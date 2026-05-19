@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS leave_applications (
     file_url TEXT,
     status VARCHAR(30) NOT NULL DEFAULT 'pending',
     remark TEXT,
+    decided_at TIMESTAMPTZ,
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CHECK (start_date <= end_date),
@@ -96,6 +97,8 @@ CREATE TABLE IF NOT EXISTS service_slots (
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     deleted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by BIGINT REFERENCES users(user_id) ON DELETE SET NULL,
     CHECK (start_time < end_time)
 );
 
@@ -127,6 +130,8 @@ CREATE TABLE IF NOT EXISTS bookings (
     booking_type VARCHAR(30) NOT NULL,
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    decided_at TIMESTAMPTZ,
+    decided_by BIGINT REFERENCES users(user_id) ON DELETE SET NULL,
     CHECK (status IN ('accepted', 'rescheduled', 'cancelled', 'past', 'rejected', 'pending')),
     CHECK (booking_type IN ('online', 'walk_in'))
 );

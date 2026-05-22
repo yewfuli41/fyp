@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+type AuthPayload struct {
+	Token string `json:"token"`
+	User  *User  `json:"user"`
+}
+
 type Booking struct {
 	BookingID     string              `json:"bookingId"`
 	UserID        string              `json:"userId"`
@@ -20,6 +25,9 @@ type Booking struct {
 	BookingType   BookingType         `json:"bookingType"`
 	DeletedAt     *string             `json:"deletedAt,omitempty"`
 	CreatedAt     string              `json:"createdAt"`
+	DecidedAt     *string             `json:"decidedAt,omitempty"`
+	DecidedBy     *string             `json:"decidedBy,omitempty"`
+	DecidedByUser *User               `json:"decidedByUser,omitempty"`
 }
 
 type BusinessProfile struct {
@@ -57,6 +65,7 @@ type LeaveApplication struct {
 	FileURL       *string     `json:"fileUrl,omitempty"`
 	Status        LeaveStatus `json:"status"`
 	Remark        *string     `json:"remark,omitempty"`
+	DecidedAt     *string     `json:"decidedAt,omitempty"`
 	DeletedAt     *string     `json:"deletedAt,omitempty"`
 	CreatedAt     string      `json:"createdAt"`
 }
@@ -85,6 +94,9 @@ type RecurringSchedule struct {
 	StartTime           time.Time       `json:"startTime"`
 	EndTime             time.Time       `json:"endTime"`
 	DeletedAt           *string         `json:"deletedAt,omitempty"`
+	CreatedAt           string          `json:"createdAt"`
+	CreatedBy           *string         `json:"createdBy,omitempty"`
+	Creator             *User           `json:"creator,omitempty"`
 }
 
 type Service struct {
@@ -111,13 +123,16 @@ type ServicePackage struct {
 
 type ServiceSlot struct {
 	ServiceSlotID       string                `json:"serviceSlotId"`
-	StaffID             string                `json:"staffId"`
-	Staff               *Staff                `json:"staff"`
+	StaffID             *string               `json:"staffId,omitempty"`
+	Staff               *Staff                `json:"staff,omitempty"`
 	Date                string                `json:"date"`
 	StartTime           time.Time             `json:"startTime"`
 	EndTime             time.Time             `json:"endTime"`
 	ServiceSlotPackages []*ServiceSlotPackage `json:"serviceSlotPackages"`
 	DeletedAt           *string               `json:"deletedAt,omitempty"`
+	CreatedAt           string                `json:"createdAt"`
+	CreatedBy           *string               `json:"createdBy,omitempty"`
+	Creator             *User                 `json:"creator,omitempty"`
 }
 
 type ServiceSlotPackage struct {
@@ -165,7 +180,7 @@ type User struct {
 	UserID              string           `json:"userId"`
 	Username            string           `json:"username"`
 	Email               string           `json:"email"`
-	ContactNumber       string           `json:"contactNumber"`
+	ContactNumber       *string          `json:"contactNumber,omitempty"`
 	FailedLoginAttempts int32            `json:"failedLoginAttempts"`
 	LockedUntil         *string          `json:"lockedUntil,omitempty"`
 	BusinessProfile     *BusinessProfile `json:"businessProfile,omitempty"`

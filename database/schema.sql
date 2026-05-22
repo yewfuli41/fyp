@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS package_items (
 
 CREATE TABLE IF NOT EXISTS staff (
     staff_id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
+    user_id BIGINT NOT NULL UNIQUE REFERENCES users(user_id) ON DELETE RESTRICT,
     business_id BIGINT NOT NULL REFERENCES business_profiles(business_id) ON DELETE CASCADE,
     position VARCHAR(100),
     deleted_at TIMESTAMPTZ,
@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS leave_applications (
 
 CREATE TABLE IF NOT EXISTS service_slots (
     service_slot_id BIGSERIAL PRIMARY KEY,
-    staff_id BIGINT NOT NULL REFERENCES staff(staff_id) ON DELETE CASCADE,
+    staff_id BIGINT REFERENCES staff(staff_id) ON DELETE CASCADE,
     date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
@@ -118,6 +118,8 @@ CREATE TABLE IF NOT EXISTS recurring_schedules (
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     deleted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by BIGINT REFERENCES users(user_id) ON DELETE SET NULL,
     CHECK (day IN ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')),
     CHECK (start_time < end_time)
 );

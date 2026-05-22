@@ -8,12 +8,26 @@ package graph
 import (
 	"context"
 	"fmt"
+	"fyp/domain/param"
 	"fyp/graph/model"
 )
 
 // SignUp is the resolver for the signUp field.
-func (r *mutationResolver) SignUp(ctx context.Context, user model.SignUpInput) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: SignUp"))
+func (r *mutationResolver) SignUp(ctx context.Context, user model.SignUpInput) (*model.AuthPayload, error) {
+	result, err := r.App.AuthService.SignUp(ctx, param.SignUpParam{
+		Username:      user.Username,
+		Email:         user.Email,
+		ContactNumber: user.ContactNumber,
+		Password:      user.Password,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.AuthPayload{
+		Token: result.Token,
+		User:  MapUser(result.User),
+	}, nil
 }
 
 // Empty is the resolver for the _empty field.

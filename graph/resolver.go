@@ -1,6 +1,12 @@
 package graph
 
-import "fyp/internal/interfaces"
+import (
+	"fyp/app"
+	"fyp/domain/param"
+	"fyp/graph/model"
+	"strconv"
+	"time"
+)
 
 // This file will not be regenerated automatically.
 //
@@ -8,11 +14,34 @@ import "fyp/internal/interfaces"
 // here.
 
 type Resolver struct {
-	authService interfaces.IAuthService
+	App *app.App
 }
 
-func NewResolver(authService interfaces.IAuthService) *Resolver {
+func NewResolver(app *app.App) *Resolver {
 	return &Resolver{
-		authService: authService,
+		App: app,
+	}
+}
+
+func MapUser(user *param.AuthUserParam) *model.User {
+	if user == nil {
+		return nil
+	}
+
+	var lockedUntil *string
+	if user.LockedUntil != nil {
+		value := user.LockedUntil.Format(time.RFC3339)
+		lockedUntil = &value
+	}
+
+	return &model.User{
+		UserID:              strconv.FormatInt(user.UserID, 10),
+		Username:            user.Username,
+		Email:               user.Email,
+		ContactNumber:       user.ContactNumber,
+		FailedLoginAttempts: int32(user.FailedLoginAttempts),
+		LockedUntil:         lockedUntil,
+		StaffProfiles:       []*model.Staff{},
+		Bookings:            []*model.Booking{},
 	}
 }

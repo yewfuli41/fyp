@@ -13,6 +13,7 @@ type Config struct {
 type AuthConfig struct {
 	MaxFailedLoginAttempts int `yaml:"max_failed_login_attempts"`
 	LockDurationMinutes    int `yaml:"lock_duration_minutes"`
+	JWTExpirationHours     int `yaml:"jwt_expiration_hours"`
 }
 
 func Load(path string) (*Config, error) {

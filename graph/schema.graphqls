@@ -36,12 +36,17 @@ type User {
   userId: ID!
   username: String!
   email: String!
-  contactNumber: String!
+  contactNumber: String
   failedLoginAttempts: Int!
   lockedUntil: DateTime
   businessProfile: BusinessProfile
   staffProfiles: [Staff!]!
   bookings: [Booking!]!
+}
+
+type AuthPayload {
+  token: String!
+  user: User!
 }
 
 type BusinessProfile {
@@ -133,19 +138,23 @@ type LeaveApplication {
   fileUrl: String
   status: LeaveStatus!
   remark: String
+  decidedAt: DateTime
   deletedAt: DateTime
   createdAt: DateTime!
 }
 
 type ServiceSlot {
   serviceSlotId: ID!
-  staffId: ID!
-  staff: Staff!
+  staffId: ID
+  staff: Staff
   date: Date!
   startTime: Time!
   endTime: Time!
   serviceSlotPackages: [ServiceSlotPackage!]!
   deletedAt: DateTime
+  createdAt: DateTime!
+  createdBy: ID
+  creator: User
 }
 
 type ServiceSlotPackage {
@@ -168,6 +177,9 @@ type RecurringSchedule {
   startTime: Time!
   endTime: Time!
   deletedAt: DateTime
+  createdAt: DateTime!
+  createdBy: ID
+  creator: User
 }
 
 type Booking {
@@ -180,13 +192,16 @@ type Booking {
   bookingType: BookingType!
   deletedAt: DateTime
   createdAt: DateTime!
+  decidedAt: DateTime
+  decidedBy: ID
+  decidedByUser: User
 }
 
 type Query {
   _empty: String
 }
 
-input SignUpInput{
+input SignUpInput {
   username: String!
   email: String!
   contactNumber: String!
@@ -194,5 +209,5 @@ input SignUpInput{
 }
 
 type Mutation {
-  signUp(user: SignUpInput!): User
+  signUp(user: SignUpInput!): AuthPayload!
 }

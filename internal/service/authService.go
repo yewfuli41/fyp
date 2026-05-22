@@ -2,10 +2,14 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"fyp/config"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
+	"os"
+	"time"
 
+	jwt "github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -37,16 +41,62 @@ func (s *authService) HashPassword(password string) (string, error) {
 	), nil
 }
 
-func (s *authService) SignUp(ctx context.Context, param param.SignUpParam) error {
-	if err := param.Validate(); err != nil {
-		return err
+func (s *authService) SignUp(ctx context.Context, signupParam param.SignUpParam) (*param.AuthResult, error) {
+	if err := signupParam.ValidateSignUp(); err != nil {
+		return nil, err
 	}
 
-	hashedPassword, err := s.HashPassword(param.Password)
+	hashedPassword, err := s.HashPassword(signupParam.Password)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	param.Password = hashedPassword
+	signupParam.Password = hashedPassword
 
-	return s.authRepo.SignUp(ctx, param)
+	user, err := s.authRepo.SignUp(ctx, signupParam)
+	if err != nil {
+		return nil, err
+	}
+
+	token, err := s.GenerateToken(user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &param.AuthResult{
+		Token: token,
+		User:  user,
+	}, nil
+}
+
+func (s *authService) GenerateToken(user *param.AuthUserParam) (string, error) {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return "", fmt.Errorf("JWT_SECRET is not set")
+	}
+
+	now := time.Now()
+	expiresAt := now.Add(time.Duration(s.authConfig.JWTExpirationHours) * time.Hour)
+
+	token := jwt.NewWithClaims(
+		jwt.SigningMethodHS256,
+		jwt.MapClaims{
+			"sub": fmt.Sprintf(
+				"%d",
+				user.UserID,
+			),
+			"email":    user.Email,
+			"username": user.Username,
+			"iat":      now.Unix(),
+			"exp":      expiresAt.Unix(),
+		},
+	)
+
+	tokenString, err := token.SignedString(
+		[]byte(secret),
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
 }

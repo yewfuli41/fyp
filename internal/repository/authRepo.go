@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
+	"time"
 )
 
 type authRepo struct {
@@ -17,8 +18,8 @@ func NewAuthRepo(db *sql.DB) interfaces.IAuthRepo {
 	}
 }
 
-func (a *authRepo) SignUp(ctx context.Context, param param.SignUpParam) error {
-	_, err := a.DB.ExecContext(ctx, `
+func (a *authRepo) SignUp(ctx context.Context, param param.SignUpParam) (*param.AuthUserParam, error) {
+	row := a.DB.QueryRowContext(ctx, `
 		INSERT INTO users (
 			username,
 			email,
@@ -28,7 +29,51 @@ func (a *authRepo) SignUp(ctx context.Context, param param.SignUpParam) error {
 			locked_until
 		)
 		VALUES ($1, $2, $3, $4, 0, NULL)
+		RETURNING
+			user_id,
+			username,
+			email,
+			contact_number,
+			failed_login_attempts,
+			locked_until
 	`,
 		param.Username, param.Email, param.ContactNumber, param.Password)
-	return err
+
+	user, err := scanUser(row)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+type rowScanner interface {
+	Scan(dest ...any) error
+}
+
+func scanUser(row rowScanner) (*param.AuthUserParam, error) {
+	var user param.AuthUserParam
+	var contactNumber sql.NullString
+	var lockedUntil sql.NullTime
+
+	if err := row.Scan(
+		&user.UserID,
+		&user.Username,
+		&user.Email,
+		&contactNumber,
+		&user.FailedLoginAttempts,
+		&lockedUntil,
+	); err != nil {
+		return nil, err
+	}
+
+	if contactNumber.Valid {
+		user.ContactNumber = &contactNumber.String
+	}
+	if lockedUntil.Valid {
+		lockedUntilValue := lockedUntil.Time.UTC().Truncate(time.Second)
+		user.LockedUntil = &lockedUntilValue
+	}
+
+	return &user, nil
 }

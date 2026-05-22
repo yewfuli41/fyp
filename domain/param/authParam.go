@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 )
 
 const (
@@ -13,11 +14,25 @@ const (
 
 var emailRegex = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
 
+type AuthResult struct {
+	Token string
+	User  *AuthUserParam
+}
+
 type SignUpParam struct {
 	Username      string
 	Email         string
 	ContactNumber string
 	Password      string
+}
+
+type AuthUserParam struct {
+	UserID              int64
+	Username            string
+	Email               string
+	ContactNumber       *string
+	FailedLoginAttempts int
+	LockedUntil         *time.Time
 }
 
 type ValidationErrors map[string]string
@@ -35,7 +50,7 @@ func (v ValidationErrors) Error() string {
 	return strings.Join(messages, ", ")
 }
 
-func (p SignUpParam) Validate() error {
+func (p SignUpParam) ValidateSignUp() error {
 	errs := ValidationErrors{}
 
 	if strings.TrimSpace(p.Username) == "" {

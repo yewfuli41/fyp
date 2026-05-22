@@ -38,10 +38,18 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	AuthPayload struct {
+		Token func(childComplexity int) int
+		User  func(childComplexity int) int
+	}
+
 	Booking struct {
 		BookingID     func(childComplexity int) int
 		BookingType   func(childComplexity int) int
 		CreatedAt     func(childComplexity int) int
+		DecidedAt     func(childComplexity int) int
+		DecidedBy     func(childComplexity int) int
+		DecidedByUser func(childComplexity int) int
 		DeletedAt     func(childComplexity int) int
 		SlotPackage   func(childComplexity int) int
 		SlotPackageID func(childComplexity int) int
@@ -77,6 +85,7 @@ type ComplexityRoot struct {
 
 	LeaveApplication struct {
 		CreatedAt     func(childComplexity int) int
+		DecidedAt     func(childComplexity int) int
 		DeletedAt     func(childComplexity int) int
 		EndDate       func(childComplexity int) int
 		FileURL       func(childComplexity int) int
@@ -106,6 +115,9 @@ type ComplexityRoot struct {
 	}
 
 	RecurringSchedule struct {
+		CreatedAt           func(childComplexity int) int
+		CreatedBy           func(childComplexity int) int
+		Creator             func(childComplexity int) int
 		Day                 func(childComplexity int) int
 		DeletedAt           func(childComplexity int) int
 		EndTime             func(childComplexity int) int
@@ -140,6 +152,9 @@ type ComplexityRoot struct {
 	}
 
 	ServiceSlot struct {
+		CreatedAt           func(childComplexity int) int
+		CreatedBy           func(childComplexity int) int
+		Creator             func(childComplexity int) int
 		Date                func(childComplexity int) int
 		DeletedAt           func(childComplexity int) int
 		EndTime             func(childComplexity int) int
@@ -198,7 +213,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	SignUp(ctx context.Context, user model.SignUpInput) (*model.User, error)
+	SignUp(ctx context.Context, user model.SignUpInput) (*model.AuthPayload, error)
 }
 type QueryResolver interface {
 	Empty(ctx context.Context) (*string, error)
@@ -218,6 +233,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	_ = ec
 	switch typeName + "." + field {
 
+	case "AuthPayload.token":
+		if e.ComplexityRoot.AuthPayload.Token == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AuthPayload.Token(childComplexity), true
+	case "AuthPayload.user":
+		if e.ComplexityRoot.AuthPayload.User == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AuthPayload.User(childComplexity), true
+
 	case "Booking.bookingId":
 		if e.ComplexityRoot.Booking.BookingID == nil {
 			break
@@ -236,6 +264,24 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Booking.CreatedAt(childComplexity), true
+	case "Booking.decidedAt":
+		if e.ComplexityRoot.Booking.DecidedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Booking.DecidedAt(childComplexity), true
+	case "Booking.decidedBy":
+		if e.ComplexityRoot.Booking.DecidedBy == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Booking.DecidedBy(childComplexity), true
+	case "Booking.decidedByUser":
+		if e.ComplexityRoot.Booking.DecidedByUser == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Booking.DecidedByUser(childComplexity), true
 	case "Booking.deletedAt":
 		if e.ComplexityRoot.Booking.DeletedAt == nil {
 			break
@@ -395,6 +441,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.LeaveApplication.CreatedAt(childComplexity), true
+	case "LeaveApplication.decidedAt":
+		if e.ComplexityRoot.LeaveApplication.DecidedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.LeaveApplication.DecidedAt(childComplexity), true
 	case "LeaveApplication.deletedAt":
 		if e.ComplexityRoot.LeaveApplication.DeletedAt == nil {
 			break
@@ -506,6 +558,24 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.Empty(childComplexity), true
 
+	case "RecurringSchedule.createdAt":
+		if e.ComplexityRoot.RecurringSchedule.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecurringSchedule.CreatedAt(childComplexity), true
+	case "RecurringSchedule.createdBy":
+		if e.ComplexityRoot.RecurringSchedule.CreatedBy == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecurringSchedule.CreatedBy(childComplexity), true
+	case "RecurringSchedule.creator":
+		if e.ComplexityRoot.RecurringSchedule.Creator == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecurringSchedule.Creator(childComplexity), true
 	case "RecurringSchedule.day":
 		if e.ComplexityRoot.RecurringSchedule.Day == nil {
 			break
@@ -659,6 +729,24 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.ServicePackage.ServiceSlotPackages(childComplexity), true
 
+	case "ServiceSlot.createdAt":
+		if e.ComplexityRoot.ServiceSlot.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceSlot.CreatedAt(childComplexity), true
+	case "ServiceSlot.createdBy":
+		if e.ComplexityRoot.ServiceSlot.CreatedBy == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceSlot.CreatedBy(childComplexity), true
+	case "ServiceSlot.creator":
+		if e.ComplexityRoot.ServiceSlot.Creator == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceSlot.Creator(childComplexity), true
 	case "ServiceSlot.date":
 		if e.ComplexityRoot.ServiceSlot.Date == nil {
 			break
@@ -1019,6 +1107,16 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // Each function is generated once per unique object type, deduplicating the
 // switch statements that were previously inlined in every fieldContext_* function.
 
+func (ec *executionContext) childFields_AuthPayload(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "token":
+		return ec.fieldContext_AuthPayload_token(ctx, field)
+	case "user":
+		return ec.fieldContext_AuthPayload_user(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type AuthPayload", field.Name)
+}
+
 func (ec *executionContext) childFields_Booking(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "bookingId":
@@ -1039,6 +1137,12 @@ func (ec *executionContext) childFields_Booking(ctx context.Context, field graph
 		return ec.fieldContext_Booking_deletedAt(ctx, field)
 	case "createdAt":
 		return ec.fieldContext_Booking_createdAt(ctx, field)
+	case "decidedAt":
+		return ec.fieldContext_Booking_decidedAt(ctx, field)
+	case "decidedBy":
+		return ec.fieldContext_Booking_decidedBy(ctx, field)
+	case "decidedByUser":
+		return ec.fieldContext_Booking_decidedByUser(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Booking", field.Name)
 }
@@ -1113,6 +1217,8 @@ func (ec *executionContext) childFields_LeaveApplication(ctx context.Context, fi
 		return ec.fieldContext_LeaveApplication_status(ctx, field)
 	case "remark":
 		return ec.fieldContext_LeaveApplication_remark(ctx, field)
+	case "decidedAt":
+		return ec.fieldContext_LeaveApplication_decidedAt(ctx, field)
 	case "deletedAt":
 		return ec.fieldContext_LeaveApplication_deletedAt(ctx, field)
 	case "createdAt":
@@ -1157,6 +1263,12 @@ func (ec *executionContext) childFields_RecurringSchedule(ctx context.Context, f
 		return ec.fieldContext_RecurringSchedule_endTime(ctx, field)
 	case "deletedAt":
 		return ec.fieldContext_RecurringSchedule_deletedAt(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_RecurringSchedule_createdAt(ctx, field)
+	case "createdBy":
+		return ec.fieldContext_RecurringSchedule_createdBy(ctx, field)
+	case "creator":
+		return ec.fieldContext_RecurringSchedule_creator(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type RecurringSchedule", field.Name)
 }
@@ -1223,6 +1335,12 @@ func (ec *executionContext) childFields_ServiceSlot(ctx context.Context, field g
 		return ec.fieldContext_ServiceSlot_serviceSlotPackages(ctx, field)
 	case "deletedAt":
 		return ec.fieldContext_ServiceSlot_deletedAt(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_ServiceSlot_createdAt(ctx, field)
+	case "createdBy":
+		return ec.fieldContext_ServiceSlot_createdBy(ctx, field)
+	case "creator":
+		return ec.fieldContext_ServiceSlot_creator(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type ServiceSlot", field.Name)
 }
@@ -1527,6 +1645,61 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _AuthPayload_token(ctx context.Context, field graphql.CollectedField, obj *model.AuthPayload) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_AuthPayload_token(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Token, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_AuthPayload_token(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("AuthPayload", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _AuthPayload_user(ctx context.Context, field graphql.CollectedField, obj *model.AuthPayload) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_AuthPayload_user(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.User, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.User) graphql.Marshaler {
+			return ec.marshalNUser2ᚖfypᚋgraphᚋmodelᚐUser(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_AuthPayload_user(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AuthPayload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_User(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Booking_bookingId(ctx context.Context, field graphql.CollectedField, obj *model.Booking) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1750,6 +1923,84 @@ func (ec *executionContext) _Booking_createdAt(ctx context.Context, field graphq
 }
 func (ec *executionContext) fieldContext_Booking_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Booking", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _Booking_decidedAt(ctx context.Context, field graphql.CollectedField, obj *model.Booking) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Booking_decidedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DecidedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalODateTime2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Booking_decidedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Booking", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _Booking_decidedBy(ctx context.Context, field graphql.CollectedField, obj *model.Booking) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Booking_decidedBy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DecidedBy, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOID2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Booking_decidedBy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Booking", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Booking_decidedByUser(ctx context.Context, field graphql.CollectedField, obj *model.Booking) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Booking_decidedByUser(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DecidedByUser, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.User) graphql.Marshaler {
+			return ec.marshalOUser2ᚖfypᚋgraphᚋmodelᚐUser(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Booking_decidedByUser(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Booking",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_User(ctx, field)
+		},
+	}
+	return fc, nil
 }
 
 func (ec *executionContext) _BusinessProfile_businessId(ctx context.Context, field graphql.CollectedField, obj *model.BusinessProfile) (ret graphql.Marshaler) {
@@ -2450,6 +2701,29 @@ func (ec *executionContext) fieldContext_LeaveApplication_remark(_ context.Conte
 	return graphql.NewScalarFieldContext("LeaveApplication", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
+func (ec *executionContext) _LeaveApplication_decidedAt(ctx context.Context, field graphql.CollectedField, obj *model.LeaveApplication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_LeaveApplication_decidedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DecidedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalODateTime2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_LeaveApplication_decidedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("LeaveApplication", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
 func (ec *executionContext) _LeaveApplication_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.LeaveApplication) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2509,11 +2783,11 @@ func (ec *executionContext) _Mutation_signUp(ctx context.Context, field graphql.
 			return ec.Resolvers.Mutation().SignUp(ctx, fc.Args["user"].(model.SignUpInput))
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *model.User) graphql.Marshaler {
-			return ec.marshalOUser2ᚖfypᚋgraphᚋmodelᚐUser(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v *model.AuthPayload) graphql.Marshaler {
+			return ec.marshalNAuthPayload2ᚖfypᚋgraphᚋmodelᚐAuthPayload(ctx, selections, v)
 		},
 		true,
-		false,
+		true,
 	)
 }
 func (ec *executionContext) fieldContext_Mutation_signUp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2523,7 +2797,7 @@ func (ec *executionContext) fieldContext_Mutation_signUp(ctx context.Context, fi
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_User(ctx, field)
+			return ec.childFields_AuthPayload(ctx, field)
 		},
 	}
 	defer func() {
@@ -2988,6 +3262,84 @@ func (ec *executionContext) fieldContext_RecurringSchedule_deletedAt(_ context.C
 	return graphql.NewScalarFieldContext("RecurringSchedule", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
+func (ec *executionContext) _RecurringSchedule_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.RecurringSchedule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecurringSchedule_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNDateTime2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RecurringSchedule_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecurringSchedule", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _RecurringSchedule_createdBy(ctx context.Context, field graphql.CollectedField, obj *model.RecurringSchedule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecurringSchedule_createdBy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedBy, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOID2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_RecurringSchedule_createdBy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecurringSchedule", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _RecurringSchedule_creator(ctx context.Context, field graphql.CollectedField, obj *model.RecurringSchedule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecurringSchedule_creator(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Creator, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.User) graphql.Marshaler {
+			return ec.marshalOUser2ᚖfypᚋgraphᚋmodelᚐUser(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_RecurringSchedule_creator(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecurringSchedule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_User(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Service_serviceId(ctx context.Context, field graphql.CollectedField, obj *model.Service) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3445,11 +3797,11 @@ func (ec *executionContext) _ServiceSlot_staffId(ctx context.Context, field grap
 			return obj.StaffID, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
-			return ec.marshalNID2string(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOID2ᚖstring(ctx, selections, v)
 		},
 		true,
-		true,
+		false,
 	)
 }
 func (ec *executionContext) fieldContext_ServiceSlot_staffId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3469,10 +3821,10 @@ func (ec *executionContext) _ServiceSlot_staff(ctx context.Context, field graphq
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *model.Staff) graphql.Marshaler {
-			return ec.marshalNStaff2ᚖfypᚋgraphᚋmodelᚐStaff(ctx, selections, v)
+			return ec.marshalOStaff2ᚖfypᚋgraphᚋmodelᚐStaff(ctx, selections, v)
 		},
 		true,
-		true,
+		false,
 	)
 }
 func (ec *executionContext) fieldContext_ServiceSlot_staff(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3610,6 +3962,84 @@ func (ec *executionContext) _ServiceSlot_deletedAt(ctx context.Context, field gr
 }
 func (ec *executionContext) fieldContext_ServiceSlot_deletedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("ServiceSlot", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceSlot_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceSlot_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNDateTime2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceSlot_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceSlot", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceSlot_createdBy(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceSlot_createdBy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedBy, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOID2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceSlot_createdBy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceSlot", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceSlot_creator(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceSlot_creator(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Creator, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.User) graphql.Marshaler {
+			return ec.marshalOUser2ᚖfypᚋgraphᚋmodelᚐUser(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceSlot_creator(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ServiceSlot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_User(ctx, field)
+		},
+	}
+	return fc, nil
 }
 
 func (ec *executionContext) _ServiceSlotPackage_slotPackageId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlotPackage) (ret graphql.Marshaler) {
@@ -4358,11 +4788,11 @@ func (ec *executionContext) _User_contactNumber(ctx context.Context, field graph
 			return obj.ContactNumber, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
-			return ec.marshalNString2string(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
 		},
 		true,
-		true,
+		false,
 	)
 }
 func (ec *executionContext) fieldContext_User_contactNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5629,6 +6059,50 @@ func (ec *executionContext) unmarshalInputSignUpInput(ctx context.Context, obj a
 
 // region    **************************** object.gotpl ****************************
 
+var authPayloadImplementors = []string{"AuthPayload"}
+
+func (ec *executionContext) _AuthPayload(ctx context.Context, sel ast.SelectionSet, obj *model.AuthPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, authPayloadImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AuthPayload")
+		case "token":
+			out.Values[i] = ec._AuthPayload_token(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "user":
+			out.Values[i] = ec._AuthPayload_user(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var bookingImplementors = []string{"Booking"}
 
 func (ec *executionContext) _Booking(ctx context.Context, sel ast.SelectionSet, obj *model.Booking) graphql.Marshaler {
@@ -5679,6 +6153,12 @@ func (ec *executionContext) _Booking(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "decidedAt":
+			out.Values[i] = ec._Booking_decidedAt(ctx, field, obj)
+		case "decidedBy":
+			out.Values[i] = ec._Booking_decidedBy(ctx, field, obj)
+		case "decidedByUser":
+			out.Values[i] = ec._Booking_decidedByUser(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5894,6 +6374,8 @@ func (ec *executionContext) _LeaveApplication(ctx context.Context, sel ast.Selec
 			}
 		case "remark":
 			out.Values[i] = ec._LeaveApplication_remark(ctx, field, obj)
+		case "decidedAt":
+			out.Values[i] = ec._LeaveApplication_decidedAt(ctx, field, obj)
 		case "deletedAt":
 			out.Values[i] = ec._LeaveApplication_deletedAt(ctx, field, obj)
 		case "createdAt":
@@ -5947,6 +6429,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_signUp(ctx, field)
 			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6148,6 +6633,15 @@ func (ec *executionContext) _RecurringSchedule(ctx context.Context, sel ast.Sele
 			}
 		case "deletedAt":
 			out.Values[i] = ec._RecurringSchedule_deletedAt(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._RecurringSchedule_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdBy":
+			out.Values[i] = ec._RecurringSchedule_createdBy(ctx, field, obj)
+		case "creator":
+			out.Values[i] = ec._RecurringSchedule_creator(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6325,14 +6819,8 @@ func (ec *executionContext) _ServiceSlot(ctx context.Context, sel ast.SelectionS
 			}
 		case "staffId":
 			out.Values[i] = ec._ServiceSlot_staffId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "staff":
 			out.Values[i] = ec._ServiceSlot_staff(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "date":
 			out.Values[i] = ec._ServiceSlot_date(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -6355,6 +6843,15 @@ func (ec *executionContext) _ServiceSlot(ctx context.Context, sel ast.SelectionS
 			}
 		case "deletedAt":
 			out.Values[i] = ec._ServiceSlot_deletedAt(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._ServiceSlot_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdBy":
+			out.Values[i] = ec._ServiceSlot_createdBy(ctx, field, obj)
+		case "creator":
+			out.Values[i] = ec._ServiceSlot_creator(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6621,9 +7118,6 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "contactNumber":
 			out.Values[i] = ec._User_contactNumber(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "failedLoginAttempts":
 			out.Values[i] = ec._User_failedLoginAttempts(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -7000,6 +7494,20 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) marshalNAuthPayload2fypᚋgraphᚋmodelᚐAuthPayload(ctx context.Context, sel ast.SelectionSet, v model.AuthPayload) graphql.Marshaler {
+	return ec._AuthPayload(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAuthPayload2ᚖfypᚋgraphᚋmodelᚐAuthPayload(ctx context.Context, sel ast.SelectionSet, v *model.AuthPayload) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AuthPayload(ctx, sel, v)
+}
 
 func (ec *executionContext) marshalNBooking2ᚕᚖfypᚋgraphᚋmodelᚐBookingᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Booking) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
@@ -7664,6 +8172,31 @@ func (ec *executionContext) marshalODateTime2ᚖstring(ctx context.Context, sel 
 	_ = ctx
 	res := graphql.MarshalString(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v any) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalID(*v)
+	return res
+}
+
+func (ec *executionContext) marshalOStaff2ᚖfypᚋgraphᚋmodelᚐStaff(ctx context.Context, sel ast.SelectionSet, v *model.Staff) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Staff(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

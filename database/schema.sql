@@ -124,10 +124,13 @@ CREATE TABLE IF NOT EXISTS recurring_schedules (
     CHECK (start_time < end_time)
 );
 
+CREATE SEQUENCE IF NOT EXISTS booking_group_seq START 1;
+
 CREATE TABLE IF NOT EXISTS bookings (
     booking_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
     slot_package_id BIGINT NOT NULL REFERENCES service_slot_packages(slot_package_id) ON DELETE RESTRICT,
+    booking_group_id BIGINT NOT NULL,
     status VARCHAR(30),
     booking_type VARCHAR(30) NOT NULL,
     deleted_at TIMESTAMPTZ,

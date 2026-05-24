@@ -26,6 +26,11 @@ type SignUpParam struct {
 	Password      string
 }
 
+type LogInParam struct {
+	Email    string
+	Password string
+}
+
 type AuthUserParam struct {
 	UserID              int64
 	Username            string
@@ -76,6 +81,21 @@ func (p SignUpParam) ValidateSignUp() error {
 		errs["password"] = fmt.Sprintf("password must be at least %d characters", minPasswordLength)
 	}
 
+	if len(errs) > 0 {
+		return errs
+	}
+
+	return nil
+}
+
+func (p LogInParam) ValidateLogIn() error {
+	errs := ValidationErrors{}
+	if p.Email == "" {
+		errs["email"] = "email is required"
+	}
+	if p.Password == "" {
+		errs["password"] = "password is required"
+	}
 	if len(errs) > 0 {
 		return errs
 	}

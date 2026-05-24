@@ -208,6 +208,12 @@ input SignUpInput {
   password: String!
 }
 
+input LogInInput{
+  email: String!
+  password: String!
+}
+
 type Mutation {
   signUp(user: SignUpInput!): AuthPayload!
+  logIn(user: LogInInput!): AuthPayload!
 }

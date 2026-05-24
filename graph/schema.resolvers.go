@@ -30,6 +30,11 @@ func (r *mutationResolver) SignUp(ctx context.Context, user model.SignUpInput) (
 	}, nil
 }
 
+// LogIn is the resolver for the logIn field.
+func (r *mutationResolver) LogIn(ctx context.Context, user model.LogInInput) (*model.AuthPayload, error) {
+	panic(fmt.Errorf("not implemented: LogIn - logIn"))
+}
+
 // Empty is the resolver for the _empty field.
 func (r *queryResolver) Empty(ctx context.Context) (*string, error) {
 	panic(fmt.Errorf("not implemented: Empty - _empty"))

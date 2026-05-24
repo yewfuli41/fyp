@@ -47,6 +47,12 @@ func (a *authRepo) SignUp(ctx context.Context, param param.SignUpParam) (*param.
 	return user, nil
 }
 
+func (a *authRepo) GetAllUsers(ctx context.Context, param param.LogInParam) (*param.AuthUserParam, error) {
+	rows, err := a.DB.ExecContext(ctx, `SELECT * FROM users`)
+	var users []string
+
+}
+
 type rowScanner interface {
 	Scan(dest ...any) error
 }

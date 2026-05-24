@@ -70,6 +70,11 @@ type LeaveApplication struct {
 	CreatedAt     string      `json:"createdAt"`
 }
 
+type LogInInput struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 type Mutation struct {
 }
 

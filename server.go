@@ -20,7 +20,7 @@ func server(app *app.App) {
 	e := echo.New()
 	//CORS
 	e.Use(echoMiddleware.CORS())
-	// CSP
+	// CSP (second layer defense for XSS)
 	e.Use(func(
 		next echo.HandlerFunc,
 	) echo.HandlerFunc {

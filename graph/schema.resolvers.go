@@ -9,7 +9,9 @@ import (
 	"context"
 	"fmt"
 	"fyp/domain/param"
+	"fyp/graph/graphErrs"
 	"fyp/graph/model"
+	"fyp/internal/contexts"
 )
 
 // SignUp is the resolver for the signUp field.
@@ -21,7 +23,7 @@ func (r *mutationResolver) SignUp(ctx context.Context, user model.SignUpInput) (
 		Password:      user.Password,
 	})
 	if err != nil {
-		return nil, err
+		return nil, graphErrs.ToGraphQLError(err)
 	}
 
 	return &model.AuthPayload{
@@ -32,12 +34,33 @@ func (r *mutationResolver) SignUp(ctx context.Context, user model.SignUpInput) (
 
 // LogIn is the resolver for the logIn field.
 func (r *mutationResolver) LogIn(ctx context.Context, user model.LogInInput) (*model.AuthPayload, error) {
-	panic(fmt.Errorf("not implemented: LogIn - logIn"))
+	result, err := r.App.AuthService.LogIn(ctx, param.LogInParam{
+		Email:    user.Email,
+		Password: user.Password,
+	})
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	return &model.AuthPayload{
+		Token: result.Token,
+		User:  MapUser(result.User),
+	}, nil
 }
 
 // Empty is the resolver for the _empty field.
 func (r *queryResolver) Empty(ctx context.Context) (*string, error) {
 	panic(fmt.Errorf("not implemented: Empty - _empty"))
+}
+
+// Me is the resolver for the me field.
+func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
+	user, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	return MapUser(user), nil
 }
 
 // Mutation returns MutationResolver implementation.

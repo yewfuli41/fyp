@@ -3,6 +3,7 @@ package main
 import (
 	"fyp/app"
 	"fyp/graph"
+	authMiddleware "fyp/internal/middleware"
 	"os"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -20,6 +21,7 @@ func server(app *app.App) {
 	e := echo.New()
 	//CORS
 	e.Use(echoMiddleware.CORS())
+	e.Use(authMiddleware.JWTUserContext())
 	// CSP (second layer defense for XSS)
 	e.Use(func(
 		next echo.HandlerFunc,

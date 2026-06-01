@@ -18,3 +18,10 @@ migrate:
 	-d $(DB_NAME) \
 	-p $(DB_PORT) \
 	-f database/db_user.sql
+
+test:
+	go test -coverprofile=coverage.out -v ./...
+	go tool cover -html=coverage.out
+
+
+

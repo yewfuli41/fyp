@@ -2,6 +2,7 @@ package param
 
 import (
 	"fmt"
+	"fyp/domain/errs"
 	"regexp"
 	"strings"
 	"time"
@@ -36,68 +37,63 @@ type AuthUserParam struct {
 	Username            string
 	Email               string
 	ContactNumber       *string
+	Password            string
 	FailedLoginAttempts int
 	LockedUntil         *time.Time
 }
 
-type ValidationErrors map[string]string
-
-func (v ValidationErrors) Error() string {
-	if len(v) == 0 {
-		return ""
-	}
-
-	messages := make([]string, 0, len(v))
-	for field, message := range v {
-		messages = append(messages, fmt.Sprintf("%s: %s", field, message))
-	}
-
-	return strings.Join(messages, ", ")
-}
-
 func (p SignUpParam) ValidateSignUp() error {
-	errs := ValidationErrors{}
+	var validationErrs errs.ValidationErrors
 
 	if strings.TrimSpace(p.Username) == "" {
-		errs["username"] = "username is required"
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "username", Message: "username is required"})
 	}
 
 	email := strings.TrimSpace(p.Email)
 	if email == "" {
-		errs["email"] = "email is required"
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "email", Message: "email is required"})
 	} else if !emailRegex.MatchString(email) {
-		errs["email"] = "email format is invalid"
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "email", Message: "email format is invalid"})
 	}
 
 	if strings.TrimSpace(p.ContactNumber) == "" {
-		errs["contactNumber"] = "contact number is required"
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "contactNumber", Message: "contact number is required"})
 	} else if len(p.ContactNumber) < minContactNumberDigits {
-		errs["contactNumber"] = fmt.Sprintf("contact number must have at least %d digits", minContactNumberDigits)
+		validationErrs = append(validationErrs, errs.ValidationError{
+			Field:   "contactNumber",
+			Message: fmt.Sprintf("contact number must have at least %d digits", minContactNumberDigits),
+		})
 	}
 
 	if p.Password == "" {
-		errs["password"] = "password is required"
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "password", Message: "password is required"})
 	} else if len(p.Password) < minPasswordLength {
-		errs["password"] = fmt.Sprintf("password must be at least %d characters", minPasswordLength)
+		validationErrs = append(validationErrs, errs.ValidationError{
+			Field:   "password",
+			Message: fmt.Sprintf("password must be at least %d characters", minPasswordLength),
+		})
 	}
 
-	if len(errs) > 0 {
-		return errs
+	if len(validationErrs) > 0 {
+		return validationErrs
 	}
 
 	return nil
 }
 
 func (p LogInParam) ValidateLogIn() error {
-	errs := ValidationErrors{}
-	if p.Email == "" {
-		errs["email"] = "email is required"
+	var validationErrs errs.ValidationErrors
+
+	if strings.TrimSpace(p.Email) == "" {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "email", Message: "email is required"})
 	}
+
 	if p.Password == "" {
-		errs["password"] = "password is required"
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "password", Message: "password is required"})
 	}
-	if len(errs) > 0 {
-		return errs
+
+	if len(validationErrs) > 0 {
+		return validationErrs
 	}
 
 	return nil

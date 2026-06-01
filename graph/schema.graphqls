@@ -199,6 +199,7 @@ type Booking {
 
 type Query {
   _empty: String
+  me: User
 }
 
 input SignUpInput {

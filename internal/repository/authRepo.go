@@ -34,6 +34,7 @@ func (a *authRepo) SignUp(ctx context.Context, param param.SignUpParam) (*param.
 			username,
 			email,
 			contact_number,
+			password,
 			failed_login_attempts,
 			locked_until
 	`,
@@ -47,10 +48,22 @@ func (a *authRepo) SignUp(ctx context.Context, param param.SignUpParam) (*param.
 	return user, nil
 }
 
-func (a *authRepo) GetAllUsers(ctx context.Context, param param.LogInParam) (*param.AuthUserParam, error) {
-	rows, err := a.DB.ExecContext(ctx, `SELECT * FROM users`)
-	var users []string
+func (a *authRepo) GetUser(ctx context.Context, param param.LogInParam) (*param.AuthUserParam, error) {
+	row := a.DB.QueryRowContext(ctx, `	
+		SELECT * FROM users WHERE email = $1
+	`, param.Email)
+	user, err := scanUser(row)
+	if err != nil {
+		return nil, err
+	}
 
+	return user, nil
+
+}
+
+func (a *authRepo) UpdateUserLogInStatus(ctx context.Context, param param.AuthUserParam) error {
+	_, err := a.DB.ExecContext(ctx, `UPDATE users SET failed_login_attempts = $1, locked_until = $2 WHERE user_id = $3`, param.FailedLoginAttempts, param.LockedUntil, param.UserID)
+	return err
 }
 
 type rowScanner interface {
@@ -67,6 +80,7 @@ func scanUser(row rowScanner) (*param.AuthUserParam, error) {
 		&user.Username,
 		&user.Email,
 		&contactNumber,
+		&user.Password,
 		&user.FailedLoginAttempts,
 		&lockedUntil,
 	); err != nil {

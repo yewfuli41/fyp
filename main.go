@@ -5,6 +5,7 @@ import (
 	"fyp/config"
 	"fyp/database"
 	"log"
+	"os"
 
 	"github.com/joho/godotenv"
 )
@@ -12,6 +13,11 @@ import (
 func main() {
 	if err := godotenv.Load(".env.local"); err != nil {
 		log.Fatal("Error loading .env.local")
+	}
+
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		log.Fatal("JWT_SECRET is required")
 	}
 
 	cfg, err := config.Load("config/config.yaml")

@@ -199,7 +199,7 @@ type Booking {
 
 type Query {
   _empty: String
-  me: User
+  userProfile: User
 }
 
 input SignUpInput {
@@ -214,7 +214,14 @@ input LogInInput{
   password: String!
 }
 
+input UpdateProfileInput{
+  username: String!
+  email: String!
+  contactNumber: String!
+}
+
 type Mutation {
   signUp(user: SignUpInput!): AuthPayload!
   logIn(user: LogInInput!): AuthPayload!
+  updateProfile(user: UpdateProfileInput!): AuthPayload!
 }

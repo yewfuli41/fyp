@@ -181,6 +181,12 @@ type StaffWorkingHour struct {
 	DeletedAt       *string   `json:"deletedAt,omitempty"`
 }
 
+type UpdateProfileInput struct {
+	Username      string `json:"username"`
+	Email         string `json:"email"`
+	ContactNumber string `json:"contactNumber"`
+}
+
 type User struct {
 	UserID              string           `json:"userId"`
 	Username            string           `json:"username"`

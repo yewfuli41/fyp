@@ -48,13 +48,18 @@ func (r *mutationResolver) LogIn(ctx context.Context, user model.LogInInput) (*m
 	}, nil
 }
 
+// UpdateProfile is the resolver for the updateProfile field.
+func (r *mutationResolver) UpdateProfile(ctx context.Context, user model.UpdateProfileInput) (*model.AuthPayload, error) {
+	panic(fmt.Errorf("not implemented: UpdateProfile - updateProfile"))
+}
+
 // Empty is the resolver for the _empty field.
 func (r *queryResolver) Empty(ctx context.Context) (*string, error) {
 	panic(fmt.Errorf("not implemented: Empty - _empty"))
 }
 
-// Me is the resolver for the me field.
-func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
+// UserProfile is the resolver for the userProfile field.
+func (r *queryResolver) UserProfile(ctx context.Context) (*model.User, error) {
 	user, err := contexts.CurrentUser(ctx)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)

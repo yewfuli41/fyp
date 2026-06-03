@@ -99,8 +99,9 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		LogIn  func(childComplexity int, user model.LogInInput) int
-		SignUp func(childComplexity int, user model.SignUpInput) int
+		LogIn         func(childComplexity int, user model.LogInInput) int
+		SignUp        func(childComplexity int, user model.SignUpInput) int
+		UpdateProfile func(childComplexity int, user model.UpdateProfileInput) int
 	}
 
 	PackageItem struct {
@@ -112,8 +113,8 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Empty func(childComplexity int) int
-		Me    func(childComplexity int) int
+		Empty       func(childComplexity int) int
+		UserProfile func(childComplexity int) int
 	}
 
 	RecurringSchedule struct {
@@ -217,10 +218,11 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	SignUp(ctx context.Context, user model.SignUpInput) (*model.AuthPayload, error)
 	LogIn(ctx context.Context, user model.LogInInput) (*model.AuthPayload, error)
+	UpdateProfile(ctx context.Context, user model.UpdateProfileInput) (*model.AuthPayload, error)
 }
 type QueryResolver interface {
 	Empty(ctx context.Context) (*string, error)
-	Me(ctx context.Context) (*model.User, error)
+	UserProfile(ctx context.Context) (*model.User, error)
 }
 
 type executableSchema graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot]
@@ -534,6 +536,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SignUp(childComplexity, args["user"].(model.SignUpInput)), true
+	case "Mutation.updateProfile":
+		if e.ComplexityRoot.Mutation.UpdateProfile == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateProfile_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateProfile(childComplexity, args["user"].(model.UpdateProfileInput)), true
 
 	case "PackageItem.deletedAt":
 		if e.ComplexityRoot.PackageItem.DeletedAt == nil {
@@ -573,12 +586,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.Empty(childComplexity), true
 
-	case "Query.me":
-		if e.ComplexityRoot.Query.Me == nil {
+	case "Query.userProfile":
+		if e.ComplexityRoot.Query.UserProfile == nil {
 			break
 		}
 
-		return e.ComplexityRoot.Query.Me(childComplexity), true
+		return e.ComplexityRoot.Query.UserProfile(childComplexity), true
 
 	case "RecurringSchedule.createdAt":
 		if e.ComplexityRoot.RecurringSchedule.CreatedAt == nil {
@@ -1036,6 +1049,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputLogInInput,
 		ec.unmarshalInputSignUpInput,
+		ec.unmarshalInputUpdateProfileInput,
 	)
 	first := true
 
@@ -1596,6 +1610,20 @@ func (ec *executionContext) field_Mutation_signUp_args(ctx context.Context, rawA
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "user",
 		func(ctx context.Context, v any) (model.SignUpInput, error) {
 			return ec.unmarshalNSignUpInput2fypᚋgraphᚋmodelᚐSignUpInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["user"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateProfile_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "user",
+		func(ctx context.Context, v any) (model.UpdateProfileInput, error) {
+			return ec.unmarshalNUpdateProfileInput2fypᚋgraphᚋmodelᚐUpdateProfileInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -2895,6 +2923,50 @@ func (ec *executionContext) fieldContext_Mutation_logIn(ctx context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_updateProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateProfile(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateProfile(ctx, fc.Args["user"].(model.UpdateProfileInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.AuthPayload) graphql.Marshaler {
+			return ec.marshalNAuthPayload2ᚖfypᚋgraphᚋmodelᚐAuthPayload(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateProfile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_AuthPayload(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateProfile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PackageItem_packageItemId(ctx context.Context, field graphql.CollectedField, obj *model.PackageItem) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3042,16 +3114,16 @@ func (ec *executionContext) fieldContext_Query__empty(_ context.Context, field g
 	return graphql.NewScalarFieldContext("Query", field, true, true, errors.New("field of type String does not have child fields"))
 }
 
-func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_userProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_Query_me(ctx, field)
+			return ec.fieldContext_Query_userProfile(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Query().Me(ctx)
+			return ec.Resolvers.Query().UserProfile(ctx)
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *model.User) graphql.Marshaler {
@@ -3061,7 +3133,7 @@ func (ec *executionContext) _Query_me(ctx context.Context, field graphql.Collect
 		false,
 	)
 }
-func (ec *executionContext) fieldContext_Query_me(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_userProfile(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -6201,6 +6273,50 @@ func (ec *executionContext) unmarshalInputSignUpInput(ctx context.Context, obj a
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateProfileInput(ctx context.Context, obj any) (model.UpdateProfileInput, error) {
+	var it model.UpdateProfileInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"username", "email", "contactNumber"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "username":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Username = data
+		case "email":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Email = data
+		case "contactNumber":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contactNumber"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ContactNumber = data
+		}
+	}
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -6589,6 +6705,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "updateProfile":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateProfile(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6706,7 +6829,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "me":
+		case "userProfile":
 			field := field
 
 			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
@@ -6715,7 +6838,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_me(ctx, field)
+				res = ec._Query_userProfile(ctx, field)
 				return res
 			}
 
@@ -8131,6 +8254,11 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNUpdateProfileInput2fypᚋgraphᚋmodelᚐUpdateProfileInput(ctx context.Context, v any) (model.UpdateProfileInput, error) {
+	res, err := ec.unmarshalInputUpdateProfileInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNUser2ᚖfypᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {

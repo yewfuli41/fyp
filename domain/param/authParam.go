@@ -5,7 +5,6 @@ import (
 	"fyp/domain/errs"
 	"regexp"
 	"strings"
-	"time"
 )
 
 const (
@@ -14,11 +13,6 @@ const (
 )
 
 var emailRegex = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
-
-type AuthResult struct {
-	Token string
-	User  *AuthUserParam
-}
 
 type SignUpParam struct {
 	Username      string
@@ -30,16 +24,6 @@ type SignUpParam struct {
 type LogInParam struct {
 	Email    string
 	Password string
-}
-
-type AuthUserParam struct {
-	UserID              int64
-	Username            string
-	Email               string
-	ContactNumber       *string
-	Password            string
-	FailedLoginAttempts int
-	LockedUntil         *time.Time
 }
 
 func (p SignUpParam) ValidateSignUp() error {

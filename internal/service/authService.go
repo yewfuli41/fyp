@@ -10,6 +10,7 @@ import (
 	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
+	"log"
 	"os"
 	"time"
 
@@ -122,7 +123,8 @@ func (s *authService) LogIn(ctx context.Context, logInParam param.LogInParam) (*
 func (s *authService) GenerateToken(user *param.AuthUserParam) (string, error) {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		return "", fmt.Errorf("JWT_SECRET is not set")
+		log.Println("JWT_SECRET is not set")
+		return "", errs.ErrInternal
 	}
 
 	now := time.Now()

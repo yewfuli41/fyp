@@ -2,8 +2,10 @@ package middleware
 
 import (
 	"fmt"
+	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/internal/contexts"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -45,7 +47,8 @@ func JWTUserContextWithSecret(secret string) echo.MiddlewareFunc {
 
 func userFromToken(tokenString string, secret string) (*param.AuthUserParam, error) {
 	if secret == "" {
-		return nil, fmt.Errorf("JWT_SECRET is not set")
+		log.Println("JWT_SECRET is not set")
+		return nil, errs.ErrInternal
 	}
 
 	claims := jwt.MapClaims{}

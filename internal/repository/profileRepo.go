@@ -21,3 +21,7 @@ func (p *profileRepo) UpdateUser(ctx context.Context, param param.ProfileParam) 
 	_, err := p.DB.ExecContext(ctx, `UPDATE users SET username = $1, email = $2, contact_number = $3 WHERE user_id = $4`, param.Username, param.Email, param.ContactNumber, param.UserId)
 	return err
 }
+
+func (p *profileRepo) GetUserProfile(ctx context.Context, userID int64) (*param.AuthUserParam, error) {
+	return nil, nil
+}

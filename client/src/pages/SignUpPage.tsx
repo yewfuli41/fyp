@@ -88,7 +88,13 @@ export default function SignUpPage() {
             <Form.Control
               type="text"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => {
+                setUsername(e.target.value)
+                setFieldErrors(prev => ({
+                  ...prev,
+                  username: "",
+                }))
+              }}
               isInvalid={!!fieldErrors.username}
             />
             <Form.Control.Feedback type="invalid">
@@ -101,7 +107,13 @@ export default function SignUpPage() {
             <Form.Control
               type="text"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                setFieldErrors(prev => ({
+                  ...prev,
+                  email: "",
+                }))
+              }}
               isInvalid={!!fieldErrors.email}
             />
             <Form.Control.Feedback type="invalid">
@@ -114,7 +126,13 @@ export default function SignUpPage() {
             <Form.Control
               type="text"
               value={contactNumber}
-              onChange={(e) => setContactNumber(e.target.value)}
+              onChange={(e) => {
+                setContactNumber(e.target.value)
+                setFieldErrors(prev => ({
+                  ...prev,
+                  contactNumber: "",
+                }))
+              }}
               isInvalid={!!fieldErrors.contactNumber}
             />
             <Form.Control.Feedback type="invalid">
@@ -126,7 +144,14 @@ export default function SignUpPage() {
             controlId="password"
             label="Password"
             value={password}
-            onChange={setPassword}
+            onChange={(value) => {
+              setPassword(value)
+              setFieldErrors(prev => {
+                const next = { ...prev }
+                delete next.password
+                return next
+              })
+            }}
             isInvalid={!!fieldErrors.password}
             errorMessage={fieldErrors.password}
             className="mb-3"
@@ -136,7 +161,14 @@ export default function SignUpPage() {
             controlId="confirmPassword"
             label="Confirm password"
             value={confirmPassword}
-            onChange={setConfirmPassword}
+            onChange={(value) => {
+              setConfirmPassword(value)
+              setFieldErrors(prev => {
+                const next = { ...prev }
+                delete next.confirmpassword
+                return next
+              })
+            }}
             isInvalid={!!fieldErrors.confirmPassword}
             errorMessage={fieldErrors.confirmPassword}
             className="mb-4"

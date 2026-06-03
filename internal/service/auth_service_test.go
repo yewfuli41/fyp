@@ -149,7 +149,7 @@ var _ = Describe("AuthService", func() {
 			result, err := authSvc.SignUp(ctx, signUpParam)
 
 			Expect(result).To(BeNil())
-			Expect(err).To(MatchError("JWT_SECRET is not set"))
+			Expect(err).To(Equal(errs.ErrInternal))
 		})
 	})
 

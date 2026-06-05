@@ -49,8 +49,25 @@ func (r *mutationResolver) LogIn(ctx context.Context, user model.LogInInput) (*m
 }
 
 // UpdateProfile is the resolver for the updateProfile field.
-func (r *mutationResolver) UpdateProfile(ctx context.Context, user model.UpdateProfileInput) (*model.AuthPayload, error) {
-	panic(fmt.Errorf("not implemented: UpdateProfile - updateProfile"))
+func (r *mutationResolver) UpdateProfile(ctx context.Context, user model.UpdateProfileInput) (*model.User, error) {
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	err = r.App.ProfileService.UpdateProfile(ctx, param.ProfileParam{
+		UserId:        int(currentUser.UserID),
+		Username:      user.Username,
+		Email:         user.Email,
+		ContactNumber: user.ContactNumber,
+	})
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	userInfo, err := r.App.AuthService.GetUserProfile(ctx, user.Email)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	return MapUser(userInfo), nil
 }
 
 // Empty is the resolver for the _empty field.
@@ -64,8 +81,12 @@ func (r *queryResolver) UserProfile(ctx context.Context) (*model.User, error) {
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
 	}
+	userInfo, err := r.App.AuthService.GetUserProfile(ctx, user.Email)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
 
-	return MapUser(user), nil
+	return MapUser(userInfo), nil
 }
 
 // Mutation returns MutationResolver implementation.

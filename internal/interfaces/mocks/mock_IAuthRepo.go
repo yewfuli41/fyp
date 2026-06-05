@@ -39,8 +39,8 @@ func (_m *MockIAuthRepo) EXPECT() *MockIAuthRepo_Expecter {
 }
 
 // GetUser provides a mock function for the type MockIAuthRepo
-func (_mock *MockIAuthRepo) GetUser(ctx context.Context, param1 param.LogInParam) (*param.AuthUserParam, error) {
-	ret := _mock.Called(ctx, param1)
+func (_mock *MockIAuthRepo) GetUser(ctx context.Context, email string) (*param.AuthUserParam, error) {
+	ret := _mock.Called(ctx, email)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetUser")
@@ -48,18 +48,18 @@ func (_mock *MockIAuthRepo) GetUser(ctx context.Context, param1 param.LogInParam
 
 	var r0 *param.AuthUserParam
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, param.LogInParam) (*param.AuthUserParam, error)); ok {
-		return returnFunc(ctx, param1)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*param.AuthUserParam, error)); ok {
+		return returnFunc(ctx, email)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, param.LogInParam) *param.AuthUserParam); ok {
-		r0 = returnFunc(ctx, param1)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *param.AuthUserParam); ok {
+		r0 = returnFunc(ctx, email)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*param.AuthUserParam)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, param.LogInParam) error); ok {
-		r1 = returnFunc(ctx, param1)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, email)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -73,20 +73,20 @@ type MockIAuthRepo_GetUser_Call struct {
 
 // GetUser is a helper method to define mock.On call
 //   - ctx context.Context
-//   - param1 param.LogInParam
-func (_e *MockIAuthRepo_Expecter) GetUser(ctx interface{}, param1 interface{}) *MockIAuthRepo_GetUser_Call {
-	return &MockIAuthRepo_GetUser_Call{Call: _e.mock.On("GetUser", ctx, param1)}
+//   - email string
+func (_e *MockIAuthRepo_Expecter) GetUser(ctx interface{}, email interface{}) *MockIAuthRepo_GetUser_Call {
+	return &MockIAuthRepo_GetUser_Call{Call: _e.mock.On("GetUser", ctx, email)}
 }
 
-func (_c *MockIAuthRepo_GetUser_Call) Run(run func(ctx context.Context, param1 param.LogInParam)) *MockIAuthRepo_GetUser_Call {
+func (_c *MockIAuthRepo_GetUser_Call) Run(run func(ctx context.Context, email string)) *MockIAuthRepo_GetUser_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 param.LogInParam
+		var arg1 string
 		if args[1] != nil {
-			arg1 = args[1].(param.LogInParam)
+			arg1 = args[1].(string)
 		}
 		run(
 			arg0,
@@ -101,7 +101,7 @@ func (_c *MockIAuthRepo_GetUser_Call) Return(authUserParam *param.AuthUserParam,
 	return _c
 }
 
-func (_c *MockIAuthRepo_GetUser_Call) RunAndReturn(run func(ctx context.Context, param1 param.LogInParam) (*param.AuthUserParam, error)) *MockIAuthRepo_GetUser_Call {
+func (_c *MockIAuthRepo_GetUser_Call) RunAndReturn(run func(ctx context.Context, email string) (*param.AuthUserParam, error)) *MockIAuthRepo_GetUser_Call {
 	_c.Call.Return(run)
 	return _c
 }

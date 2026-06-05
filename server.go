@@ -2,6 +2,7 @@ package main
 
 import (
 	"fyp/app"
+	"fyp/config"
 	"fyp/graph"
 	authMiddleware "fyp/internal/middleware"
 	"os"
@@ -17,11 +18,11 @@ import (
 
 const defaultPort = "8080"
 
-func server(app *app.App) {
+func server(app *app.App, cfg *config.Config) {
 	e := echo.New()
 	//CORS
 	e.Use(echoMiddleware.CORS())
-	e.Use(authMiddleware.JWTUserContext())
+	e.Use(authMiddleware.JWTUserContext(cfg.Auth.JWTSecret))
 	// CSP (second layer defense for XSS)
 	e.Use(func(
 		next echo.HandlerFunc,

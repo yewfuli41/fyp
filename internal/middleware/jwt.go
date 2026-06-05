@@ -7,7 +7,6 @@ import (
 	"fyp/internal/contexts"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -15,8 +14,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func JWTUserContext() echo.MiddlewareFunc {
-	return JWTUserContextWithSecret(os.Getenv("JWT_SECRET"))
+func JWTUserContext(secret string) echo.MiddlewareFunc {
+	return JWTUserContextWithSecret(secret)
 }
 
 func JWTUserContextWithSecret(secret string) echo.MiddlewareFunc {

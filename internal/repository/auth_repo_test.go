@@ -90,7 +90,7 @@ var _ = Describe("AuthRepo", func() {
 				WillReturnRows(sqlmock.NewRows(userCols).
 					AddRow(1, "testuser", logInParam.Email, "12345678", "hashedpassword", 0, nil))
 
-			user, err := repo.GetUser(ctx, logInParam)
+			user, err := repo.GetUser(ctx, logInParam.Email)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(user.Email).To(Equal(logInParam.Email))
@@ -109,7 +109,7 @@ var _ = Describe("AuthRepo", func() {
 				WillReturnRows(sqlmock.NewRows(userCols).
 					AddRow(1, "testuser", logInParam.Email, "12345678", "hashedpassword", 3, lockedUntil))
 
-			user, err := repo.GetUser(ctx, logInParam)
+			user, err := repo.GetUser(ctx, logInParam.Email)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(user.Email).To(Equal(logInParam.Email))
@@ -127,7 +127,7 @@ var _ = Describe("AuthRepo", func() {
 				WithArgs(logInParam.Email).
 				WillReturnError(sql.ErrNoRows)
 
-			user, err := repo.GetUser(ctx, logInParam)
+			user, err := repo.GetUser(ctx, logInParam.Email)
 
 			Expect(err).To(Equal(sql.ErrNoRows))
 			Expect(user).To(BeNil())

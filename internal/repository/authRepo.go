@@ -47,10 +47,10 @@ func (a *authRepo) SignUp(ctx context.Context, param param.SignUpParam) (*param.
 	return user, nil
 }
 
-func (a *authRepo) GetUser(ctx context.Context, param param.LogInParam) (*param.AuthUserParam, error) {
+func (a *authRepo) GetUser(ctx context.Context, email string) (*param.AuthUserParam, error) {
 	row := a.DB.QueryRowContext(ctx, `	
 		SELECT * FROM users WHERE email = $1
-	`, param.Email)
+	`, email)
 	user, err := ScanUser(row)
 	if err != nil {
 		return nil, err

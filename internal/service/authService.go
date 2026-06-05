@@ -10,8 +10,6 @@ import (
 	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
-	"log"
-	"os"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -67,7 +65,7 @@ func (s *authService) LogIn(ctx context.Context, logInParam param.LogInParam) (*
 		return nil, err
 	}
 
-	user, err := s.authRepo.GetUser(ctx, logInParam)
+	user, err := s.authRepo.GetUser(ctx, logInParam.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errs.ValidationErrors{
@@ -120,13 +118,15 @@ func (s *authService) LogIn(ctx context.Context, logInParam param.LogInParam) (*
 	}, nil
 }
 
-func (s *authService) GenerateToken(user *param.AuthUserParam) (string, error) {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		log.Println("JWT_SECRET is not set")
-		return "", errs.ErrInternal
+func (a *authService) GetUserProfile(ctx context.Context, email string) (*param.AuthUserParam, error) {
+	user, err := a.authRepo.GetUser(ctx, email)
+	if err != nil {
+		return nil, err
 	}
+	return user, nil
+}
 
+func (s *authService) GenerateToken(user *param.AuthUserParam) (string, error) {
 	now := time.Now()
 	expiresAt := now.Add(time.Duration(s.authConfig.JWTExpirationHours) * time.Hour)
 
@@ -145,7 +145,7 @@ func (s *authService) GenerateToken(user *param.AuthUserParam) (string, error) {
 	)
 
 	tokenString, err := token.SignedString(
-		[]byte(secret),
+		[]byte(s.authConfig.JWTSecret),
 	)
 	if err != nil {
 		return "", err

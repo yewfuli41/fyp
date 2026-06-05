@@ -218,7 +218,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	SignUp(ctx context.Context, user model.SignUpInput) (*model.AuthPayload, error)
 	LogIn(ctx context.Context, user model.LogInInput) (*model.AuthPayload, error)
-	UpdateProfile(ctx context.Context, user model.UpdateProfileInput) (*model.AuthPayload, error)
+	UpdateProfile(ctx context.Context, user model.UpdateProfileInput) (*model.User, error)
 }
 type QueryResolver interface {
 	Empty(ctx context.Context) (*string, error)
@@ -2936,8 +2936,8 @@ func (ec *executionContext) _Mutation_updateProfile(ctx context.Context, field g
 			return ec.Resolvers.Mutation().UpdateProfile(ctx, fc.Args["user"].(model.UpdateProfileInput))
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *model.AuthPayload) graphql.Marshaler {
-			return ec.marshalNAuthPayload2ᚖfypᚋgraphᚋmodelᚐAuthPayload(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v *model.User) graphql.Marshaler {
+			return ec.marshalNUser2ᚖfypᚋgraphᚋmodelᚐUser(ctx, selections, v)
 		},
 		true,
 		true,
@@ -2950,7 +2950,7 @@ func (ec *executionContext) fieldContext_Mutation_updateProfile(ctx context.Cont
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_AuthPayload(ctx, field)
+			return ec.childFields_User(ctx, field)
 		},
 	}
 	defer func() {
@@ -8259,6 +8259,10 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 func (ec *executionContext) unmarshalNUpdateProfileInput2fypᚋgraphᚋmodelᚐUpdateProfileInput(ctx context.Context, v any) (model.UpdateProfileInput, error) {
 	res, err := ec.unmarshalInputUpdateProfileInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUser2fypᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
+	return ec._User(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNUser2ᚖfypᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {

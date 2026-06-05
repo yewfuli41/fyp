@@ -38,6 +38,74 @@ func (_m *MockIAuthService) EXPECT() *MockIAuthService_Expecter {
 	return &MockIAuthService_Expecter{mock: &_m.Mock}
 }
 
+// GetUserProfile provides a mock function for the type MockIAuthService
+func (_mock *MockIAuthService) GetUserProfile(ctx context.Context, email string) (*param.AuthUserParam, error) {
+	ret := _mock.Called(ctx, email)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUserProfile")
+	}
+
+	var r0 *param.AuthUserParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*param.AuthUserParam, error)); ok {
+		return returnFunc(ctx, email)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *param.AuthUserParam); ok {
+		r0 = returnFunc(ctx, email)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*param.AuthUserParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, email)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIAuthService_GetUserProfile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUserProfile'
+type MockIAuthService_GetUserProfile_Call struct {
+	*mock.Call
+}
+
+// GetUserProfile is a helper method to define mock.On call
+//   - ctx context.Context
+//   - email string
+func (_e *MockIAuthService_Expecter) GetUserProfile(ctx interface{}, email interface{}) *MockIAuthService_GetUserProfile_Call {
+	return &MockIAuthService_GetUserProfile_Call{Call: _e.mock.On("GetUserProfile", ctx, email)}
+}
+
+func (_c *MockIAuthService_GetUserProfile_Call) Run(run func(ctx context.Context, email string)) *MockIAuthService_GetUserProfile_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIAuthService_GetUserProfile_Call) Return(authUserParam *param.AuthUserParam, err error) *MockIAuthService_GetUserProfile_Call {
+	_c.Call.Return(authUserParam, err)
+	return _c
+}
+
+func (_c *MockIAuthService_GetUserProfile_Call) RunAndReturn(run func(ctx context.Context, email string) (*param.AuthUserParam, error)) *MockIAuthService_GetUserProfile_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // LogIn provides a mock function for the type MockIAuthService
 func (_mock *MockIAuthService) LogIn(ctx context.Context, logInParam param.LogInParam) (*param.AuthResult, error) {
 	ret := _mock.Called(ctx, logInParam)

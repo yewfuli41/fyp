@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 
 	"github.com/goccy/go-yaml"
@@ -11,9 +12,10 @@ type Config struct {
 }
 
 type AuthConfig struct {
-	MaxFailedLoginAttempts int `yaml:"max_failed_login_attempts"`
-	LockDurationMinutes    int `yaml:"lock_duration_minutes"`
-	JWTExpirationHours     int `yaml:"jwt_expiration_hours"`
+	MaxFailedLoginAttempts int    `yaml:"max_failed_login_attempts"`
+	LockDurationMinutes    int    `yaml:"lock_duration_minutes"`
+	JWTExpirationHours     int    `yaml:"jwt_expiration_hours"`
+	JWTSecret              string `yaml:"-"`
 }
 
 func Load(path string) (*Config, error) {
@@ -26,6 +28,9 @@ func Load(path string) (*Config, error) {
 	if err := yaml.Unmarshal(file, cfg); err != nil {
 		return nil, err
 	}
-
+	cfg.Auth.JWTSecret = os.Getenv("JWT_SECRET")
+	if cfg.Auth.JWTSecret == "" {
+		return nil, errors.New("JWT_SECRET is required in environment variables")
+	}
 	return cfg, nil
 }

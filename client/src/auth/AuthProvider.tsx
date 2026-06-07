@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { AuthContext, type User } from "./AuthContext";
 
 export function AuthProvider({
@@ -6,22 +6,16 @@ export function AuthProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    const savedToken = localStorage.getItem("token");
+  const [user, setUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem("user");
-
-    if (savedToken) {
-      setToken(savedToken);
+    try {
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
     }
-
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-  }, []);
+  });
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem("token"));
+  const [message, setMessage] = useState("");
 
   const login = (token: string, user: User) => {
     localStorage.setItem("token", token);

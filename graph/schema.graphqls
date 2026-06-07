@@ -220,8 +220,25 @@ input UpdateProfileInput{
   contactNumber: String!
 }
 
+input RegisterBusinessProfileInput {
+  businessName: String!
+  description: String
+  address: String
+  imageUrl: String
+  businessContactNumber: String
+  businessEmail: String
+  workingHours: [WorkingHourInput!]!
+}
+
+input WorkingHourInput {
+  day: DayOfWeek!
+  startTime: Time!
+  endTime: Time!
+}
+
 type Mutation {
   signUp(user: SignUpInput!): AuthPayload!
   logIn(user: LogInInput!): AuthPayload!
   updateProfile(user: UpdateProfileInput!): User!
+  registerBusinessProfile(business: RegisterBusinessProfileInput!): BusinessProfile!
 }

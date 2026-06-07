@@ -70,6 +70,44 @@ func (r *mutationResolver) UpdateProfile(ctx context.Context, user model.UpdateP
 	return MapUser(userInfo), nil
 }
 
+// RegisterBusinessProfile is the resolver for the registerBusinessProfile field.
+func (r *mutationResolver) RegisterBusinessProfile(ctx context.Context, business model.RegisterBusinessProfileInput) (*model.BusinessProfile, error) {
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	workingHours := make([]param.WorkingHourParam, len(business.WorkingHours))
+	for i, wh := range business.WorkingHours {
+		workingHours[i] = param.WorkingHourParam{
+			Day:       string(wh.Day),
+			StartTime: wh.StartTime,
+			EndTime:   wh.EndTime,
+		}
+	}
+
+	businessProfile, err := r.App.BusinessService.RegisterBusinessProfile(ctx, param.BusinessProfileParam{
+		OwnerUserID:           currentUser.UserID,
+		BusinessName:          business.BusinessName,
+		Description:           business.Description,
+		Address:               business.Address,
+		ImageURL:              business.ImageURL,
+		BusinessContactNumber: business.BusinessContactNumber,
+		BusinessEmail:         business.BusinessEmail,
+		WorkingHours:          workingHours,
+	})
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	owner, err := r.App.AuthService.GetUserProfile(ctx, currentUser.Email)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	return MapBusinessProfile(businessProfile, owner), nil
+}
+
 // Empty is the resolver for the _empty field.
 func (r *queryResolver) Empty(ctx context.Context) (*string, error) {
 	panic(fmt.Errorf("not implemented: Empty - _empty"))

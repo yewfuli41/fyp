@@ -5,6 +5,9 @@
 package mocks
 
 import (
+	"context"
+	"fyp/domain/param"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -33,4 +36,61 @@ type MockIProfileService_Expecter struct {
 
 func (_m *MockIProfileService) EXPECT() *MockIProfileService_Expecter {
 	return &MockIProfileService_Expecter{mock: &_m.Mock}
+}
+
+// UpdateProfile provides a mock function for the type MockIProfileService
+func (_mock *MockIProfileService) UpdateProfile(ctx context.Context, param1 param.ProfileParam) error {
+	ret := _mock.Called(ctx, param1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateProfile")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, param.ProfileParam) error); ok {
+		r0 = returnFunc(ctx, param1)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIProfileService_UpdateProfile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateProfile'
+type MockIProfileService_UpdateProfile_Call struct {
+	*mock.Call
+}
+
+// UpdateProfile is a helper method to define mock.On call
+//   - ctx context.Context
+//   - param1 param.ProfileParam
+func (_e *MockIProfileService_Expecter) UpdateProfile(ctx interface{}, param1 interface{}) *MockIProfileService_UpdateProfile_Call {
+	return &MockIProfileService_UpdateProfile_Call{Call: _e.mock.On("UpdateProfile", ctx, param1)}
+}
+
+func (_c *MockIProfileService_UpdateProfile_Call) Run(run func(ctx context.Context, param1 param.ProfileParam)) *MockIProfileService_UpdateProfile_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 param.ProfileParam
+		if args[1] != nil {
+			arg1 = args[1].(param.ProfileParam)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIProfileService_UpdateProfile_Call) Return(err error) *MockIProfileService_UpdateProfile_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIProfileService_UpdateProfile_Call) RunAndReturn(run func(ctx context.Context, param1 param.ProfileParam) error) *MockIProfileService_UpdateProfile_Call {
+	_c.Call.Return(run)
+	return _c
 }

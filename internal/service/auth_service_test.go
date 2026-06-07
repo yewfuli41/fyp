@@ -9,11 +9,9 @@ import (
 	"fyp/domain/param"
 	"fyp/internal/interfaces/mocks"
 	"fyp/internal/service"
-	"os"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
-	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"
@@ -38,9 +36,9 @@ var _ = Describe("AuthService", func() {
 			MaxFailedLoginAttempts: 3,
 			LockDurationMinutes:    15,
 			JWTExpirationHours:     2,
+			JWTSecret:              "test-secret",
 		}
 		authSvc = service.NewAuthService(authRepo, authConfig)
-		setenv("JWT_SECRET", "test-secret")
 	})
 
 	Describe("SignUp", func() {
@@ -127,30 +125,6 @@ var _ = Describe("AuthService", func() {
 			Expect(err).To(MatchError(dbErr))
 		})
 
-		It("returns an error when JWT_SECRET is missing", func() {
-			signUpParam := param.SignUpParam{
-				Username:      "finn",
-				Email:         "finn@example.com",
-				ContactNumber: "0123456789",
-				Password:      "password123",
-			}
-			createdUser := &param.AuthUserParam{
-				UserID:   42,
-				Username: signUpParam.Username,
-				Email:    signUpParam.Email,
-			}
-			setenv("JWT_SECRET", "")
-
-			authRepo.EXPECT().
-				SignUp(ctx, mock.AnythingOfType("param.SignUpParam")).
-				Return(createdUser, nil).
-				Once()
-
-			result, err := authSvc.SignUp(ctx, signUpParam)
-
-			Expect(result).To(BeNil())
-			Expect(err).To(Equal(errs.ErrInternal))
-		})
 	})
 
 	Describe("LogIn", func() {
@@ -183,7 +157,7 @@ var _ = Describe("AuthService", func() {
 
 		It("returns invalid email when the user does not exist", func() {
 			authRepo.EXPECT().
-				GetUser(ctx, logInParam).
+				GetUser(ctx, logInParam.Email).
 				Return(nil, sql.ErrNoRows).
 				Once()
 
@@ -198,7 +172,7 @@ var _ = Describe("AuthService", func() {
 		It("returns an error when the repo GetUser fails generically", func() {
 			dbErr := errors.New("database connection failed")
 			authRepo.EXPECT().
-				GetUser(ctx, logInParam).
+				GetUser(ctx, logInParam.Email).
 				Return(nil, dbErr).
 				Once()
 
@@ -210,7 +184,7 @@ var _ = Describe("AuthService", func() {
 
 		It("resets failed login state and returns a signed token for a valid password", func() {
 			authRepo.EXPECT().
-				GetUser(ctx, logInParam).
+				GetUser(ctx, logInParam.Email).
 				Return(user, nil).
 				Once()
 			authRepo.EXPECT().
@@ -235,7 +209,7 @@ var _ = Describe("AuthService", func() {
 			logInParam.Password = "wrong-password"
 
 			authRepo.EXPECT().
-				GetUser(ctx, logInParam).
+				GetUser(ctx, logInParam.Email).
 				Return(user, nil).
 				Once()
 			authRepo.EXPECT().
@@ -261,7 +235,7 @@ var _ = Describe("AuthService", func() {
 			user.LockedUntil = &lockedUntil
 
 			authRepo.EXPECT().
-				GetUser(ctx, logInParam).
+				GetUser(ctx, logInParam.Email).
 				Return(user, nil).
 				Once()
 
@@ -277,7 +251,7 @@ var _ = Describe("AuthService", func() {
 			user.FailedLoginAttempts = 3
 
 			authRepo.EXPECT().
-				GetUser(ctx, logInParam).
+				GetUser(ctx, logInParam.Email).
 				Return(user, nil).
 				Once()
 			authRepo.EXPECT().
@@ -308,7 +282,7 @@ var _ = Describe("AuthService", func() {
 			updateErr := errors.New("update failed")
 
 			authRepo.EXPECT().
-				GetUser(ctx, logInParam).
+				GetUser(ctx, logInParam.Email).
 				Return(user, nil).
 				Once()
 			authRepo.EXPECT().
@@ -345,24 +319,4 @@ func expectTokenClaims(tokenString string, user *param.AuthUserParam, expiresInH
 	Expect(claims["username"]).To(Equal(user.Username))
 	Expect(claims["iat"]).To(BeNumerically("~", float64(time.Now().Unix()), 3))
 	Expect(claims["exp"]).To(BeNumerically("~", float64(time.Now().Add(time.Duration(expiresInHours)*time.Hour).Unix()), 3))
-}
-
-func newUniqueViolation(constraint string) error {
-	return &pq.Error{
-		Code:       "23505",
-		Constraint: constraint,
-	}
-}
-
-func setenv(key, value string) {
-	originalValue, hadOriginalValue := os.LookupEnv(key)
-	Expect(os.Setenv(key, value)).To(Succeed())
-
-	DeferCleanup(func() {
-		if hadOriginalValue {
-			Expect(os.Setenv(key, originalValue)).To(Succeed())
-			return
-		}
-		Expect(os.Unsetenv(key)).To(Succeed())
-	})
 }

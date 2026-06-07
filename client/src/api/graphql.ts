@@ -19,7 +19,7 @@ interface GraphQLError {
 	};
 }
 
-export interface GraphQLResponse<T = any> {
+export interface GraphQLResponse<T = unknown> {
 	data?: T | null;
 	errors?: GraphQLError[];
 }
@@ -29,22 +29,26 @@ export const doGraphQL = async <T>(
 
 ): Promise<GraphQLResponse<T>> => {
     try{
-        const res = await apiClient.post<any>(
+        const res = await apiClient.post<GraphQLResponse<T>>(
             "/query", 
             {query}, 
             {headers: buildHeaders(accessToken)}
         );
 
         const json = res.data
+        const errors = Array.isArray(json?.errors) ? json.errors: [];
+
         return{
             data: json.data ?? null,
-            errors: Array.isArray(json?.errors) ? json.errors: [],
+            errors,
         }
-    }  catch (err: any) {
+    }  catch (err: unknown) {
+		console.error("GraphQL request failed:", err);
+        const error = err as { response?: { data?: { message?: string } } };
 		return {
 			data: null,
 			errors: [
-                {message: err.response?.data?.message ?? "Something went wrong"},
+                {message: error.response?.data?.message ?? "Something went wrong"},
 			],
 		};
 	}

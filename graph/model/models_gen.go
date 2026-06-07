@@ -104,6 +104,16 @@ type RecurringSchedule struct {
 	Creator             *User           `json:"creator,omitempty"`
 }
 
+type RegisterBusinessProfileInput struct {
+	BusinessName          string              `json:"businessName"`
+	Description           *string             `json:"description,omitempty"`
+	Address               *string             `json:"address,omitempty"`
+	ImageURL              *string             `json:"imageUrl,omitempty"`
+	BusinessContactNumber *string             `json:"businessContactNumber,omitempty"`
+	BusinessEmail         *string             `json:"businessEmail,omitempty"`
+	WorkingHours          []*WorkingHourInput `json:"workingHours"`
+}
+
 type Service struct {
 	ServiceID       string            `json:"serviceId"`
 	BusinessID      string            `json:"businessId"`
@@ -197,6 +207,12 @@ type User struct {
 	BusinessProfile     *BusinessProfile `json:"businessProfile,omitempty"`
 	StaffProfiles       []*Staff         `json:"staffProfiles"`
 	Bookings            []*Booking       `json:"bookings"`
+}
+
+type WorkingHourInput struct {
+	Day       DayOfWeek `json:"day"`
+	StartTime time.Time `json:"startTime"`
+	EndTime   time.Time `json:"endTime"`
 }
 
 type BookingStatus string

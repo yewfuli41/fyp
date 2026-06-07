@@ -5,6 +5,9 @@
 package mocks
 
 import (
+	"context"
+	"fyp/domain/param"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -33,4 +36,61 @@ type MockIProfileRepo_Expecter struct {
 
 func (_m *MockIProfileRepo) EXPECT() *MockIProfileRepo_Expecter {
 	return &MockIProfileRepo_Expecter{mock: &_m.Mock}
+}
+
+// UpdateUser provides a mock function for the type MockIProfileRepo
+func (_mock *MockIProfileRepo) UpdateUser(ctx context.Context, param1 param.ProfileParam) error {
+	ret := _mock.Called(ctx, param1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateUser")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, param.ProfileParam) error); ok {
+		r0 = returnFunc(ctx, param1)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIProfileRepo_UpdateUser_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateUser'
+type MockIProfileRepo_UpdateUser_Call struct {
+	*mock.Call
+}
+
+// UpdateUser is a helper method to define mock.On call
+//   - ctx context.Context
+//   - param1 param.ProfileParam
+func (_e *MockIProfileRepo_Expecter) UpdateUser(ctx interface{}, param1 interface{}) *MockIProfileRepo_UpdateUser_Call {
+	return &MockIProfileRepo_UpdateUser_Call{Call: _e.mock.On("UpdateUser", ctx, param1)}
+}
+
+func (_c *MockIProfileRepo_UpdateUser_Call) Run(run func(ctx context.Context, param1 param.ProfileParam)) *MockIProfileRepo_UpdateUser_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 param.ProfileParam
+		if args[1] != nil {
+			arg1 = args[1].(param.ProfileParam)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIProfileRepo_UpdateUser_Call) Return(err error) *MockIProfileRepo_UpdateUser_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIProfileRepo_UpdateUser_Call) RunAndReturn(run func(ctx context.Context, param1 param.ProfileParam) error) *MockIProfileRepo_UpdateUser_Call {
+	_c.Call.Return(run)
+	return _c
 }

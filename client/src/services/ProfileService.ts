@@ -9,11 +9,25 @@ export const userProfile= async(token: string) => {
                 username
                 email
                 contactNumber
+                businessProfile {
+                    businessId
+                    businessName
+                    description
+                    address
+                    imageUrl
+                    businessContactNumber
+                    businessEmail
+                    workingHours {
+                        day
+                        startTime
+                        endTime
+                    }
+                }
             }
         }
     `
 
-    const profileData = await doGraphQL<{userProfile: User}>(query, token);
+    const profileData = await doGraphQL<{userProfile: any}>(query, token);
     return profileData
 }
 

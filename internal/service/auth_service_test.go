@@ -304,7 +304,7 @@ func hashPassword(password string) string {
 	return string(hash)
 }
 
-func expectTokenClaims(tokenString string, user *param.AuthUserParam, expiresInHours int) {
+func expectTokenClaims(tokenString string, user *param.AuthUserParam, expiresInHours float64) {
 	parsedToken, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		Expect(token.Method).To(Equal(jwt.SigningMethodHS256))
 		return []byte("test-secret"), nil

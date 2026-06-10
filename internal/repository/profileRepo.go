@@ -22,5 +22,9 @@ func (p *profileRepo) UpdateUser(ctx context.Context, param param.ProfileParam) 
 	return err
 }
 
-func (p *profileRepo) GetPassword(ctx context.Context)
-func (p *profileRepo) ChangePassword(ctx context.Context)
+func (p *profileRepo) GetPassword(ctx context.Context, userId int) (string, error) {
+	return "", nil
+}
+func (p *profileRepo) ChangePassword(ctx context.Context, hashedPassword string) error {
+	return nil
+}

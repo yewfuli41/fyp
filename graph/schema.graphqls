@@ -3,13 +3,13 @@ scalar Time
 scalar DateTime
 
 enum DayOfWeek {
-  MONDAY
-  TUESDAY
-  WEDNESDAY
-  THURSDAY
-  FRIDAY
-  SATURDAY
-  SUNDAY
+  monday
+  tuesday
+  wednesday
+  thursday
+  friday
+  saturday
+  sunday
 }
 
 enum LeaveStatus {
@@ -36,7 +36,7 @@ type User {
   userId: ID!
   username: String!
   email: String!
-  contactNumber: String
+  contactNumber: String!
   failedLoginAttempts: Int!
   lockedUntil: DateTime
   businessProfile: BusinessProfile
@@ -55,10 +55,10 @@ type BusinessProfile {
   owner: User!
   businessName: String!
   description: String
-  address: String
+  address: String!
   imageUrl: String
-  businessContactNumber: String
-  businessEmail: String
+  businessContactNumber: String!
+  businessEmail: String!
   workingHours: [BusinessWorkingHour!]!
   services: [Service!]!
   staff: [Staff!]!
@@ -69,8 +69,8 @@ type BusinessWorkingHour {
   businessId: ID!
   business: BusinessProfile!
   day: DayOfWeek!
-  startTime: Time!
-  endTime: Time!
+  startTime: String!
+  endTime: String!
   deletedAt: DateTime
 }
 
@@ -200,6 +200,7 @@ type Booking {
 type Query {
   _empty: String
   userProfile: User
+  businessServices: [Service!]!
 }
 
 input SignUpInput {
@@ -217,28 +218,48 @@ input LogInInput{
 input UpdateProfileInput{
   username: String!
   email: String!
-  contactNumber: String!
+  contactNumber: String
 }
 
-input RegisterBusinessProfileInput {
+input BusinessProfileInput {
   businessName: String!
   description: String
-  address: String
+  address: String!
   imageUrl: String
-  businessContactNumber: String
-  businessEmail: String
+  businessContactNumber: String!
+  businessEmail: String!
   workingHours: [WorkingHourInput!]!
 }
 
 input WorkingHourInput {
   day: DayOfWeek!
-  startTime: Time!
-  endTime: Time!
+  startTime: String!
+  endTime: String!
+}
+
+input PackageItemInput {
+  packageItemName: String!
+}
+
+input ServicePackageInput {
+  servicePackageName: String!
+  description: String
+  packageItems: [PackageItemInput!]!
+}
+
+input ServiceInput {
+  serviceName: String!
+  description: String
+  servicePackages: [ServicePackageInput!]!
 }
 
 type Mutation {
   signUp(user: SignUpInput!): AuthPayload!
   logIn(user: LogInInput!): AuthPayload!
   updateProfile(user: UpdateProfileInput!): User!
-  registerBusinessProfile(business: RegisterBusinessProfileInput!): BusinessProfile!
+  registerBusinessProfile(business: BusinessProfileInput!): BusinessProfile!
+  updateBusinessProfile(business: BusinessProfileInput!): BusinessProfile!
+  createService(service: ServiceInput!): Service!
+  updateService(serviceId: ID!, service: ServiceInput!): Service!
+  deleteService(serviceId: ID!): Boolean!
 }

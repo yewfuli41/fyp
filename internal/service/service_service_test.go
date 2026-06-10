@@ -1,0 +1,216 @@
+package service_test
+
+import (
+	"context"
+	"database/sql"
+	"fyp/domain/param"
+	"fyp/internal/interfaces"
+	"fyp/internal/interfaces/mocks"
+	"fyp/internal/service"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
+)
+
+var _ = Describe("ServiceService", func() {
+	var (
+		ctx         context.Context
+		db          *sql.DB
+		dbMock      sqlmock.Sqlmock
+		serviceRepo *mocks.MockIServiceRepo
+		serviceSvc  interfaces.IServiceService
+	)
+
+	BeforeEach(func() {
+		ctx = context.Background()
+		var err error
+		db, dbMock, err = sqlmock.New()
+		Expect(err).NotTo(HaveOccurred())
+
+		serviceRepo = mocks.NewMockIServiceRepo(GinkgoT())
+		serviceSvc = service.NewServiceService(db, serviceRepo)
+	})
+
+	AfterEach(func() {
+		Expect(dbMock.ExpectationsWereMet()).To(Succeed())
+	})
+
+	Describe("CreateService", func() {
+		var (
+			serviceParam param.ServiceParam
+			createdSvc   *param.ServiceParam
+		)
+
+		BeforeEach(func() {
+			serviceParam = param.ServiceParam{
+				BusinessID:  1,
+				ServiceName: "Massage",
+				ServicePackages: []param.ServicePackageParam{
+					{
+						ServicePackageName: "Deep Tissue",
+						PackageItems: []param.PackageItemParam{
+							{PackageItemName: "Oil"},
+						},
+					},
+				},
+			}
+			createdSvc = &param.ServiceParam{
+				ServiceID:   10,
+				BusinessID:  1,
+				ServiceName: "Massage",
+			}
+		})
+
+		It("successfully creates a service with packages and items", func() {
+			dbMock.ExpectBegin()
+
+			serviceRepo.EXPECT().
+				InsertService(ctx, mock.AnythingOfType("*sql.Tx"), serviceParam).
+				Return(createdSvc, nil).
+				Once()
+
+			createdPkg := &param.ServicePackageParam{ServicePackageID: 20, ServiceID: 10, ServicePackageName: "Deep Tissue"}
+			serviceRepo.EXPECT().
+				InsertServicePackage(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServicePackageParam) bool {
+					return p.ServiceID == 10 && p.ServicePackageName == "Deep Tissue"
+				})).
+				Return(createdPkg, nil).
+				Once()
+
+			serviceRepo.EXPECT().
+				InsertPackageItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.PackageItemParam) bool {
+					return p.ServicePackageID == 20 && p.PackageItemName == "Oil"
+				})).
+				Return(nil).
+				Once()
+
+			dbMock.ExpectCommit()
+
+			result, err := serviceSvc.CreateService(ctx, serviceParam)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ServiceID).To(Equal(int64(10)))
+			Expect(result.ServicePackages).To(HaveLen(1))
+			Expect(result.ServicePackages[0].ServicePackageID).To(Equal(int64(20)))
+		})
+
+		It("returns validation error", func() {
+			invalidParam := param.ServiceParam{ServiceName: ""}
+			dbMock.ExpectBegin()
+			dbMock.ExpectRollback()
+
+			result, err := serviceSvc.CreateService(ctx, invalidParam)
+			Expect(err).To(HaveOccurred())
+			Expect(result).To(BeNil())
+		})
+	})
+
+	Describe("UpdateService", func() {
+		var (
+			serviceParam param.ServiceParam
+			updatedSvc   *param.ServiceParam
+		)
+
+		BeforeEach(func() {
+			serviceParam = param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServicePackages: []param.ServicePackageParam{
+					{
+						ServicePackageName: "Swedish",
+						PackageItems: []param.PackageItemParam{
+							{PackageItemName: "Lotion"},
+						},
+					},
+				},
+			}
+			updatedSvc = &param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+			}
+		})
+
+		It("successfully updates a service and its packages", func() {
+			dbMock.ExpectBegin()
+
+			serviceRepo.EXPECT().
+				UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), serviceParam).
+				Return(updatedSvc, nil).
+				Once()
+
+			serviceRepo.EXPECT().
+				DeleteServicePackagesByServiceID(ctx, mock.AnythingOfType("*sql.Tx"), int64(10)).
+				Return(nil).
+				Once()
+
+			createdPkg := &param.ServicePackageParam{ServicePackageID: 30, ServiceID: 10, ServicePackageName: "Swedish"}
+			serviceRepo.EXPECT().
+				InsertServicePackage(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServicePackageParam) bool {
+					return p.ServiceID == 10 && p.ServicePackageName == "Swedish"
+				})).
+				Return(createdPkg, nil).
+				Once()
+
+			serviceRepo.EXPECT().
+				InsertPackageItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.PackageItemParam) bool {
+					return p.ServicePackageID == 30 && p.PackageItemName == "Lotion"
+				})).
+				Return(nil).
+				Once()
+
+			dbMock.ExpectCommit()
+
+			result, err := serviceSvc.UpdateService(ctx, serviceParam)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ServiceName).To(Equal("Updated Massage"))
+		})
+	})
+
+	Describe("DeleteService", func() {
+		It("successfully deletes a service when no bookings exist", func() {
+			serviceRepo.EXPECT().HasBookingForService(ctx, int64(10)).Return(false, nil).Once()
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().SoftDeleteService(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(1)).Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			err := serviceSvc.DeleteService(ctx, 10, 1)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("fails to delete when bookings exist", func() {
+			serviceRepo.EXPECT().HasBookingForService(ctx, int64(10)).Return(true, nil).Once()
+
+			err := serviceSvc.DeleteService(ctx, 10, 1)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("booking exists"))
+		})
+	})
+
+	Describe("GetServicesByBusinessID", func() {
+		It("successfully fetches services with packages and items", func() {
+			services := []param.ServiceParam{
+				{ServiceID: 10, ServiceName: "Massage"},
+			}
+			packages := []param.ServicePackageParam{
+				{ServicePackageID: 20, ServicePackageName: "Deep Tissue"},
+			}
+			items := []param.PackageItemParam{
+				{PackageItemName: "Oil"},
+			}
+
+			serviceRepo.EXPECT().GetServicesByBusinessID(ctx, int64(1)).Return(services, nil).Once()
+			serviceRepo.EXPECT().GetServicePackagesByServiceID(ctx, int64(10)).Return(packages, nil).Once()
+			serviceRepo.EXPECT().GetPackageItemsByPackageID(ctx, int64(20)).Return(items, nil).Once()
+
+			result, err := serviceSvc.GetServicesByBusinessID(ctx, 1)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(HaveLen(1))
+			Expect(result[0].ServicePackages).To(HaveLen(1))
+			Expect(result[0].ServicePackages[0].PackageItems).To(HaveLen(1))
+		})
+	})
+})

@@ -39,6 +39,205 @@ func (_m *MockIBusinessRepo) EXPECT() *MockIBusinessRepo_Expecter {
 	return &MockIBusinessRepo_Expecter{mock: &_m.Mock}
 }
 
+// DeleteBusinessWorkingHours provides a mock function for the type MockIBusinessRepo
+func (_mock *MockIBusinessRepo) DeleteBusinessWorkingHours(ctx context.Context, tx *sql.Tx, businessID int64) error {
+	ret := _mock.Called(ctx, tx, businessID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteBusinessWorkingHours")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, int64) error); ok {
+		r0 = returnFunc(ctx, tx, businessID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIBusinessRepo_DeleteBusinessWorkingHours_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteBusinessWorkingHours'
+type MockIBusinessRepo_DeleteBusinessWorkingHours_Call struct {
+	*mock.Call
+}
+
+// DeleteBusinessWorkingHours is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx *sql.Tx
+//   - businessID int64
+func (_e *MockIBusinessRepo_Expecter) DeleteBusinessWorkingHours(ctx interface{}, tx interface{}, businessID interface{}) *MockIBusinessRepo_DeleteBusinessWorkingHours_Call {
+	return &MockIBusinessRepo_DeleteBusinessWorkingHours_Call{Call: _e.mock.On("DeleteBusinessWorkingHours", ctx, tx, businessID)}
+}
+
+func (_c *MockIBusinessRepo_DeleteBusinessWorkingHours_Call) Run(run func(ctx context.Context, tx *sql.Tx, businessID int64)) *MockIBusinessRepo_DeleteBusinessWorkingHours_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *sql.Tx
+		if args[1] != nil {
+			arg1 = args[1].(*sql.Tx)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBusinessRepo_DeleteBusinessWorkingHours_Call) Return(err error) *MockIBusinessRepo_DeleteBusinessWorkingHours_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIBusinessRepo_DeleteBusinessWorkingHours_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, businessID int64) error) *MockIBusinessRepo_DeleteBusinessWorkingHours_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetBusinessProfileByOwnerID provides a mock function for the type MockIBusinessRepo
+func (_mock *MockIBusinessRepo) GetBusinessProfileByOwnerID(ctx context.Context, ownerID int64) (*param.BusinessProfileParam, error) {
+	ret := _mock.Called(ctx, ownerID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBusinessProfileByOwnerID")
+	}
+
+	var r0 *param.BusinessProfileParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (*param.BusinessProfileParam, error)); ok {
+		return returnFunc(ctx, ownerID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) *param.BusinessProfileParam); ok {
+		r0 = returnFunc(ctx, ownerID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*param.BusinessProfileParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, ownerID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBusinessRepo_GetBusinessProfileByOwnerID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBusinessProfileByOwnerID'
+type MockIBusinessRepo_GetBusinessProfileByOwnerID_Call struct {
+	*mock.Call
+}
+
+// GetBusinessProfileByOwnerID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - ownerID int64
+func (_e *MockIBusinessRepo_Expecter) GetBusinessProfileByOwnerID(ctx interface{}, ownerID interface{}) *MockIBusinessRepo_GetBusinessProfileByOwnerID_Call {
+	return &MockIBusinessRepo_GetBusinessProfileByOwnerID_Call{Call: _e.mock.On("GetBusinessProfileByOwnerID", ctx, ownerID)}
+}
+
+func (_c *MockIBusinessRepo_GetBusinessProfileByOwnerID_Call) Run(run func(ctx context.Context, ownerID int64)) *MockIBusinessRepo_GetBusinessProfileByOwnerID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBusinessRepo_GetBusinessProfileByOwnerID_Call) Return(businessProfileParam *param.BusinessProfileParam, err error) *MockIBusinessRepo_GetBusinessProfileByOwnerID_Call {
+	_c.Call.Return(businessProfileParam, err)
+	return _c
+}
+
+func (_c *MockIBusinessRepo_GetBusinessProfileByOwnerID_Call) RunAndReturn(run func(ctx context.Context, ownerID int64) (*param.BusinessProfileParam, error)) *MockIBusinessRepo_GetBusinessProfileByOwnerID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetBusinessWorkingHours provides a mock function for the type MockIBusinessRepo
+func (_mock *MockIBusinessRepo) GetBusinessWorkingHours(ctx context.Context, businessID int64) ([]param.WorkingHourParam, error) {
+	ret := _mock.Called(ctx, businessID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBusinessWorkingHours")
+	}
+
+	var r0 []param.WorkingHourParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) ([]param.WorkingHourParam, error)); ok {
+		return returnFunc(ctx, businessID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) []param.WorkingHourParam); ok {
+		r0 = returnFunc(ctx, businessID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]param.WorkingHourParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, businessID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBusinessRepo_GetBusinessWorkingHours_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBusinessWorkingHours'
+type MockIBusinessRepo_GetBusinessWorkingHours_Call struct {
+	*mock.Call
+}
+
+// GetBusinessWorkingHours is a helper method to define mock.On call
+//   - ctx context.Context
+//   - businessID int64
+func (_e *MockIBusinessRepo_Expecter) GetBusinessWorkingHours(ctx interface{}, businessID interface{}) *MockIBusinessRepo_GetBusinessWorkingHours_Call {
+	return &MockIBusinessRepo_GetBusinessWorkingHours_Call{Call: _e.mock.On("GetBusinessWorkingHours", ctx, businessID)}
+}
+
+func (_c *MockIBusinessRepo_GetBusinessWorkingHours_Call) Run(run func(ctx context.Context, businessID int64)) *MockIBusinessRepo_GetBusinessWorkingHours_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBusinessRepo_GetBusinessWorkingHours_Call) Return(workingHourParams []param.WorkingHourParam, err error) *MockIBusinessRepo_GetBusinessWorkingHours_Call {
+	_c.Call.Return(workingHourParams, err)
+	return _c
+}
+
+func (_c *MockIBusinessRepo_GetBusinessWorkingHours_Call) RunAndReturn(run func(ctx context.Context, businessID int64) ([]param.WorkingHourParam, error)) *MockIBusinessRepo_GetBusinessWorkingHours_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // InsertBusinessProfile provides a mock function for the type MockIBusinessRepo
 func (_mock *MockIBusinessRepo) InsertBusinessProfile(ctx context.Context, tx *sql.Tx, param1 param.BusinessProfileParam) (*param.BusinessProfileParam, error) {
 	ret := _mock.Called(ctx, tx, param1)
@@ -172,6 +371,80 @@ func (_c *MockIBusinessRepo_InsertBusinessWorkingHours_Call) Return(err error) *
 }
 
 func (_c *MockIBusinessRepo_InsertBusinessWorkingHours_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, param1 param.BusinessProfileParam) error) *MockIBusinessRepo_InsertBusinessWorkingHours_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateBusinessProfile provides a mock function for the type MockIBusinessRepo
+func (_mock *MockIBusinessRepo) UpdateBusinessProfile(ctx context.Context, tx *sql.Tx, param1 param.BusinessProfileParam) (*param.BusinessProfileParam, error) {
+	ret := _mock.Called(ctx, tx, param1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateBusinessProfile")
+	}
+
+	var r0 *param.BusinessProfileParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, param.BusinessProfileParam) (*param.BusinessProfileParam, error)); ok {
+		return returnFunc(ctx, tx, param1)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, param.BusinessProfileParam) *param.BusinessProfileParam); ok {
+		r0 = returnFunc(ctx, tx, param1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*param.BusinessProfileParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *sql.Tx, param.BusinessProfileParam) error); ok {
+		r1 = returnFunc(ctx, tx, param1)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBusinessRepo_UpdateBusinessProfile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateBusinessProfile'
+type MockIBusinessRepo_UpdateBusinessProfile_Call struct {
+	*mock.Call
+}
+
+// UpdateBusinessProfile is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx *sql.Tx
+//   - param1 param.BusinessProfileParam
+func (_e *MockIBusinessRepo_Expecter) UpdateBusinessProfile(ctx interface{}, tx interface{}, param1 interface{}) *MockIBusinessRepo_UpdateBusinessProfile_Call {
+	return &MockIBusinessRepo_UpdateBusinessProfile_Call{Call: _e.mock.On("UpdateBusinessProfile", ctx, tx, param1)}
+}
+
+func (_c *MockIBusinessRepo_UpdateBusinessProfile_Call) Run(run func(ctx context.Context, tx *sql.Tx, param1 param.BusinessProfileParam)) *MockIBusinessRepo_UpdateBusinessProfile_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *sql.Tx
+		if args[1] != nil {
+			arg1 = args[1].(*sql.Tx)
+		}
+		var arg2 param.BusinessProfileParam
+		if args[2] != nil {
+			arg2 = args[2].(param.BusinessProfileParam)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBusinessRepo_UpdateBusinessProfile_Call) Return(businessProfileParam *param.BusinessProfileParam, err error) *MockIBusinessRepo_UpdateBusinessProfile_Call {
+	_c.Call.Return(businessProfileParam, err)
+	return _c
+}
+
+func (_c *MockIBusinessRepo_UpdateBusinessProfile_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, param1 param.BusinessProfileParam) (*param.BusinessProfileParam, error)) *MockIBusinessRepo_UpdateBusinessProfile_Call {
 	_c.Call.Return(run)
 	return _c
 }

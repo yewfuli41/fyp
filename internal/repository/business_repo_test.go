@@ -7,7 +7,6 @@ import (
 	"fyp/internal/interfaces"
 	"fyp/internal/repository"
 	"regexp"
-	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	. "github.com/onsi/ginkgo/v2"
@@ -74,8 +73,8 @@ var _ = Describe("BusinessRepo", func() {
 
 	Describe("InsertBusinessWorkingHours", func() {
 		It("inserts working hours using the provided transaction", func() {
-			startTime, _ := time.Parse("15:04", "09:00")
-			endTime, _ := time.Parse("15:04", "18:00")
+			startTime := "09:00"
+			endTime := "18:00"
 
 			businessParam := param.BusinessProfileParam{
 				BusinessID: 7,
@@ -93,8 +92,8 @@ var _ = Describe("BusinessRepo", func() {
 					WithArgs(
 						int64(7),
 						wh.Day,
-						wh.StartTime.Format("15:04:05"),
-						wh.EndTime.Format("15:04:05"),
+						wh.StartTime,
+						wh.EndTime,
 					).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 			}

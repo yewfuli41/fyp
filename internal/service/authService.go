@@ -128,7 +128,7 @@ func (a *authService) GetUserProfile(ctx context.Context, email string) (*param.
 
 func (s *authService) GenerateToken(user *param.AuthUserParam) (string, error) {
 	now := time.Now()
-	expiresAt := now.Add(time.Duration(s.authConfig.JWTExpirationHours) * time.Hour)
+	expiresAt := now.Add(time.Duration(s.authConfig.JWTExpirationHours * float64(time.Hour)))
 
 	token := jwt.NewWithClaims(
 		jwt.SigningMethodHS256,

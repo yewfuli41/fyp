@@ -8,7 +8,6 @@ import (
 	"fyp/internal/interfaces"
 	"fyp/internal/interfaces/mocks"
 	"fyp/internal/service"
-	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/lib/pq"
@@ -44,38 +43,47 @@ var _ = Describe("BusinessService", func() {
 		var (
 			businessParam param.BusinessProfileParam
 			createdBiz    *param.BusinessProfileParam
-			startTime     time.Time
-			endTime       time.Time
+			startTime     string
+			endTime       string
 		)
 
 		BeforeEach(func() {
-			startTime, _ = time.Parse("15:04", "09:00")
-			endTime, _ = time.Parse("15:04", "18:00")
+			startTime = "09:00"
+			endTime = "18:00"
 
 			businessParam = param.BusinessProfileParam{
-				OwnerUserID:  42,
-				BusinessName: "Finn Studio",
+				OwnerUserID:           42,
+				BusinessName:          "Finn Studio",
+				Address:               "123 Street",
+				BusinessContactNumber: "0123456789",
+				BusinessEmail:         "test@example.com",
 				WorkingHours: []param.WorkingHourParam{
 					{Day: "MONDAY", StartTime: startTime, EndTime: endTime},
 				},
 			}
 			createdBiz = &param.BusinessProfileParam{
-				BusinessID:   7,
-				OwnerUserID:  42,
-				BusinessName: "Finn Studio",
+				BusinessID:            7,
+				OwnerUserID:           42,
+				BusinessName:          "Finn Studio",
+				Address:               "123 Street",
+				BusinessContactNumber: "0123456789",
+				BusinessEmail:         "test@example.com",
+				WorkingHours: []param.WorkingHourParam{
+					{Day: "MONDAY", StartTime: startTime, EndTime: endTime},
+				},
 			}
 		})
 
 		It("successfully registers a business profile in a transaction", func() {
 			dbMock.ExpectBegin()
-			
+
 			businessRepo.EXPECT().
 				InsertBusinessProfile(ctx, mock.AnythingOfType("*sql.Tx"), businessParam).
 				Return(createdBiz, nil).
 				Once()
 
 			businessRepo.EXPECT().
-				InsertBusinessWorkingHours(ctx, mock.AnythingOfType("*sql.Tx"), businessParam).
+				InsertBusinessWorkingHours(ctx, mock.AnythingOfType("*sql.Tx"), *createdBiz).
 				Return(nil).
 				Once()
 
@@ -94,19 +102,19 @@ var _ = Describe("BusinessService", func() {
 				// Missing BusinessName
 			}
 
-			// We still expect a Begin and Rollback because WithTransaction starts the tx 
+			// We still expect a Begin and Rollback because WithTransaction starts the tx
 			// before calling the function.
 			// Wait, let's look at BusinessService.RegisterBusinessProfile implementation again.
 			/*
-			err := s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
-				if err := businessParam.ValidateRegisterBusinessProfile(); err != nil {
-					return err
-				}
-				...
-			})
+				err := s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
+					if err := businessParam.ValidateRegisterBusinessProfile(); err != nil {
+						return err
+					}
+					...
+				})
 			*/
 			// Yes, it starts the transaction FIRST.
-			
+
 			dbMock.ExpectBegin()
 			dbMock.ExpectRollback()
 
@@ -118,7 +126,7 @@ var _ = Describe("BusinessService", func() {
 
 		It("rolls back and returns error if InsertBusinessProfile fails", func() {
 			dbMock.ExpectBegin()
-			
+
 			businessRepo.EXPECT().
 				InsertBusinessProfile(ctx, mock.AnythingOfType("*sql.Tx"), businessParam).
 				Return(nil, fmt.Errorf("db error")).
@@ -134,14 +142,14 @@ var _ = Describe("BusinessService", func() {
 
 		It("rolls back and returns error if InsertBusinessWorkingHours fails", func() {
 			dbMock.ExpectBegin()
-			
+
 			businessRepo.EXPECT().
 				InsertBusinessProfile(ctx, mock.AnythingOfType("*sql.Tx"), businessParam).
 				Return(createdBiz, nil).
 				Once()
 
 			businessRepo.EXPECT().
-				InsertBusinessWorkingHours(ctx, mock.AnythingOfType("*sql.Tx"), businessParam).
+				InsertBusinessWorkingHours(ctx, mock.AnythingOfType("*sql.Tx"), *createdBiz).
 				Return(fmt.Errorf("working hours error")).
 				Once()
 
@@ -155,7 +163,7 @@ var _ = Describe("BusinessService", func() {
 
 		It("maps duplicate owner violation to a friendly error", func() {
 			dbMock.ExpectBegin()
-			
+
 			duplicateErr := newUniqueViolation("business_profiles_owner_user_id_key")
 			businessRepo.EXPECT().
 				InsertBusinessProfile(ctx, mock.AnythingOfType("*sql.Tx"), businessParam).
@@ -172,7 +180,7 @@ var _ = Describe("BusinessService", func() {
 
 		It("maps foreign key violation to a friendly error", func() {
 			dbMock.ExpectBegin()
-			
+
 			fkErr := &pq.Error{Code: "23503", Constraint: "business_profiles_owner_user_id_fkey"}
 			businessRepo.EXPECT().
 				InsertBusinessProfile(ctx, mock.AnythingOfType("*sql.Tx"), businessParam).

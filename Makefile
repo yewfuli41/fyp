@@ -25,4 +25,6 @@ test:
 
 mock:
 	mockery
-
+.PHONY: database
+database:
+	psql -U $(DB_USER) -d fyp -p 5433

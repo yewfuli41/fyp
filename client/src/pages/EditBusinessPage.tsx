@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { Alert, Button, Container, Form, Row, Col } from "react-bootstrap";
+import { useState, useEffect } from "react";
+import { Alert, Button, Container, Form, Spinner, Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { userProfile } from "../services/ProfileService";
-import { registerBusinessProfile, type BusinessProfileInput, type WorkingHour } from "../services/BusinessService";
+import { updateBusinessProfile, type BusinessProfileInput, type WorkingHour } from "../services/BusinessService";
 
 const DAYS_OF_WEEK = [
     "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
@@ -16,7 +16,7 @@ const toTimeInputValue = (time: string): string => {
     return `${parts[0].padStart(2, "0")}:${parts[1].padStart(2, "0")}`;
 };
 
-export default function RegisterBusinessPage() {
+export default function EditBusinessPage() {
     const navigate = useNavigate();
     const { token } = useAuth();
     const activeToken = token ?? localStorage.getItem("token");
@@ -27,10 +27,9 @@ export default function RegisterBusinessPage() {
     const [imageUrl, setImageUrl] = useState("");
     const [businessContactNumber, setBusinessContactNumber] = useState("");
     const [businessEmail, setBusinessEmail] = useState("");
-    const [workingHours, setWorkingHours] = useState<WorkingHour[]>([
-        { day: "monday", startTime: "09:00:00", endTime: "18:00:00" }
-    ]);
+    const [workingHours, setWorkingHours] = useState<WorkingHour[]>([]);
 
+    const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState("");
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -41,18 +40,33 @@ export default function RegisterBusinessPage() {
             return;
         }
 
-        const checkExistingBusiness = async () => {
+        const fetchBusinessData = async () => {
             try {
                 const result = await userProfile(activeToken);
                 if (result.data?.userProfile?.businessProfile) {
-                    navigate("/edit-business");
+                    const bp = result.data.userProfile.businessProfile;
+                    setBusinessName(bp.businessName);
+                    setDescription(bp.description || "");
+                    setAddress(bp.address || "");
+                    setImageUrl(bp.imageUrl || "");
+                    setBusinessContactNumber(bp.businessContactNumber || "");
+                    setBusinessEmail(bp.businessEmail || "");
+                    setWorkingHours(bp.workingHours.map((wh: any) => ({
+                        day: wh.day.toLowerCase(),
+                        startTime: wh.startTime.split("T")[1]?.slice(0, 8) ?? "09:00:00",
+                        endTime: wh.endTime.split("T")[1]?.slice(0, 8) ?? "18:00:00"
+                    })));
+                } else {
+                    navigate("/register-business");
                 }
-            } catch (err) {
-                console.error("Failed to check existing business:", err);
+            } catch {
+                setFormError("Failed to load business data.");
+            } finally {
+                setIsLoading(false);
             }
         };
 
-        checkExistingBusiness();
+        fetchBusinessData();
     }, [activeToken, navigate]);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,7 +113,7 @@ export default function RegisterBusinessPage() {
         };
 
         try {
-            const result = await registerBusinessProfile(activeToken, input);
+            const result = await updateBusinessProfile(activeToken, input);
             if (result.errors?.length) {
                 const firstError = result.errors[0];
                 const validationErrors = firstError?.extensions?.validationErrors;
@@ -111,7 +125,7 @@ export default function RegisterBusinessPage() {
                     }
                     setFieldErrors(nextErrors);
                 } else {
-                    setFormError(firstError?.message ?? "Failed to register business profile");
+                    setFormError(firstError?.message ?? "Failed to update business profile");
                 }
             } else {
                 navigate("/profile");
@@ -123,9 +137,17 @@ export default function RegisterBusinessPage() {
         }
     };
 
+    if (isLoading) {
+        return (
+            <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: "50vh" }}>
+                <Spinner animation="border" variant="primary" />
+            </Container>
+        );
+    }
+
     return (
         <Container className="py-5">
-            <h1>Register Business Profile</h1>
+            <h1>Edit Business Profile</h1>
             {formError && <Alert variant="danger">{formError}</Alert>}
 
             <Form onSubmit={handleSubmit}>
@@ -136,6 +158,7 @@ export default function RegisterBusinessPage() {
                         value={businessName}
                         onChange={(e) => setBusinessName(e.target.value)}
                         isInvalid={!!fieldErrors.businessName}
+                        required
                     />
                     <Form.Control.Feedback type="invalid">{fieldErrors.businessName}</Form.Control.Feedback>
                 </Form.Group>
@@ -202,7 +225,6 @@ export default function RegisterBusinessPage() {
 
                 <h3 className="mt-4">Working Hours</h3>
                 {workingHours.map((wh, index) => (
-                    <React.Fragment key={index}>
                     <Row key={index} className="mb-2 align-items-end">
                         <Col>
                             <Form.Group>
@@ -241,16 +263,10 @@ export default function RegisterBusinessPage() {
                             <Button variant="danger" onClick={() => handleRemoveWorkingHour(index)}>Remove</Button>
                         </Col>
                     </Row>
-                    {fieldErrors[`workingHours[${index}]`] && (
-                    <div className="text-danger small mb-3">
-                        {fieldErrors[`workingHours[${index}]`]}
-                    </div>
-                    )}
-                    </React.Fragment>
                 ))}
                 {fieldErrors.workingHours && <div className="text-danger mb-2">{fieldErrors.workingHours}</div>}
                 
-                <Button variant="link" onClick={handleAddWorkingHour} className="mb-4">
+                <Button variant="secondary" onClick={handleAddWorkingHour} className="mb-4">
                     Add Working Hour
                 </Button>
 
@@ -259,7 +275,7 @@ export default function RegisterBusinessPage() {
                         Cancel
                     </Button>
                     <Button variant="primary" type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? "Registering..." : "Register Business"}
+                        {isSubmitting ? "Saving..." : "Save Changes"}
                     </Button>
                 </div>
             </Form>

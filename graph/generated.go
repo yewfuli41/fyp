@@ -99,10 +99,14 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		CreateService           func(childComplexity int, service model.ServiceInput) int
+		DeleteService           func(childComplexity int, serviceID string) int
 		LogIn                   func(childComplexity int, user model.LogInInput) int
-		RegisterBusinessProfile func(childComplexity int, business model.RegisterBusinessProfileInput) int
+		RegisterBusinessProfile func(childComplexity int, business model.BusinessProfileInput) int
 		SignUp                  func(childComplexity int, user model.SignUpInput) int
+		UpdateBusinessProfile   func(childComplexity int, business model.BusinessProfileInput) int
 		UpdateProfile           func(childComplexity int, user model.UpdateProfileInput) int
+		UpdateService           func(childComplexity int, serviceID string, service model.ServiceInput) int
 	}
 
 	PackageItem struct {
@@ -114,8 +118,9 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Empty       func(childComplexity int) int
-		UserProfile func(childComplexity int) int
+		BusinessServices func(childComplexity int) int
+		Empty            func(childComplexity int) int
+		UserProfile      func(childComplexity int) int
 	}
 
 	RecurringSchedule struct {
@@ -220,11 +225,16 @@ type MutationResolver interface {
 	SignUp(ctx context.Context, user model.SignUpInput) (*model.AuthPayload, error)
 	LogIn(ctx context.Context, user model.LogInInput) (*model.AuthPayload, error)
 	UpdateProfile(ctx context.Context, user model.UpdateProfileInput) (*model.User, error)
-	RegisterBusinessProfile(ctx context.Context, business model.RegisterBusinessProfileInput) (*model.BusinessProfile, error)
+	RegisterBusinessProfile(ctx context.Context, business model.BusinessProfileInput) (*model.BusinessProfile, error)
+	UpdateBusinessProfile(ctx context.Context, business model.BusinessProfileInput) (*model.BusinessProfile, error)
+	CreateService(ctx context.Context, service model.ServiceInput) (*model.Service, error)
+	UpdateService(ctx context.Context, serviceID string, service model.ServiceInput) (*model.Service, error)
+	DeleteService(ctx context.Context, serviceID string) (bool, error)
 }
 type QueryResolver interface {
 	Empty(ctx context.Context) (*string, error)
 	UserProfile(ctx context.Context) (*model.User, error)
+	BusinessServices(ctx context.Context) ([]*model.Service, error)
 }
 
 type executableSchema graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot]
@@ -516,6 +526,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.LeaveApplication.Status(childComplexity), true
 
+	case "Mutation.createService":
+		if e.ComplexityRoot.Mutation.CreateService == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createService_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateService(childComplexity, args["service"].(model.ServiceInput)), true
+	case "Mutation.deleteService":
+		if e.ComplexityRoot.Mutation.DeleteService == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteService_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteService(childComplexity, args["serviceId"].(string)), true
 	case "Mutation.logIn":
 		if e.ComplexityRoot.Mutation.LogIn == nil {
 			break
@@ -537,7 +569,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Mutation.RegisterBusinessProfile(childComplexity, args["business"].(model.RegisterBusinessProfileInput)), true
+		return e.ComplexityRoot.Mutation.RegisterBusinessProfile(childComplexity, args["business"].(model.BusinessProfileInput)), true
 	case "Mutation.signUp":
 		if e.ComplexityRoot.Mutation.SignUp == nil {
 			break
@@ -549,6 +581,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SignUp(childComplexity, args["user"].(model.SignUpInput)), true
+	case "Mutation.updateBusinessProfile":
+		if e.ComplexityRoot.Mutation.UpdateBusinessProfile == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateBusinessProfile_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateBusinessProfile(childComplexity, args["business"].(model.BusinessProfileInput)), true
 	case "Mutation.updateProfile":
 		if e.ComplexityRoot.Mutation.UpdateProfile == nil {
 			break
@@ -560,6 +603,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateProfile(childComplexity, args["user"].(model.UpdateProfileInput)), true
+	case "Mutation.updateService":
+		if e.ComplexityRoot.Mutation.UpdateService == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateService_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateService(childComplexity, args["serviceId"].(string), args["service"].(model.ServiceInput)), true
 
 	case "PackageItem.deletedAt":
 		if e.ComplexityRoot.PackageItem.DeletedAt == nil {
@@ -592,6 +646,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.PackageItem.ServicePackageID(childComplexity), true
 
+	case "Query.businessServices":
+		if e.ComplexityRoot.Query.BusinessServices == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.BusinessServices(childComplexity), true
 	case "Query._empty":
 		if e.ComplexityRoot.Query.Empty == nil {
 			break
@@ -1060,8 +1120,11 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := newExecutionContext(opCtx, e, make(chan graphql.DeferredResult))
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputBusinessProfileInput,
 		ec.unmarshalInputLogInInput,
-		ec.unmarshalInputRegisterBusinessProfileInput,
+		ec.unmarshalInputPackageItemInput,
+		ec.unmarshalInputServiceInput,
+		ec.unmarshalInputServicePackageInput,
 		ec.unmarshalInputSignUpInput,
 		ec.unmarshalInputUpdateProfileInput,
 		ec.unmarshalInputWorkingHourInput,
@@ -1605,6 +1668,34 @@ func (ec *executionContext) childFields___Type(ctx context.Context, field graphq
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) field_Mutation_createService_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "service",
+		func(ctx context.Context, v any) (model.ServiceInput, error) {
+			return ec.unmarshalNServiceInput2fypᚋgraphᚋmodelᚐServiceInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["service"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteService_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "serviceId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["serviceId"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_logIn_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1623,8 +1714,8 @@ func (ec *executionContext) field_Mutation_registerBusinessProfile_args(ctx cont
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "business",
-		func(ctx context.Context, v any) (model.RegisterBusinessProfileInput, error) {
-			return ec.unmarshalNRegisterBusinessProfileInput2fypᚋgraphᚋmodelᚐRegisterBusinessProfileInput(ctx, v)
+		func(ctx context.Context, v any) (model.BusinessProfileInput, error) {
+			return ec.unmarshalNBusinessProfileInput2fypᚋgraphᚋmodelᚐBusinessProfileInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -1647,6 +1738,20 @@ func (ec *executionContext) field_Mutation_signUp_args(ctx context.Context, rawA
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_updateBusinessProfile_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "business",
+		func(ctx context.Context, v any) (model.BusinessProfileInput, error) {
+			return ec.unmarshalNBusinessProfileInput2fypᚋgraphᚋmodelᚐBusinessProfileInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["business"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_updateProfile_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1658,6 +1763,28 @@ func (ec *executionContext) field_Mutation_updateProfile_args(ctx context.Contex
 		return nil, err
 	}
 	args["user"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateService_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "serviceId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["serviceId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "service",
+		func(ctx context.Context, v any) (model.ServiceInput, error) {
+			return ec.unmarshalNServiceInput2fypᚋgraphᚋmodelᚐServiceInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["service"] = arg1
 	return args, nil
 }
 
@@ -2233,11 +2360,11 @@ func (ec *executionContext) _BusinessProfile_address(ctx context.Context, field 
 			return obj.Address, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
-			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
 		},
 		true,
-		false,
+		true,
 	)
 }
 func (ec *executionContext) fieldContext_BusinessProfile_address(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2279,11 +2406,11 @@ func (ec *executionContext) _BusinessProfile_businessContactNumber(ctx context.C
 			return obj.BusinessContactNumber, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
-			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
 		},
 		true,
-		false,
+		true,
 	)
 }
 func (ec *executionContext) fieldContext_BusinessProfile_businessContactNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2302,11 +2429,11 @@ func (ec *executionContext) _BusinessProfile_businessEmail(ctx context.Context, 
 			return obj.BusinessEmail, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
-			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
 		},
 		true,
-		false,
+		true,
 	)
 }
 func (ec *executionContext) fieldContext_BusinessProfile_businessEmail(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2522,15 +2649,15 @@ func (ec *executionContext) _BusinessWorkingHour_startTime(ctx context.Context, 
 			return obj.StartTime, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
-			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
 		},
 		true,
 		true,
 	)
 }
 func (ec *executionContext) fieldContext_BusinessWorkingHour_startTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("BusinessWorkingHour", field, false, false, errors.New("field of type Time does not have child fields"))
+	return graphql.NewScalarFieldContext("BusinessWorkingHour", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _BusinessWorkingHour_endTime(ctx context.Context, field graphql.CollectedField, obj *model.BusinessWorkingHour) (ret graphql.Marshaler) {
@@ -2545,15 +2672,15 @@ func (ec *executionContext) _BusinessWorkingHour_endTime(ctx context.Context, fi
 			return obj.EndTime, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
-			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
 		},
 		true,
 		true,
 	)
 }
 func (ec *executionContext) fieldContext_BusinessWorkingHour_endTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("BusinessWorkingHour", field, false, false, errors.New("field of type Time does not have child fields"))
+	return graphql.NewScalarFieldContext("BusinessWorkingHour", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _BusinessWorkingHour_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.BusinessWorkingHour) (ret graphql.Marshaler) {
@@ -3006,7 +3133,7 @@ func (ec *executionContext) _Mutation_registerBusinessProfile(ctx context.Contex
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().RegisterBusinessProfile(ctx, fc.Args["business"].(model.RegisterBusinessProfileInput))
+			return ec.Resolvers.Mutation().RegisterBusinessProfile(ctx, fc.Args["business"].(model.BusinessProfileInput))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *model.BusinessProfile) graphql.Marshaler {
@@ -3034,6 +3161,182 @@ func (ec *executionContext) fieldContext_Mutation_registerBusinessProfile(ctx co
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_registerBusinessProfile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateBusinessProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateBusinessProfile(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateBusinessProfile(ctx, fc.Args["business"].(model.BusinessProfileInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.BusinessProfile) graphql.Marshaler {
+			return ec.marshalNBusinessProfile2ᚖfypᚋgraphᚋmodelᚐBusinessProfile(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateBusinessProfile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BusinessProfile(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateBusinessProfile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createService(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createService(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateService(ctx, fc.Args["service"].(model.ServiceInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Service) graphql.Marshaler {
+			return ec.marshalNService2ᚖfypᚋgraphᚋmodelᚐService(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createService(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Service(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createService_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateService(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateService(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateService(ctx, fc.Args["serviceId"].(string), fc.Args["service"].(model.ServiceInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Service) graphql.Marshaler {
+			return ec.marshalNService2ᚖfypᚋgraphᚋmodelᚐService(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateService(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Service(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateService_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteService(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteService(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteService(ctx, fc.Args["serviceId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteService(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteService_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3214,6 +3517,38 @@ func (ec *executionContext) fieldContext_Query_userProfile(_ context.Context, fi
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_User(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_businessServices(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_businessServices(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().BusinessServices(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.Service) graphql.Marshaler {
+			return ec.marshalNService2ᚕᚖfypᚋgraphᚋmodelᚐServiceᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_businessServices(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Service(ctx, field)
 		},
 	}
 	return fc, nil
@@ -5046,11 +5381,11 @@ func (ec *executionContext) _User_contactNumber(ctx context.Context, field graph
 			return obj.ContactNumber, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
-			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
 		},
 		true,
-		false,
+		true,
 	)
 }
 func (ec *executionContext) fieldContext_User_contactNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6258,6 +6593,78 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputBusinessProfileInput(ctx context.Context, obj any) (model.BusinessProfileInput, error) {
+	var it model.BusinessProfileInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"businessName", "description", "address", "imageUrl", "businessContactNumber", "businessEmail", "workingHours"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "businessName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("businessName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BusinessName = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "address":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("address"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Address = data
+		case "imageUrl":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("imageUrl"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ImageURL = data
+		case "businessContactNumber":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("businessContactNumber"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BusinessContactNumber = data
+		case "businessEmail":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("businessEmail"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BusinessEmail = data
+		case "workingHours":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workingHours"))
+			data, err := ec.unmarshalNWorkingHourInput2ᚕᚖfypᚋgraphᚋmodelᚐWorkingHourInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WorkingHours = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputLogInInput(ctx context.Context, obj any) (model.LogInInput, error) {
 	var it model.LogInInput
 	if obj == nil {
@@ -6295,8 +6702,8 @@ func (ec *executionContext) unmarshalInputLogInInput(ctx context.Context, obj an
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputRegisterBusinessProfileInput(ctx context.Context, obj any) (model.RegisterBusinessProfileInput, error) {
-	var it model.RegisterBusinessProfileInput
+func (ec *executionContext) unmarshalInputPackageItemInput(ctx context.Context, obj any) (model.PackageItemInput, error) {
+	var it model.PackageItemInput
 	if obj == nil {
 		return it, nil
 	}
@@ -6306,20 +6713,50 @@ func (ec *executionContext) unmarshalInputRegisterBusinessProfileInput(ctx conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"businessName", "description", "address", "imageUrl", "businessContactNumber", "businessEmail", "workingHours"}
+	fieldsInOrder := [...]string{"packageItemName"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "businessName":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("businessName"))
+		case "packageItemName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("packageItemName"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.BusinessName = data
+			it.PackageItemName = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputServiceInput(ctx context.Context, obj any) (model.ServiceInput, error) {
+	var it model.ServiceInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"serviceName", "description", "servicePackages"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "serviceName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceName = data
 		case "description":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -6327,41 +6764,57 @@ func (ec *executionContext) unmarshalInputRegisterBusinessProfileInput(ctx conte
 				return it, err
 			}
 			it.Description = data
-		case "address":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("address"))
+		case "servicePackages":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("servicePackages"))
+			data, err := ec.unmarshalNServicePackageInput2ᚕᚖfypᚋgraphᚋmodelᚐServicePackageInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServicePackages = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputServicePackageInput(ctx context.Context, obj any) (model.ServicePackageInput, error) {
+	var it model.ServicePackageInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"servicePackageName", "description", "packageItems"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "servicePackageName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("servicePackageName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServicePackageName = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Address = data
-		case "imageUrl":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("imageUrl"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			it.Description = data
+		case "packageItems":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("packageItems"))
+			data, err := ec.unmarshalNPackageItemInput2ᚕᚖfypᚋgraphᚋmodelᚐPackageItemInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ImageURL = data
-		case "businessContactNumber":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("businessContactNumber"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.BusinessContactNumber = data
-		case "businessEmail":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("businessEmail"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.BusinessEmail = data
-		case "workingHours":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workingHours"))
-			data, err := ec.unmarshalNWorkingHourInput2ᚕᚖfypᚋgraphᚋmodelᚐWorkingHourInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.WorkingHours = data
+			it.PackageItems = data
 		}
 	}
 	return it, nil
@@ -6452,7 +6905,7 @@ func (ec *executionContext) unmarshalInputUpdateProfileInput(ctx context.Context
 			it.Email = data
 		case "contactNumber":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contactNumber"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6489,14 +6942,14 @@ func (ec *executionContext) unmarshalInputWorkingHourInput(ctx context.Context, 
 			it.Day = data
 		case "startTime":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTime"))
-			data, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.StartTime = data
 		case "endTime":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endTime"))
-			data, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6672,12 +7125,21 @@ func (ec *executionContext) _BusinessProfile(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._BusinessProfile_description(ctx, field, obj)
 		case "address":
 			out.Values[i] = ec._BusinessProfile_address(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "imageUrl":
 			out.Values[i] = ec._BusinessProfile_imageUrl(ctx, field, obj)
 		case "businessContactNumber":
 			out.Values[i] = ec._BusinessProfile_businessContactNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "businessEmail":
 			out.Values[i] = ec._BusinessProfile_businessEmail(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "workingHours":
 			out.Values[i] = ec._BusinessProfile_workingHours(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -6908,6 +7370,34 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "updateBusinessProfile":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateBusinessProfile(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createService":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createService(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateService":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateService(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteService":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteService(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7035,6 +7525,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_userProfile(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "businessServices":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_businessServices(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -7613,6 +8125,9 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "contactNumber":
 			out.Values[i] = ec._User_contactNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "failedLoginAttempts":
 			out.Values[i] = ec._User_failedLoginAttempts(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -8070,6 +8585,11 @@ func (ec *executionContext) marshalNBusinessProfile2ᚖfypᚋgraphᚋmodelᚐBus
 	return ec._BusinessProfile(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNBusinessProfileInput2fypᚋgraphᚋmodelᚐBusinessProfileInput(ctx context.Context, v any) (model.BusinessProfileInput, error) {
+	res, err := ec.unmarshalInputBusinessProfileInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNBusinessWorkingHour2ᚕᚖfypᚋgraphᚋmodelᚐBusinessWorkingHourᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.BusinessWorkingHour) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -8237,6 +8757,26 @@ func (ec *executionContext) marshalNPackageItem2ᚖfypᚋgraphᚋmodelᚐPackage
 	return ec._PackageItem(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNPackageItemInput2ᚕᚖfypᚋgraphᚋmodelᚐPackageItemInputᚄ(ctx context.Context, v any) ([]*model.PackageItemInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.PackageItemInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNPackageItemInput2ᚖfypᚋgraphᚋmodelᚐPackageItemInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNPackageItemInput2ᚖfypᚋgraphᚋmodelᚐPackageItemInput(ctx context.Context, v any) (*model.PackageItemInput, error) {
+	res, err := ec.unmarshalInputPackageItemInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNRecurringSchedule2ᚕᚖfypᚋgraphᚋmodelᚐRecurringScheduleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RecurringSchedule) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -8263,9 +8803,8 @@ func (ec *executionContext) marshalNRecurringSchedule2ᚖfypᚋgraphᚋmodelᚐR
 	return ec._RecurringSchedule(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNRegisterBusinessProfileInput2fypᚋgraphᚋmodelᚐRegisterBusinessProfileInput(ctx context.Context, v any) (model.RegisterBusinessProfileInput, error) {
-	res, err := ec.unmarshalInputRegisterBusinessProfileInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
+func (ec *executionContext) marshalNService2fypᚋgraphᚋmodelᚐService(ctx context.Context, sel ast.SelectionSet, v model.Service) graphql.Marshaler {
+	return ec._Service(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNService2ᚕᚖfypᚋgraphᚋmodelᚐServiceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Service) graphql.Marshaler {
@@ -8294,6 +8833,11 @@ func (ec *executionContext) marshalNService2ᚖfypᚋgraphᚋmodelᚐService(ctx
 	return ec._Service(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNServiceInput2fypᚋgraphᚋmodelᚐServiceInput(ctx context.Context, v any) (model.ServiceInput, error) {
+	res, err := ec.unmarshalInputServiceInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNServicePackage2ᚕᚖfypᚋgraphᚋmodelᚐServicePackageᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServicePackage) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -8318,6 +8862,26 @@ func (ec *executionContext) marshalNServicePackage2ᚖfypᚋgraphᚋmodelᚐServ
 		return graphql.Null
 	}
 	return ec._ServicePackage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNServicePackageInput2ᚕᚖfypᚋgraphᚋmodelᚐServicePackageInputᚄ(ctx context.Context, v any) ([]*model.ServicePackageInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.ServicePackageInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNServicePackageInput2ᚖfypᚋgraphᚋmodelᚐServicePackageInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNServicePackageInput2ᚖfypᚋgraphᚋmodelᚐServicePackageInput(ctx context.Context, v any) (*model.ServicePackageInput, error) {
+	res, err := ec.unmarshalInputServicePackageInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNServiceSlot2ᚕᚖfypᚋgraphᚋmodelᚐServiceSlotᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServiceSlot) graphql.Marshaler {

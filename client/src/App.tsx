@@ -4,6 +4,9 @@ import { useAuth } from "./auth/AuthContext";
 import LogInPage from "./pages/LogInPage";
 import SignUpPage from "./pages/SignUpPage";
 import ProfilePage from "./pages/ProfilePage";
+import EditBusinessPage from "./pages/EditBusinessPage";
+import RegisterBusinessPage from "./pages/RegisterBusinessPage";
+import ServicePage from "./pages/ServicePage";
 
 function HomePage() {
   const { isLoggedIn, user, message, logout } = useAuth();
@@ -40,6 +43,9 @@ function App() {
       <Route path="/login" element={<LogInPage />} />
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/register-business" element={<RegisterBusinessPage />} />
+      <Route path="/edit-business" element={<EditBusinessPage />} />
+      <Route path="/services" element={<ServicePage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

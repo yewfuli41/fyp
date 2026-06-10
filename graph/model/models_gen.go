@@ -36,13 +36,23 @@ type BusinessProfile struct {
 	Owner                 *User                  `json:"owner"`
 	BusinessName          string                 `json:"businessName"`
 	Description           *string                `json:"description,omitempty"`
-	Address               *string                `json:"address,omitempty"`
+	Address               string                 `json:"address"`
 	ImageURL              *string                `json:"imageUrl,omitempty"`
-	BusinessContactNumber *string                `json:"businessContactNumber,omitempty"`
-	BusinessEmail         *string                `json:"businessEmail,omitempty"`
+	BusinessContactNumber string                 `json:"businessContactNumber"`
+	BusinessEmail         string                 `json:"businessEmail"`
 	WorkingHours          []*BusinessWorkingHour `json:"workingHours"`
 	Services              []*Service             `json:"services"`
 	Staff                 []*Staff               `json:"staff"`
+}
+
+type BusinessProfileInput struct {
+	BusinessName          string              `json:"businessName"`
+	Description           *string             `json:"description,omitempty"`
+	Address               string              `json:"address"`
+	ImageURL              *string             `json:"imageUrl,omitempty"`
+	BusinessContactNumber string              `json:"businessContactNumber"`
+	BusinessEmail         string              `json:"businessEmail"`
+	WorkingHours          []*WorkingHourInput `json:"workingHours"`
 }
 
 type BusinessWorkingHour struct {
@@ -50,8 +60,8 @@ type BusinessWorkingHour struct {
 	BusinessID         string           `json:"businessId"`
 	Business           *BusinessProfile `json:"business"`
 	Day                DayOfWeek        `json:"day"`
-	StartTime          time.Time        `json:"startTime"`
-	EndTime            time.Time        `json:"endTime"`
+	StartTime          string           `json:"startTime"`
+	EndTime            string           `json:"endTime"`
 	DeletedAt          *string          `json:"deletedAt,omitempty"`
 }
 
@@ -86,6 +96,10 @@ type PackageItem struct {
 	DeletedAt        *string         `json:"deletedAt,omitempty"`
 }
 
+type PackageItemInput struct {
+	PackageItemName string `json:"packageItemName"`
+}
+
 type Query struct {
 }
 
@@ -104,16 +118,6 @@ type RecurringSchedule struct {
 	Creator             *User           `json:"creator,omitempty"`
 }
 
-type RegisterBusinessProfileInput struct {
-	BusinessName          string              `json:"businessName"`
-	Description           *string             `json:"description,omitempty"`
-	Address               *string             `json:"address,omitempty"`
-	ImageURL              *string             `json:"imageUrl,omitempty"`
-	BusinessContactNumber *string             `json:"businessContactNumber,omitempty"`
-	BusinessEmail         *string             `json:"businessEmail,omitempty"`
-	WorkingHours          []*WorkingHourInput `json:"workingHours"`
-}
-
 type Service struct {
 	ServiceID       string            `json:"serviceId"`
 	BusinessID      string            `json:"businessId"`
@@ -122,6 +126,12 @@ type Service struct {
 	Description     *string           `json:"description,omitempty"`
 	ServicePackages []*ServicePackage `json:"servicePackages"`
 	DeletedAt       *string           `json:"deletedAt,omitempty"`
+}
+
+type ServiceInput struct {
+	ServiceName     string                 `json:"serviceName"`
+	Description     *string                `json:"description,omitempty"`
+	ServicePackages []*ServicePackageInput `json:"servicePackages"`
 }
 
 type ServicePackage struct {
@@ -134,6 +144,12 @@ type ServicePackage struct {
 	ServiceSlotPackages []*ServiceSlotPackage `json:"serviceSlotPackages"`
 	RecurringSchedules  []*RecurringSchedule  `json:"recurringSchedules"`
 	DeletedAt           *string               `json:"deletedAt,omitempty"`
+}
+
+type ServicePackageInput struct {
+	ServicePackageName string              `json:"servicePackageName"`
+	Description        *string             `json:"description,omitempty"`
+	PackageItems       []*PackageItemInput `json:"packageItems"`
 }
 
 type ServiceSlot struct {
@@ -192,16 +208,16 @@ type StaffWorkingHour struct {
 }
 
 type UpdateProfileInput struct {
-	Username      string `json:"username"`
-	Email         string `json:"email"`
-	ContactNumber string `json:"contactNumber"`
+	Username      string  `json:"username"`
+	Email         string  `json:"email"`
+	ContactNumber *string `json:"contactNumber,omitempty"`
 }
 
 type User struct {
 	UserID              string           `json:"userId"`
 	Username            string           `json:"username"`
 	Email               string           `json:"email"`
-	ContactNumber       *string          `json:"contactNumber,omitempty"`
+	ContactNumber       string           `json:"contactNumber"`
 	FailedLoginAttempts int32            `json:"failedLoginAttempts"`
 	LockedUntil         *string          `json:"lockedUntil,omitempty"`
 	BusinessProfile     *BusinessProfile `json:"businessProfile,omitempty"`
@@ -211,8 +227,8 @@ type User struct {
 
 type WorkingHourInput struct {
 	Day       DayOfWeek `json:"day"`
-	StartTime time.Time `json:"startTime"`
-	EndTime   time.Time `json:"endTime"`
+	StartTime string    `json:"startTime"`
+	EndTime   string    `json:"endTime"`
 }
 
 type BookingStatus string
@@ -336,13 +352,13 @@ func (e BookingType) MarshalJSON() ([]byte, error) {
 type DayOfWeek string
 
 const (
-	DayOfWeekMonday    DayOfWeek = "MONDAY"
-	DayOfWeekTuesday   DayOfWeek = "TUESDAY"
-	DayOfWeekWednesday DayOfWeek = "WEDNESDAY"
-	DayOfWeekThursday  DayOfWeek = "THURSDAY"
-	DayOfWeekFriday    DayOfWeek = "FRIDAY"
-	DayOfWeekSaturday  DayOfWeek = "SATURDAY"
-	DayOfWeekSunday    DayOfWeek = "SUNDAY"
+	DayOfWeekMonday    DayOfWeek = "monday"
+	DayOfWeekTuesday   DayOfWeek = "tuesday"
+	DayOfWeekWednesday DayOfWeek = "wednesday"
+	DayOfWeekThursday  DayOfWeek = "thursday"
+	DayOfWeekFriday    DayOfWeek = "friday"
+	DayOfWeekSaturday  DayOfWeek = "saturday"
+	DayOfWeekSunday    DayOfWeek = "sunday"
 )
 
 var AllDayOfWeek = []DayOfWeek{

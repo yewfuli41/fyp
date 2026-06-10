@@ -70,8 +70,8 @@ func (b *businessRepo) InsertBusinessWorkingHours(ctx context.Context, tx *sql.T
 		`,
 			param.BusinessID,
 			wh.Day,
-			wh.StartTime.Format("15:04:05"),
-			wh.EndTime.Format("15:04:05"),
+			wh.StartTime,
+			wh.EndTime,
 		)
 		if err != nil {
 			return err
@@ -79,6 +79,102 @@ func (b *businessRepo) InsertBusinessWorkingHours(ctx context.Context, tx *sql.T
 	}
 	return nil
 }
+
+func (b *businessRepo) UpdateBusinessProfile(ctx context.Context, tx *sql.Tx, param param.BusinessProfileParam) (*param.BusinessProfileParam, error) {
+	row := tx.QueryRowContext(ctx, `
+		UPDATE business_profiles
+		SET
+			business_name = $1,
+			description = $2,
+			address = $3,
+			image_url = $4,
+			business_contact_number = $5,
+			business_email = $6
+		WHERE owner_user_id = $7
+		RETURNING
+			business_id,
+			owner_user_id,
+			business_name,
+			description,
+			address,
+			image_url,
+			business_contact_number,
+			business_email
+	`,
+		param.BusinessName,
+		param.Description,
+		param.Address,
+		param.ImageURL,
+		param.BusinessContactNumber,
+		param.BusinessEmail,
+		param.OwnerUserID,
+	)
+
+	businessProfile, err := ScanBusinessProfile(row)
+	if err != nil {
+		return nil, err
+	}
+
+	return businessProfile, nil
+}
+
+func (b *businessRepo) DeleteBusinessWorkingHours(ctx context.Context, tx *sql.Tx, businessID int64) error {
+	_, err := tx.ExecContext(ctx, `
+		DELETE FROM business_working_hours
+		WHERE business_id = $1
+	`, businessID)
+	return err
+}
+
+func (b *businessRepo) GetBusinessProfileByOwnerID(ctx context.Context, ownerID int64) (*param.BusinessProfileParam, error) {
+	row := b.DB.QueryRowContext(ctx, `
+		SELECT
+			business_id,
+			owner_user_id,
+			business_name,
+			description,
+			address,
+			image_url,
+			business_contact_number,
+			business_email
+		FROM business_profiles
+		WHERE owner_user_id = $1
+	`, ownerID)
+
+	businessProfile, err := ScanBusinessProfile(row)
+	if err != nil {
+		return nil, err
+	}
+
+	return businessProfile, nil
+}
+
+func (b *businessRepo) GetBusinessWorkingHours(ctx context.Context, businessID int64) ([]param.WorkingHourParam, error) {
+	rows, err := b.DB.QueryContext(ctx, `
+		SELECT
+			day,
+			start_time,
+			end_time
+		FROM business_working_hours
+		WHERE business_id = $1
+	`, businessID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var workingHours []param.WorkingHourParam
+	for rows.Next() {
+		var wh param.WorkingHourParam
+		if err := rows.Scan(&wh.Day, &wh.StartTime, &wh.EndTime); err != nil {
+			return nil, err
+		}
+		workingHours = append(workingHours, wh)
+	}
+
+	return workingHours, nil
+}
+
 func ScanBusinessProfile(row rowScanner) (*param.BusinessProfileParam, error) {
 	var businessProfile param.BusinessProfileParam
 	var description sql.NullString
@@ -101,10 +197,10 @@ func ScanBusinessProfile(row rowScanner) (*param.BusinessProfileParam, error) {
 	}
 
 	businessProfile.Description = utils.NullStringPtr(description)
-	businessProfile.Address = utils.NullStringPtr(address)
+	businessProfile.Address = address.String
 	businessProfile.ImageURL = utils.NullStringPtr(imageURL)
-	businessProfile.BusinessContactNumber = utils.NullStringPtr(businessContactNumber)
-	businessProfile.BusinessEmail = utils.NullStringPtr(businessEmail)
+	businessProfile.BusinessContactNumber = businessContactNumber.String
+	businessProfile.BusinessEmail = businessEmail.String
 
 	return &businessProfile, nil
 }

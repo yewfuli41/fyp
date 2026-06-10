@@ -38,6 +38,74 @@ func (_m *MockIBusinessService) EXPECT() *MockIBusinessService_Expecter {
 	return &MockIBusinessService_Expecter{mock: &_m.Mock}
 }
 
+// GetBusinessProfileByOwnerID provides a mock function for the type MockIBusinessService
+func (_mock *MockIBusinessService) GetBusinessProfileByOwnerID(ctx context.Context, ownerID int64) (*param.BusinessProfileParam, error) {
+	ret := _mock.Called(ctx, ownerID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBusinessProfileByOwnerID")
+	}
+
+	var r0 *param.BusinessProfileParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (*param.BusinessProfileParam, error)); ok {
+		return returnFunc(ctx, ownerID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) *param.BusinessProfileParam); ok {
+		r0 = returnFunc(ctx, ownerID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*param.BusinessProfileParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, ownerID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBusinessService_GetBusinessProfileByOwnerID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBusinessProfileByOwnerID'
+type MockIBusinessService_GetBusinessProfileByOwnerID_Call struct {
+	*mock.Call
+}
+
+// GetBusinessProfileByOwnerID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - ownerID int64
+func (_e *MockIBusinessService_Expecter) GetBusinessProfileByOwnerID(ctx interface{}, ownerID interface{}) *MockIBusinessService_GetBusinessProfileByOwnerID_Call {
+	return &MockIBusinessService_GetBusinessProfileByOwnerID_Call{Call: _e.mock.On("GetBusinessProfileByOwnerID", ctx, ownerID)}
+}
+
+func (_c *MockIBusinessService_GetBusinessProfileByOwnerID_Call) Run(run func(ctx context.Context, ownerID int64)) *MockIBusinessService_GetBusinessProfileByOwnerID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBusinessService_GetBusinessProfileByOwnerID_Call) Return(businessProfileParam *param.BusinessProfileParam, err error) *MockIBusinessService_GetBusinessProfileByOwnerID_Call {
+	_c.Call.Return(businessProfileParam, err)
+	return _c
+}
+
+func (_c *MockIBusinessService_GetBusinessProfileByOwnerID_Call) RunAndReturn(run func(ctx context.Context, ownerID int64) (*param.BusinessProfileParam, error)) *MockIBusinessService_GetBusinessProfileByOwnerID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RegisterBusinessProfile provides a mock function for the type MockIBusinessService
 func (_mock *MockIBusinessService) RegisterBusinessProfile(ctx context.Context, param1 param.BusinessProfileParam) (*param.BusinessProfileParam, error) {
 	ret := _mock.Called(ctx, param1)
@@ -102,6 +170,74 @@ func (_c *MockIBusinessService_RegisterBusinessProfile_Call) Return(businessProf
 }
 
 func (_c *MockIBusinessService_RegisterBusinessProfile_Call) RunAndReturn(run func(ctx context.Context, param1 param.BusinessProfileParam) (*param.BusinessProfileParam, error)) *MockIBusinessService_RegisterBusinessProfile_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateBusinessProfile provides a mock function for the type MockIBusinessService
+func (_mock *MockIBusinessService) UpdateBusinessProfile(ctx context.Context, param1 param.BusinessProfileParam) (*param.BusinessProfileParam, error) {
+	ret := _mock.Called(ctx, param1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateBusinessProfile")
+	}
+
+	var r0 *param.BusinessProfileParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, param.BusinessProfileParam) (*param.BusinessProfileParam, error)); ok {
+		return returnFunc(ctx, param1)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, param.BusinessProfileParam) *param.BusinessProfileParam); ok {
+		r0 = returnFunc(ctx, param1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*param.BusinessProfileParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, param.BusinessProfileParam) error); ok {
+		r1 = returnFunc(ctx, param1)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBusinessService_UpdateBusinessProfile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateBusinessProfile'
+type MockIBusinessService_UpdateBusinessProfile_Call struct {
+	*mock.Call
+}
+
+// UpdateBusinessProfile is a helper method to define mock.On call
+//   - ctx context.Context
+//   - param1 param.BusinessProfileParam
+func (_e *MockIBusinessService_Expecter) UpdateBusinessProfile(ctx interface{}, param1 interface{}) *MockIBusinessService_UpdateBusinessProfile_Call {
+	return &MockIBusinessService_UpdateBusinessProfile_Call{Call: _e.mock.On("UpdateBusinessProfile", ctx, param1)}
+}
+
+func (_c *MockIBusinessService_UpdateBusinessProfile_Call) Run(run func(ctx context.Context, param1 param.BusinessProfileParam)) *MockIBusinessService_UpdateBusinessProfile_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 param.BusinessProfileParam
+		if args[1] != nil {
+			arg1 = args[1].(param.BusinessProfileParam)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBusinessService_UpdateBusinessProfile_Call) Return(businessProfileParam *param.BusinessProfileParam, err error) *MockIBusinessService_UpdateBusinessProfile_Call {
+	_c.Call.Return(businessProfileParam, err)
+	return _c
+}
+
+func (_c *MockIBusinessService_UpdateBusinessProfile_Call) RunAndReturn(run func(ctx context.Context, param1 param.BusinessProfileParam) (*param.BusinessProfileParam, error)) *MockIBusinessService_UpdateBusinessProfile_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -22,11 +22,45 @@ func MapUser(user *param.AuthUserParam) *model.User {
 		UserID:              strconv.FormatInt(user.UserID, 10),
 		Username:            user.Username,
 		Email:               user.Email,
-		ContactNumber:       user.ContactNumber,
+		ContactNumber:       *user.ContactNumber,
 		FailedLoginAttempts: int32(user.FailedLoginAttempts),
 		LockedUntil:         lockedUntil,
 		StaffProfiles:       []*model.Staff{},
 		Bookings:            []*model.Booking{},
+	}
+}
+
+func MapService(s *param.ServiceParam) *model.Service {
+	if s == nil {
+		return nil
+	}
+
+	packages := make([]*model.ServicePackage, len(s.ServicePackages))
+	for i, pkg := range s.ServicePackages {
+		items := make([]*model.PackageItem, len(pkg.PackageItems))
+		for j, item := range pkg.PackageItems {
+			items[j] = &model.PackageItem{
+				PackageItemID:   strconv.FormatInt(item.PackageItemID, 10),
+				PackageItemName: item.PackageItemName,
+			}
+		}
+		packages[i] = &model.ServicePackage{
+			ServicePackageID:    strconv.FormatInt(pkg.ServicePackageID, 10),
+			ServiceID:           strconv.FormatInt(pkg.ServiceID, 10),
+			ServicePackageName:  pkg.ServicePackageName,
+			Description:         pkg.Description,
+			PackageItems:        items,
+			ServiceSlotPackages: []*model.ServiceSlotPackage{},
+			RecurringSchedules:  []*model.RecurringSchedule{},
+		}
+	}
+
+	return &model.Service{
+		ServiceID:       strconv.FormatInt(s.ServiceID, 10),
+		BusinessID:      strconv.FormatInt(s.BusinessID, 10),
+		ServiceName:     s.ServiceName,
+		Description:     s.Description,
+		ServicePackages: packages,
 	}
 }
 

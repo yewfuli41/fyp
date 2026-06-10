@@ -31,6 +31,7 @@ export default function ProfilePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [businessProfile, setBusinessProfile] = useState<any>(null);
 
   useEffect(() => {
     if (!activeToken) {
@@ -51,6 +52,7 @@ export default function ProfilePage() {
             email: profile.email,
             contactNumber: profile.contactNumber || "",
           });
+          setBusinessProfile(profile.businessProfile);
         } else if (result.errors?.length) {
           setFormError(result.errors[0].message);
         }
@@ -270,9 +272,23 @@ export default function ProfilePage() {
           <Button type="button" className="profile-action-button">
             Change Password
           </Button>
-          <Button type="button" className="profile-action-button profile-action-button-wide">
-            Register Business Profile
-          </Button>
+          {businessProfile ? (
+            <Button
+              type="button"
+              className="profile-action-button profile-action-button-wide"
+              onClick={() => navigate("/edit-business")}
+            >
+              Edit Business Profile
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              className="profile-action-button profile-action-button-wide"
+              onClick={() => navigate("/register-business")}
+            >
+              Register Business Profile
+            </Button>
+          )}
         </div>
       </section>
     </Container>

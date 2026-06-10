@@ -36,7 +36,7 @@ func (s *businessService) RegisterBusinessProfile(ctx context.Context, businessP
 		createdBusiness.WorkingHours = businessParam.WorkingHours
 		businessProfile = createdBusiness
 
-		err = s.businessRepo.InsertBusinessWorkingHours(ctx, tx, businessParam)
+		err = s.businessRepo.InsertBusinessWorkingHours(ctx, tx, *createdBusiness)
 		if err != nil {
 			return err
 		}
@@ -51,5 +51,52 @@ func (s *businessService) RegisterBusinessProfile(ctx context.Context, businessP
 		return nil, err
 	}
 
+	return businessProfile, nil
+}
+
+func (s *businessService) UpdateBusinessProfile(ctx context.Context, businessParam param.BusinessProfileParam) (*param.BusinessProfileParam, error) {
+	var businessProfile *param.BusinessProfileParam
+	err := s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
+		if err := businessParam.ValidateRegisterBusinessProfile(); err != nil {
+			return err
+		}
+
+		updatedBusiness, err := s.businessRepo.UpdateBusinessProfile(ctx, tx, businessParam)
+		if err != nil {
+			return err
+		}
+
+		if err := s.businessRepo.DeleteBusinessWorkingHours(ctx, tx, updatedBusiness.BusinessID); err != nil {
+			return err
+		}
+
+		businessParam.BusinessID = updatedBusiness.BusinessID
+		if err := s.businessRepo.InsertBusinessWorkingHours(ctx, tx, businessParam); err != nil {
+			return err
+		}
+
+		updatedBusiness.WorkingHours = businessParam.WorkingHours
+		businessProfile = updatedBusiness
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return businessProfile, nil
+}
+
+func (s *businessService) GetBusinessProfileByOwnerID(ctx context.Context, ownerID int64) (*param.BusinessProfileParam, error) {
+	businessProfile, err := s.businessRepo.GetBusinessProfileByOwnerID(ctx, ownerID)
+	if err != nil {
+		return nil, err
+	}
+
+	workingHours, err := s.businessRepo.GetBusinessWorkingHours(ctx, businessProfile.BusinessID)
+	if err != nil {
+		return nil, err
+	}
+
+	businessProfile.WorkingHours = workingHours
 	return businessProfile, nil
 }

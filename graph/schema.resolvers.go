@@ -12,6 +12,7 @@ import (
 	"fyp/graph/graphErrs"
 	"fyp/graph/model"
 	"fyp/internal/contexts"
+	"strconv"
 )
 
 // SignUp is the resolver for the signUp field.
@@ -58,7 +59,7 @@ func (r *mutationResolver) UpdateProfile(ctx context.Context, user model.UpdateP
 		UserId:        int(currentUser.UserID),
 		Username:      user.Username,
 		Email:         user.Email,
-		ContactNumber: user.ContactNumber,
+		ContactNumber: *user.ContactNumber,
 	})
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
@@ -71,7 +72,7 @@ func (r *mutationResolver) UpdateProfile(ctx context.Context, user model.UpdateP
 }
 
 // RegisterBusinessProfile is the resolver for the registerBusinessProfile field.
-func (r *mutationResolver) RegisterBusinessProfile(ctx context.Context, business model.RegisterBusinessProfileInput) (*model.BusinessProfile, error) {
+func (r *mutationResolver) RegisterBusinessProfile(ctx context.Context, business model.BusinessProfileInput) (*model.BusinessProfile, error) {
 	currentUser, err := contexts.CurrentUser(ctx)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
@@ -108,6 +109,147 @@ func (r *mutationResolver) RegisterBusinessProfile(ctx context.Context, business
 	return MapBusinessProfile(businessProfile, owner), nil
 }
 
+// UpdateBusinessProfile is the resolver for the updateBusinessProfile field.
+func (r *mutationResolver) UpdateBusinessProfile(ctx context.Context, business model.BusinessProfileInput) (*model.BusinessProfile, error) {
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	workingHours := make([]param.WorkingHourParam, len(business.WorkingHours))
+	for i, wh := range business.WorkingHours {
+		workingHours[i] = param.WorkingHourParam{
+			Day:       string(wh.Day),
+			StartTime: wh.StartTime,
+			EndTime:   wh.EndTime,
+		}
+	}
+
+	businessProfile, err := r.App.BusinessService.UpdateBusinessProfile(ctx, param.BusinessProfileParam{
+		OwnerUserID:           currentUser.UserID,
+		BusinessName:          business.BusinessName,
+		Description:           business.Description,
+		Address:               business.Address,
+		ImageURL:              business.ImageURL,
+		BusinessContactNumber: business.BusinessContactNumber,
+		BusinessEmail:         business.BusinessEmail,
+		WorkingHours:          workingHours,
+	})
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	owner, err := r.App.AuthService.GetUserProfile(ctx, currentUser.Email)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	return MapBusinessProfile(businessProfile, owner), nil
+}
+
+// CreateService is the resolver for the createService field.
+func (r *mutationResolver) CreateService(ctx context.Context, service model.ServiceInput) (*model.Service, error) {
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	businessProfile, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, currentUser.UserID)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	p := param.ServiceParam{
+		BusinessID:  businessProfile.BusinessID,
+		ServiceName: service.ServiceName,
+		Description: service.Description,
+	}
+	for _, pkg := range service.ServicePackages {
+		pkgParam := param.ServicePackageParam{
+			ServicePackageName: pkg.ServicePackageName,
+			Description:        pkg.Description,
+		}
+		for _, item := range pkg.PackageItems {
+			pkgParam.PackageItems = append(pkgParam.PackageItems, param.PackageItemParam{
+				PackageItemName: item.PackageItemName,
+			})
+		}
+		p.ServicePackages = append(p.ServicePackages, pkgParam)
+	}
+
+	result, err := r.App.ServiceService.CreateService(ctx, p)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	return MapService(result), nil
+}
+
+// UpdateService is the resolver for the updateService field.
+func (r *mutationResolver) UpdateService(ctx context.Context, serviceID string, service model.ServiceInput) (*model.Service, error) {
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	businessProfile, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, currentUser.UserID)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	sid, err := strconv.ParseInt(serviceID, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid service ID")
+	}
+
+	p := param.ServiceParam{
+		ServiceID:   sid,
+		BusinessID:  businessProfile.BusinessID,
+		ServiceName: service.ServiceName,
+		Description: service.Description,
+	}
+	for _, pkg := range service.ServicePackages {
+		pkgParam := param.ServicePackageParam{
+			ServicePackageName: pkg.ServicePackageName,
+			Description:        pkg.Description,
+		}
+		for _, item := range pkg.PackageItems {
+			pkgParam.PackageItems = append(pkgParam.PackageItems, param.PackageItemParam{
+				PackageItemName: item.PackageItemName,
+			})
+		}
+		p.ServicePackages = append(p.ServicePackages, pkgParam)
+	}
+
+	result, err := r.App.ServiceService.UpdateService(ctx, p)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	return MapService(result), nil
+}
+
+// DeleteService is the resolver for the deleteService field.
+func (r *mutationResolver) DeleteService(ctx context.Context, serviceID string) (bool, error) {
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return false, graphErrs.ToGraphQLError(err)
+	}
+
+	businessProfile, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, currentUser.UserID)
+	if err != nil {
+		return false, graphErrs.ToGraphQLError(err)
+	}
+
+	sid, err := strconv.ParseInt(serviceID, 10, 64)
+	if err != nil {
+		return false, fmt.Errorf("invalid service ID")
+	}
+
+	if err := r.App.ServiceService.DeleteService(ctx, sid, businessProfile.BusinessID); err != nil {
+		return false, graphErrs.ToGraphQLError(err)
+	}
+	return true, nil
+}
+
 // Empty is the resolver for the _empty field.
 func (r *queryResolver) Empty(ctx context.Context) (*string, error) {
 	panic(fmt.Errorf("not implemented: Empty - _empty"))
@@ -124,7 +266,42 @@ func (r *queryResolver) UserProfile(ctx context.Context) (*model.User, error) {
 		return nil, graphErrs.ToGraphQLError(err)
 	}
 
-	return MapUser(userInfo), nil
+	mappedUser := MapUser(userInfo)
+
+	businessProfile, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, userInfo.UserID)
+	if err != nil {
+		// If no business profile is found, we just return the user without it.
+		// We don't want to return an error if it's just not found.
+		return mappedUser, nil
+	}
+
+	mappedUser.BusinessProfile = MapBusinessProfile(businessProfile, userInfo)
+
+	return mappedUser, nil
+}
+
+// BusinessServices is the resolver for the businessServices field.
+func (r *queryResolver) BusinessServices(ctx context.Context) ([]*model.Service, error) {
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	businessProfile, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, currentUser.UserID)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	services, err := r.App.ServiceService.GetServicesByBusinessID(ctx, businessProfile.BusinessID)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	result := make([]*model.Service, len(services))
+	for i := range services {
+		result[i] = MapService(&services[i])
+	}
+	return result, nil
 }
 
 // Mutation returns MutationResolver implementation.

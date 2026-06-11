@@ -5,9 +5,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import PasswordInput from "../components/PasswordInput";
 import { logIn } from "../services/LogInService";
+import { parseGraphQLErrors } from "../utils/graphqlErrors";
 import "../styles/auth.css";
-
-type FieldErrors = Record<string, string>;
 
 export default function LogInPage() {
   const navigate = useNavigate();
@@ -15,7 +14,7 @@ export default function LogInPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -40,23 +39,14 @@ export default function LogInPage() {
     try {
       const result = await logIn(email, password);
 
-      if (result.errors?.length) {
-        const firstError = result.errors[0];
-        const validationErrors = firstError?.extensions?.validationErrors;
-
-        if (validationErrors?.length) {
-          const nextErrors: FieldErrors = {};
-          for (const item of validationErrors) {
-            nextErrors[item.field] = item.message;
-          }
-          setFieldErrors(nextErrors);
-        } else if (firstError?.extensions?.lockedUntil) {
-          const lockedUntil = new Date(String(firstError.extensions.lockedUntil));
-          setFormError(
-            `Account is locked until ${lockedUntil.toLocaleString()}`,
-          );
+      const parsed = parseGraphQLErrors(result, "Log in failed");
+      if (parsed.hasErrors) {
+        if (parsed.extensions?.lockedUntil) {
+          const lockedUntil = new Date(String(parsed.extensions.lockedUntil));
+          setFormError(`Account is locked until ${lockedUntil.toLocaleString()}`);
         } else {
-          setFormError(firstError?.message ?? "Log in failed");
+          setFieldErrors(parsed.fieldErrors);
+          setFormError(parsed.formError);
         }
         return;
       }

@@ -130,6 +130,11 @@ func (r *mutationResolver) UpdateBusinessProfile(ctx context.Context, business m
 		return nil, graphErrs.ToGraphQLError(err)
 	}
 
+	_, err = r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, currentUser.UserID)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
 	workingHours := make([]param.WorkingHourParam, len(business.WorkingHours))
 	for i, wh := range business.WorkingHours {
 		workingHours[i] = param.WorkingHourParam{

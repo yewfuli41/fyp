@@ -5,9 +5,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import PasswordInput from "../components/PasswordInput";
 import { signUp } from "../services/SignUpService";
+import { parseGraphQLErrors, type FieldErrors } from "../utils/graphqlErrors";
+import { FIELD_LIMITS } from "../utils/fieldLimits";
 import "../styles/auth.css";
-
-type FieldErrors = Record<string, string>;
 
 export default function SignUpPage() {
   const navigate = useNavigate();
@@ -43,14 +43,11 @@ export default function SignUpPage() {
     try {
       const result = await signUp(username, email, contactNumber, password);
 
-      if (result.errors?.length) {
-        const validationErrors = result.errors[0]?.extensions?.validationErrors;
-        if (validationErrors?.length) {
-          for (const item of validationErrors) {
-            nextErrors[item.field] = item.message;
-          }
-        } else {
-          setFormError(result.errors[0]?.message ?? "Sign up failed");
+      const parsed = parseGraphQLErrors(result, "Sign up failed");
+      if (parsed.hasErrors) {
+        Object.assign(nextErrors, parsed.fieldErrors);
+        if (parsed.formError) {
+          setFormError(parsed.formError);
         }
       } else {
         const payload = result.data?.signUp;
@@ -101,6 +98,7 @@ export default function SignUpPage() {
                   username: "",
                 }))
               }}
+              maxLength={FIELD_LIMITS.username}
               isInvalid={!!fieldErrors.username}
             />
             <Form.Control.Feedback type="invalid">
@@ -120,6 +118,7 @@ export default function SignUpPage() {
                   email: "",
                 }))
               }}
+              maxLength={FIELD_LIMITS.email}
               isInvalid={!!fieldErrors.email}
             />
             <Form.Control.Feedback type="invalid">
@@ -139,6 +138,7 @@ export default function SignUpPage() {
                   contactNumber: "",
                 }))
               }}
+              maxLength={FIELD_LIMITS.contactNumber}
               isInvalid={!!fieldErrors.contactNumber}
             />
             <Form.Control.Feedback type="invalid">

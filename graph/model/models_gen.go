@@ -60,8 +60,8 @@ type BusinessWorkingHour struct {
 	BusinessID         string           `json:"businessId"`
 	Business           *BusinessProfile `json:"business"`
 	Day                DayOfWeek        `json:"day"`
-	StartTime          string           `json:"startTime"`
-	EndTime            string           `json:"endTime"`
+	StartTime          time.Time        `json:"startTime"`
+	EndTime            time.Time        `json:"endTime"`
 	DeletedAt          *string          `json:"deletedAt,omitempty"`
 }
 
@@ -227,8 +227,8 @@ type User struct {
 
 type WorkingHourInput struct {
 	Day       DayOfWeek `json:"day"`
-	StartTime string    `json:"startTime"`
-	EndTime   string    `json:"endTime"`
+	StartTime time.Time `json:"startTime"`
+	EndTime   time.Time `json:"endTime"`
 }
 
 type BookingStatus string

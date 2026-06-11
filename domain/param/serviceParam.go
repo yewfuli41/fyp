@@ -1,6 +1,7 @@
 package param
 
 import (
+	"fmt"
 	"fyp/domain/errs"
 	"strings"
 )
@@ -32,6 +33,26 @@ func (p ServiceParam) Validate() error {
 
 	if strings.TrimSpace(p.ServiceName) == "" {
 		validationErrs = append(validationErrs, errs.ValidationError{Field: "serviceName", Message: "service name is required"})
+	} else if e, ok := maxLengthError("serviceName", "service name", p.ServiceName, maxServiceNameLength); ok {
+		validationErrs = append(validationErrs, e)
+	}
+
+	for i, pkg := range p.ServicePackages {
+		if e, ok := maxLengthError(
+			fmt.Sprintf("servicePackages[%d].servicePackageName", i),
+			"service package name", pkg.ServicePackageName, maxPackageNameLength,
+		); ok {
+			validationErrs = append(validationErrs, e)
+		}
+
+		for j, item := range pkg.PackageItems {
+			if e, ok := maxLengthError(
+				fmt.Sprintf("servicePackages[%d].packageItems[%d]", i, j),
+				"package item name", item.PackageItemName, maxPackageNameLength,
+			); ok {
+				validationErrs = append(validationErrs, e)
+			}
+		}
 	}
 
 	if len(validationErrs) > 0 {

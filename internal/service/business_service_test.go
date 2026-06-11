@@ -8,6 +8,7 @@ import (
 	"fyp/internal/interfaces"
 	"fyp/internal/interfaces/mocks"
 	"fyp/internal/service"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/lib/pq"
@@ -43,13 +44,13 @@ var _ = Describe("BusinessService", func() {
 		var (
 			businessParam param.BusinessProfileParam
 			createdBiz    *param.BusinessProfileParam
-			startTime     string
-			endTime       string
+			startTime     time.Time
+			endTime       time.Time
 		)
 
 		BeforeEach(func() {
-			startTime = "09:00"
-			endTime = "18:00"
+			startTime = time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC)
+			endTime = time.Date(0, 1, 1, 18, 0, 0, 0, time.UTC)
 
 			businessParam = param.BusinessProfileParam{
 				OwnerUserID:           42,

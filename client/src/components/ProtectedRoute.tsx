@@ -3,25 +3,21 @@ import {Spinner} from "react-bootstrap";
 import { useAuth } from "../auth/AuthContext";
 
 type ProtectedRouteProps = {
-  role?: string;
+  roles?: string[];
 };
 
-export default function ProtectedRoute({ role = "" }: ProtectedRouteProps) {
+export default function ProtectedRoute({ roles = [] }: ProtectedRouteProps) {
   const { isLoggedIn, user, hasRoles } = useAuth();
-console.log("user", user);
-console.log(
-  "businessProfile",
-  user?.businessProfile
-);
-console.log(
-  "has owner role",
-  hasRoles("OWNER")
-);
+
   if (isLoggedIn === null) {
     return (<Spinner animation="border" />);
   }
 
-  if (isLoggedIn === false || !user || (!hasRoles(role))) {
+  if (isLoggedIn === false || !user ){
+    return <Navigate to="/login" replace />;
+  }
+
+  if ((roles.length > 0 && !hasRoles(roles))) {
     return <Navigate to="/" replace />;
   }
 

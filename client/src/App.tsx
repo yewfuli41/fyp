@@ -43,9 +43,11 @@ function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LogInPage />} />
       <Route path="/signup" element={<SignUpPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
-      <Route path="/register-business" element={<RegisterBusinessPage />} />
-      <Route element={<ProtectedRoute role="OWNER" />}>
+      <Route element={<ProtectedRoute />}>
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/register-business" element={<RegisterBusinessPage />} />
+      </Route>
+      <Route element={<ProtectedRoute roles={["OWNER"]} />}>
         <Route path="/edit-business" element={<EditBusinessPage />} />
         <Route path="/services" element={<ServicePage />} />
       </Route>

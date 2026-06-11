@@ -29,7 +29,7 @@ export type AuthContextValue = {
   message: string;
   login: (token: string, user: User) => void;
   logout: () => void;
-  hasRoles: (_: string) => boolean;
+  hasRoles: (roles: string[]) => boolean;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

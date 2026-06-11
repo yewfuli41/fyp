@@ -3,16 +3,8 @@ package param
 import (
 	"fmt"
 	"fyp/domain/errs"
-	"regexp"
 	"strings"
 )
-
-const (
-	minPasswordLength      = 8
-	minContactNumberDigits = 10
-)
-
-var emailRegex = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
 
 type SignUpParam struct {
 	Username      string
@@ -31,6 +23,8 @@ func (p SignUpParam) ValidateSignUp() error {
 
 	if strings.TrimSpace(p.Username) == "" {
 		validationErrs = append(validationErrs, errs.ValidationError{Field: "username", Message: "username is required"})
+	} else if e, ok := maxLengthError("username", "username", p.Username, maxUsernameLength); ok {
+		validationErrs = append(validationErrs, e)
 	}
 
 	email := strings.TrimSpace(p.Email)
@@ -38,6 +32,8 @@ func (p SignUpParam) ValidateSignUp() error {
 		validationErrs = append(validationErrs, errs.ValidationError{Field: "email", Message: "email is required"})
 	} else if !emailRegex.MatchString(email) {
 		validationErrs = append(validationErrs, errs.ValidationError{Field: "email", Message: "email format is invalid"})
+	} else if e, ok := maxLengthError("email", "email", email, maxEmailLength); ok {
+		validationErrs = append(validationErrs, e)
 	}
 
 	if strings.TrimSpace(p.ContactNumber) == "" {
@@ -47,6 +43,8 @@ func (p SignUpParam) ValidateSignUp() error {
 			Field:   "contactNumber",
 			Message: fmt.Sprintf("contact number must have at least %d digits", minContactNumberDigits),
 		})
+	} else if e, ok := maxLengthError("contactNumber", "contact number", p.ContactNumber, maxContactNumberLength); ok {
+		validationErrs = append(validationErrs, e)
 	}
 
 	if p.Password == "" {

@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Alert, Button, Container, Form, Spinner, Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { userProfile } from "../services/ProfileService";
 import { updateBusinessProfile, type BusinessProfileInput, type WorkingHour } from "../services/BusinessService";
+import { applyGraphQLErrors } from "../utils/graphqlErrors";
+import { FIELD_LIMITS } from "../utils/fieldLimits";
 
 const DAYS_OF_WEEK = [
     "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
@@ -35,10 +37,7 @@ export default function EditBusinessPage() {
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        if (!activeToken) {
-            navigate("/login");
-            return;
-        }
+        if (!activeToken) return;
 
         const fetchBusinessData = async () => {
             try {
@@ -114,22 +113,13 @@ export default function EditBusinessPage() {
 
         try {
             const result = await updateBusinessProfile(activeToken, input);
-            if (result.errors?.length) {
-                const firstError = result.errors[0];
-                const validationErrors = firstError?.extensions?.validationErrors;
+            if (applyGraphQLErrors(result, {
+                setFieldErrors,
+                setFormError,
+                fallbackMessage: "Failed to update business profile",
+            })) return;
 
-                if (validationErrors?.length) {
-                    const nextErrors: Record<string, string> = {};
-                    for (const item of validationErrors) {
-                        nextErrors[item.field] = item.message;
-                    }
-                    setFieldErrors(nextErrors);
-                } else {
-                    setFormError(firstError?.message ?? "Failed to update business profile");
-                }
-            } else {
-                navigate("/profile");
-            }
+            navigate("/profile");
         } catch {
             setFormError("Something went wrong. Please try again.");
         } finally {
@@ -157,6 +147,7 @@ export default function EditBusinessPage() {
                         type="text"
                         value={businessName}
                         onChange={(e) => setBusinessName(e.target.value)}
+                        maxLength={FIELD_LIMITS.businessName}
                         isInvalid={!!fieldErrors.businessName}
                         required
                     />
@@ -205,6 +196,7 @@ export default function EditBusinessPage() {
                         type="text"
                         value={businessContactNumber}
                         onChange={(e) => setBusinessContactNumber(e.target.value)}
+                        maxLength={FIELD_LIMITS.businessContactNumber}
                         isInvalid={!!fieldErrors.businessContactNumber}
                         required
                     />
@@ -217,6 +209,7 @@ export default function EditBusinessPage() {
                         type="email"
                         value={businessEmail}
                         onChange={(e) => setBusinessEmail(e.target.value)}
+                        maxLength={FIELD_LIMITS.businessEmail}
                         isInvalid={!!fieldErrors.businessEmail}
                         required
                     />
@@ -225,6 +218,7 @@ export default function EditBusinessPage() {
 
                 <h3 className="mt-4">Working Hours</h3>
                 {workingHours.map((wh, index) => (
+                    <React.Fragment key={index}>
                     <Row key={index} className="mb-2 align-items-end">
                         <Col>
                             <Form.Group>
@@ -263,6 +257,12 @@ export default function EditBusinessPage() {
                             <Button variant="danger" onClick={() => handleRemoveWorkingHour(index)}>Remove</Button>
                         </Col>
                     </Row>
+                    {fieldErrors[`workingHours[${index}]`] && (
+                    <div className="text-danger small mb-3">
+                        {fieldErrors[`workingHours[${index}]`]}
+                    </div>
+                    )}
+                    </React.Fragment>
                 ))}
                 {fieldErrors.workingHours && <div className="text-danger mb-2">{fieldErrors.workingHours}</div>}
                 

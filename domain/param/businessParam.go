@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"fyp/domain/errs"
 	"strings"
+	"time"
 )
 
 type WorkingHourParam struct {
 	Day       string
-	StartTime string
-	EndTime   string
+	StartTime time.Time
+	EndTime   time.Time
 }
 
 type BusinessProfileParam struct {
@@ -29,6 +30,8 @@ func (p BusinessProfileParam) ValidateRegisterBusinessProfile() error {
 
 	if strings.TrimSpace(p.BusinessName) == "" {
 		validationErrs = append(validationErrs, errs.ValidationError{Field: "businessName", Message: "business name is required"})
+	} else if e, ok := maxLengthError("businessName", "business name", p.BusinessName, maxBusinessNameLength); ok {
+		validationErrs = append(validationErrs, e)
 	}
 
 	if strings.TrimSpace(p.Address) == "" {
@@ -42,12 +45,16 @@ func (p BusinessProfileParam) ValidateRegisterBusinessProfile() error {
 			Field:   "businessContactNumber",
 			Message: fmt.Sprintf("business contact number must have at least %d digits", minContactNumberDigits),
 		})
+	} else if e, ok := maxLengthError("businessContactNumber", "business contact number", p.BusinessContactNumber, maxContactNumberLength); ok {
+		validationErrs = append(validationErrs, e)
 	}
 
 	if strings.TrimSpace(p.BusinessEmail) == "" {
 		validationErrs = append(validationErrs, errs.ValidationError{Field: "businessEmail", Message: "business email is required"})
 	} else if !emailRegex.MatchString(strings.TrimSpace(p.BusinessEmail)) {
 		validationErrs = append(validationErrs, errs.ValidationError{Field: "businessEmail", Message: "business email format is invalid"})
+	} else if e, ok := maxLengthError("businessEmail", "business email", p.BusinessEmail, maxEmailLength); ok {
+		validationErrs = append(validationErrs, e)
 	}
 
 	if len(p.WorkingHours) == 0 {
@@ -55,7 +62,7 @@ func (p BusinessProfileParam) ValidateRegisterBusinessProfile() error {
 	}
 
 	for i, wh := range p.WorkingHours {
-		if wh.StartTime >= wh.EndTime {
+		if !wh.StartTime.Before(wh.EndTime) {
 			validationErrs = append(validationErrs, errs.ValidationError{
 				Field:   fmt.Sprintf("workingHours[%d]", i),
 				Message: "start time must be before end time",

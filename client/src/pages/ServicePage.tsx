@@ -6,9 +6,11 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import {
     getBusinessServices, createService, updateService, deleteService,
-    type Service, type ServiceInput, type ServicePackageInput, type PackageItemInput
+    type Service, type ServiceInput, type ServicePackageInput
 } from "../services/ServiceService";
 import { userProfile } from "../services/ProfileService";
+import { applyGraphQLErrors } from "../utils/graphqlErrors";
+import { FIELD_LIMITS } from "../utils/fieldLimits";
 
 const emptyPackage = (): ServicePackageInput => ({
     servicePackageName: "",
@@ -61,7 +63,7 @@ export default function ServicePage() {
     }, [activeToken]);
 
     useEffect(() => {
-        if (!activeToken) { navigate("/login"); return; }
+        if (!activeToken) return;
 
         const init = async () => {
             try {
@@ -136,20 +138,14 @@ export default function ServicePage() {
                 ? await updateService(activeToken, editingService.serviceId, payload)
                 : await createService(activeToken, payload);
 
-            if (result.errors?.length) {
-                const first = result.errors[0];
-                const validationErrors = first?.extensions?.validationErrors;
-                if (validationErrors?.length) {
-                    const errs: Record<string, string> = {};
-                    for (const ve of validationErrors) errs[ve.field] = ve.message;
-                    setFieldErrors(errs);
-                } else {
-                    setFormError(first?.message ?? "Operation failed");
-                }
-            } else {
-                setShowForm(false);
-                fetchServices();
-            }
+            if (applyGraphQLErrors(result, {
+                setFieldErrors,
+                setFormError,
+                fallbackMessage: "Operation failed",
+            })) return;
+
+            setShowForm(false);
+            fetchServices();
         } catch {
             setFormError("Something went wrong. Please try again.");
         } finally {
@@ -351,6 +347,7 @@ export default function ServicePage() {
                                 type="text"
                                 value={formInput.serviceName}
                                 onChange={e => setFormInput(prev => ({ ...prev, serviceName: e.target.value }))}
+                                maxLength={FIELD_LIMITS.serviceName}
                                 isInvalid={!!fieldErrors.serviceName}
                             />
                             <Form.Control.Feedback type="invalid">{fieldErrors.serviceName}</Form.Control.Feedback>
@@ -398,6 +395,7 @@ export default function ServicePage() {
                                         type="text"
                                         value={pkg.servicePackageName}
                                         onChange={e => updatePackage(pkgIdx, "servicePackageName", e.target.value)}
+                                        maxLength={FIELD_LIMITS.servicePackageName}
                                     />
                                 </Form.Group>
 
@@ -424,6 +422,7 @@ export default function ServicePage() {
                                             placeholder="Item name"
                                             value={item.packageItemName}
                                             onChange={e => updateItem(pkgIdx, itemIdx, e.target.value)}
+                                            maxLength={FIELD_LIMITS.packageItemName}
                                         />
                                         {pkg.packageItems.length > 1 && (
                                             <Button

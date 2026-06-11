@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { userProfile } from "../services/ProfileService";
 import { registerBusinessProfile, type BusinessProfileInput, type WorkingHour } from "../services/BusinessService";
+import { applyGraphQLErrors } from "../utils/graphqlErrors";
+import { FIELD_LIMITS } from "../utils/fieldLimits";
 
 const DAYS_OF_WEEK = [
     "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
@@ -36,10 +38,7 @@ export default function RegisterBusinessPage() {
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        if (!activeToken) {
-            navigate("/login");
-            return;
-        }
+        if (!activeToken) return;
 
         const checkExistingBusiness = async () => {
             try {
@@ -100,36 +99,26 @@ export default function RegisterBusinessPage() {
 
         try {
             const result = await registerBusinessProfile(activeToken, input);
-            if (result.errors?.length) {
-                const firstError = result.errors[0];
-                const validationErrors = firstError?.extensions?.validationErrors;
+            if (applyGraphQLErrors(result, {
+                setFieldErrors,
+                setFormError,
+                fallbackMessage: "Failed to register business profile",
+            })) return;
 
-                if (validationErrors?.length) {
-                    const nextErrors: Record<string, string> = {};
-                    for (const item of validationErrors) {
-                        nextErrors[item.field] = item.message;
-                    }
-                    setFieldErrors(nextErrors);
-                } else {
-                    setFormError(firstError?.message ?? "Failed to register business profile");
-                }
-            } else {
-                const profileResult = await userProfile(activeToken);
+            const profileResult = await userProfile(activeToken);
+            const profile = profileResult.data?.userProfile;
 
-                const profile = profileResult.data?.userProfile;
-
-                if (profile) {
-                    login(activeToken, {
-                        userId: Number(profile.userId),
-                        username: profile.username,
-                        email: profile.email,
-                        contactNumber: profile.contactNumber,
-                        businessProfile: profile.businessProfile,
-                        staffProfile: profile.staffProfile,
-                    });
-                }
-                navigate("/profile");
+            if (profile) {
+                login(activeToken, {
+                    userId: Number(profile.userId),
+                    username: profile.username,
+                    email: profile.email,
+                    contactNumber: profile.contactNumber,
+                    businessProfile: profile.businessProfile,
+                    staffProfile: profile.staffProfile,
+                });
             }
+            navigate("/profile");
         } catch {
             setFormError("Something went wrong. Please try again.");
         } finally {
@@ -149,6 +138,7 @@ export default function RegisterBusinessPage() {
                         type="text"
                         value={businessName}
                         onChange={(e) => setBusinessName(e.target.value)}
+                        maxLength={FIELD_LIMITS.businessName}
                         isInvalid={!!fieldErrors.businessName}
                     />
                     <Form.Control.Feedback type="invalid">{fieldErrors.businessName}</Form.Control.Feedback>
@@ -196,6 +186,7 @@ export default function RegisterBusinessPage() {
                         type="text"
                         value={businessContactNumber}
                         onChange={(e) => setBusinessContactNumber(e.target.value)}
+                        maxLength={FIELD_LIMITS.businessContactNumber}
                         isInvalid={!!fieldErrors.businessContactNumber}
                         required
                     />
@@ -208,6 +199,7 @@ export default function RegisterBusinessPage() {
                         type="email"
                         value={businessEmail}
                         onChange={(e) => setBusinessEmail(e.target.value)}
+                        maxLength={FIELD_LIMITS.businessEmail}
                         isInvalid={!!fieldErrors.businessEmail}
                         required
                     />

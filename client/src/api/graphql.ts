@@ -1,12 +1,12 @@
 import apiClient from "./client"
 import { buildHeaders } from "./header";
 
-interface ValidationError {
+export interface ValidationError {
 	field: string;
 	message: string;
 }
 
-interface GraphQLError {
+export interface GraphQLError {
 	message: string;
 	path?: string[];
 	locations?: {

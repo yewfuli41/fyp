@@ -69,8 +69,8 @@ type BusinessWorkingHour {
   businessId: ID!
   business: BusinessProfile!
   day: DayOfWeek!
-  startTime: String!
-  endTime: String!
+  startTime: Time!
+  endTime: Time!
   deletedAt: DateTime
 }
 
@@ -233,8 +233,8 @@ input BusinessProfileInput {
 
 input WorkingHourInput {
   day: DayOfWeek!
-  startTime: String!
-  endTime: String!
+  startTime: Time!
+  endTime: Time!
 }
 
 input PackageItemInput {

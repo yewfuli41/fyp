@@ -2649,15 +2649,15 @@ func (ec *executionContext) _BusinessWorkingHour_startTime(ctx context.Context, 
 			return obj.StartTime, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
-			return ec.marshalNString2string(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
 		},
 		true,
 		true,
 	)
 }
 func (ec *executionContext) fieldContext_BusinessWorkingHour_startTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("BusinessWorkingHour", field, false, false, errors.New("field of type String does not have child fields"))
+	return graphql.NewScalarFieldContext("BusinessWorkingHour", field, false, false, errors.New("field of type Time does not have child fields"))
 }
 
 func (ec *executionContext) _BusinessWorkingHour_endTime(ctx context.Context, field graphql.CollectedField, obj *model.BusinessWorkingHour) (ret graphql.Marshaler) {
@@ -2672,15 +2672,15 @@ func (ec *executionContext) _BusinessWorkingHour_endTime(ctx context.Context, fi
 			return obj.EndTime, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
-			return ec.marshalNString2string(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
 		},
 		true,
 		true,
 	)
 }
 func (ec *executionContext) fieldContext_BusinessWorkingHour_endTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("BusinessWorkingHour", field, false, false, errors.New("field of type String does not have child fields"))
+	return graphql.NewScalarFieldContext("BusinessWorkingHour", field, false, false, errors.New("field of type Time does not have child fields"))
 }
 
 func (ec *executionContext) _BusinessWorkingHour_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.BusinessWorkingHour) (ret graphql.Marshaler) {
@@ -6942,14 +6942,14 @@ func (ec *executionContext) unmarshalInputWorkingHourInput(ctx context.Context, 
 			it.Day = data
 		case "startTime":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTime"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.StartTime = data
 		case "endTime":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endTime"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}

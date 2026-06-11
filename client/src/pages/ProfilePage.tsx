@@ -4,12 +4,12 @@ import { Alert, Button, Container, Form, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { userProfile, updateProfile } from "../services/ProfileService";
+import { applyGraphQLErrors, type FieldErrors } from "../utils/graphqlErrors";
+import { FIELD_LIMITS } from "../utils/fieldLimits";
 import userIcon from "../assets/user-icon-simple-design-free-vector.jpg";
 import emailIcon from "../assets/message-icon-logo-design-vector.webp";
 import phoneIcon from "../assets/phone--v1.jpg";
 import "../styles/ProfilePage.css";
-
-type FieldErrors = Record<string, string>;
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -34,10 +34,7 @@ export default function ProfilePage() {
   const [businessProfile, setBusinessProfile] = useState<any>(null);
 
   useEffect(() => {
-    if (!activeToken) {
-      navigate("/login");
-      return;
-    }
+    if (!activeToken) return;
 
     const fetchProfile = async () => {
       try {
@@ -79,21 +76,11 @@ export default function ProfilePage() {
     try {
       const result = await updateProfile(activeToken, username, email, contactNumber);
 
-      if (result.errors?.length) {
-        const firstError = result.errors[0];
-        const validationErrors = firstError?.extensions?.validationErrors;
-
-        if (validationErrors?.length) {
-          const nextErrors: FieldErrors = {};
-          for (const item of validationErrors) {
-            nextErrors[item.field] = item.message;
-          }
-          setFieldErrors(nextErrors);
-        } else {
-          setFormError(firstError?.message ?? "Profile update failed");
-        }
-        return;
-      }
+      if (applyGraphQLErrors(result, {
+        setFieldErrors,
+        setFormError,
+        fallbackMessage: "Profile update failed",
+      })) return;
 
       const updatedUser = result.data?.updateProfile;
       if (!updatedUser) {
@@ -202,6 +189,7 @@ export default function ProfilePage() {
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
+                      maxLength={FIELD_LIMITS.username}
                       isInvalid={!!fieldErrors.username}
                     />
                     <Form.Control.Feedback type="invalid">
@@ -228,6 +216,7 @@ export default function ProfilePage() {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      maxLength={FIELD_LIMITS.email}
                       isInvalid={!!fieldErrors.email}
                     />
                     <Form.Control.Feedback type="invalid">
@@ -254,6 +243,7 @@ export default function ProfilePage() {
                       type="text"
                       value={contactNumber}
                       onChange={(e) => setContactNumber(e.target.value)}
+                      maxLength={FIELD_LIMITS.contactNumber}
                       isInvalid={!!fieldErrors.contactNumber}
                     />
                     <Form.Control.Feedback type="invalid">

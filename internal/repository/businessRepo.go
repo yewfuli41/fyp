@@ -70,8 +70,8 @@ func (b *businessRepo) InsertBusinessWorkingHours(ctx context.Context, tx *sql.T
 		`,
 			param.BusinessID,
 			wh.Day,
-			wh.StartTime,
-			wh.EndTime,
+			wh.StartTime.Format("15:04:05"),
+			wh.EndTime.Format("15:04:05"),
 		)
 		if err != nil {
 			return err

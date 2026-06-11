@@ -40,7 +40,7 @@ type User {
   failedLoginAttempts: Int!
   lockedUntil: DateTime
   businessProfile: BusinessProfile
-  staffProfiles: [Staff!]!
+  staffProfile: Staff
   bookings: [Booking!]!
 }
 

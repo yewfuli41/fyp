@@ -23,13 +23,18 @@ export default function LogInPage() {
     if (isLoggedIn) {
       navigate("/");
     }
+    const msg = sessionStorage.getItem("authMessage");
+    if(msg){
+      setFormError(msg);
+      sessionStorage.removeItem("authMessage");
+    }
   }, [isLoggedIn, navigate]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFieldErrors({});
     setFormError("");
-
+    
     setIsSubmitting(true);
 
     try {
@@ -67,7 +72,10 @@ export default function LogInPage() {
         username: payload.user.username,
         email: payload.user.email,
         contactNumber: payload.user.contactNumber,
+        businessProfile: payload.user.businessProfile,
+        staffProfile: payload.user.staffProfile,
       });
+      console.log(payload.user);
       navigate("/");
     } catch {
       setFormError("Something went wrong. Please try again.");

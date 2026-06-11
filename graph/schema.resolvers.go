@@ -43,9 +43,23 @@ func (r *mutationResolver) LogIn(ctx context.Context, user model.LogInInput) (*m
 		return nil, graphErrs.ToGraphQLError(err)
 	}
 
+	mappedUser := MapUser(result.User)
+
+	businessProfile, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, result.User.UserID)
+	if err != nil {
+		// If no business profile is found, we just return the user without it.
+		// We don't want to return an error if it's just not found.
+		return &model.AuthPayload{
+			Token: result.Token,
+			User:  mappedUser,
+		}, nil
+	}
+
+	mappedUser.BusinessProfile = MapBusinessProfile(businessProfile, result.User)
+
 	return &model.AuthPayload{
 		Token: result.Token,
-		User:  MapUser(result.User),
+		User:  mappedUser,
 	}, nil
 }
 

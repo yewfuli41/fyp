@@ -221,7 +221,7 @@ type User struct {
 	FailedLoginAttempts int32            `json:"failedLoginAttempts"`
 	LockedUntil         *string          `json:"lockedUntil,omitempty"`
 	BusinessProfile     *BusinessProfile `json:"businessProfile,omitempty"`
-	StaffProfiles       []*Staff         `json:"staffProfiles"`
+	StaffProfile        *Staff           `json:"staffProfile,omitempty"`
 	Bookings            []*Booking       `json:"bookings"`
 }
 

@@ -18,7 +18,7 @@ const toTimeInputValue = (time: string): string => {
 
 export default function RegisterBusinessPage() {
     const navigate = useNavigate();
-    const { token } = useAuth();
+    const { token, login } = useAuth();
     const activeToken = token ?? localStorage.getItem("token");
 
     const [businessName, setBusinessName] = useState("");
@@ -114,6 +114,20 @@ export default function RegisterBusinessPage() {
                     setFormError(firstError?.message ?? "Failed to register business profile");
                 }
             } else {
+                const profileResult = await userProfile(activeToken);
+
+                const profile = profileResult.data?.userProfile;
+
+                if (profile) {
+                    login(activeToken, {
+                        userId: Number(profile.userId),
+                        username: profile.username,
+                        email: profile.email,
+                        contactNumber: profile.contactNumber,
+                        businessProfile: profile.businessProfile,
+                        staffProfile: profile.staffProfile,
+                    });
+                }
                 navigate("/profile");
             }
         } catch {

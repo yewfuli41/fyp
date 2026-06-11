@@ -25,7 +25,7 @@ func MapUser(user *param.AuthUserParam) *model.User {
 		ContactNumber:       *user.ContactNumber,
 		FailedLoginAttempts: int32(user.FailedLoginAttempts),
 		LockedUntil:         lockedUntil,
-		StaffProfiles:       []*model.Staff{},
+		StaffProfile:        nil,
 		Bookings:            []*model.Booking{},
 	}
 }

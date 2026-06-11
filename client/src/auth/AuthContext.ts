@@ -5,7 +5,17 @@ export type User = {
   username: string;
   email: string;
   contactNumber?: string;
+  businessProfile?: BusinessProfile;
+  staffProfile?: Staff;
 };
+
+export type BusinessProfile = {
+  businessId: number;
+}
+
+export type Staff = {
+  staffId: number;
+}
 
 export type AuthPayload = {
   token: string;
@@ -19,6 +29,7 @@ export type AuthContextValue = {
   message: string;
   login: (token: string, user: User) => void;
   logout: () => void;
+  hasRoles: (_: string) => boolean;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

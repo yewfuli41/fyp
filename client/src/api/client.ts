@@ -8,8 +8,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      window.dispatchEvent(new Event("unauthorized"));
     }
 
     return Promise.reject(error);

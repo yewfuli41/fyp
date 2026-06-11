@@ -215,7 +215,7 @@ type ComplexityRoot struct {
 		Email               func(childComplexity int) int
 		FailedLoginAttempts func(childComplexity int) int
 		LockedUntil         func(childComplexity int) int
-		StaffProfiles       func(childComplexity int) int
+		StaffProfile        func(childComplexity int) int
 		UserID              func(childComplexity int) int
 		Username            func(childComplexity int) int
 	}
@@ -1093,12 +1093,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.User.LockedUntil(childComplexity), true
-	case "User.staffProfiles":
-		if e.ComplexityRoot.User.StaffProfiles == nil {
+	case "User.staffProfile":
+		if e.ComplexityRoot.User.StaffProfile == nil {
 			break
 		}
 
-		return e.ComplexityRoot.User.StaffProfiles(childComplexity), true
+		return e.ComplexityRoot.User.StaffProfile(childComplexity), true
 	case "User.userId":
 		if e.ComplexityRoot.User.UserID == nil {
 			break
@@ -1544,8 +1544,8 @@ func (ec *executionContext) childFields_User(ctx context.Context, field graphql.
 		return ec.fieldContext_User_lockedUntil(ctx, field)
 	case "businessProfile":
 		return ec.fieldContext_User_businessProfile(ctx, field)
-	case "staffProfiles":
-		return ec.fieldContext_User_staffProfiles(ctx, field)
+	case "staffProfile":
+		return ec.fieldContext_User_staffProfile(ctx, field)
 	case "bookings":
 		return ec.fieldContext_User_bookings(ctx, field)
 	}
@@ -5470,26 +5470,26 @@ func (ec *executionContext) fieldContext_User_businessProfile(_ context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _User_staffProfiles(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_staffProfile(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_User_staffProfiles(ctx, field)
+			return ec.fieldContext_User_staffProfile(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.StaffProfiles, nil
+			return obj.StaffProfile, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v []*model.Staff) graphql.Marshaler {
-			return ec.marshalNStaff2ᚕᚖfypᚋgraphᚋmodelᚐStaffᚄ(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Staff) graphql.Marshaler {
+			return ec.marshalOStaff2ᚖfypᚋgraphᚋmodelᚐStaff(ctx, selections, v)
 		},
 		true,
-		true,
+		false,
 	)
 }
-func (ec *executionContext) fieldContext_User_staffProfiles(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_User_staffProfile(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "User",
 		Field:      field,
@@ -8137,11 +8137,8 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._User_lockedUntil(ctx, field, obj)
 		case "businessProfile":
 			out.Values[i] = ec._User_businessProfile(ctx, field, obj)
-		case "staffProfiles":
-			out.Values[i] = ec._User_staffProfiles(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
+		case "staffProfile":
+			out.Values[i] = ec._User_staffProfile(ctx, field, obj)
 		case "bookings":
 			out.Values[i] = ec._User_bookings(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

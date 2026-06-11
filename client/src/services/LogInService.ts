@@ -17,6 +17,13 @@ export const logIn = async(
                     username
                     email
                     contactNumber
+                    businessProfile {
+                        businessId
+                    }
+
+                    staffProfile {
+                        staffId
+                    }
                 }
             }
         }

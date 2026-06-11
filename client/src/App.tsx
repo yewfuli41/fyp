@@ -7,6 +7,7 @@ import ProfilePage from "./pages/ProfilePage";
 import EditBusinessPage from "./pages/EditBusinessPage";
 import RegisterBusinessPage from "./pages/RegisterBusinessPage";
 import ServicePage from "./pages/ServicePage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function HomePage() {
   const { isLoggedIn, user, message, logout } = useAuth();
@@ -44,8 +45,10 @@ function App() {
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/register-business" element={<RegisterBusinessPage />} />
-      <Route path="/edit-business" element={<EditBusinessPage />} />
-      <Route path="/services" element={<ServicePage />} />
+      <Route element={<ProtectedRoute role="OWNER" />}>
+        <Route path="/edit-business" element={<EditBusinessPage />} />
+        <Route path="/services" element={<ServicePage />} />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

@@ -32,7 +32,7 @@ func (p ServiceParam) Validate() error {
 	var validationErrs errs.ValidationErrors
 
 	if strings.TrimSpace(p.ServiceName) == "" {
-		validationErrs = append(validationErrs, errs.ValidationError{Field: "serviceName", Message: "service name is required"})
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "serviceName", Message: "Service name is required"})
 	} else if e, ok := maxLengthError("serviceName", "service name", p.ServiceName, maxServiceNameLength); ok {
 		validationErrs = append(validationErrs, e)
 	}

@@ -30,10 +30,10 @@ var _ = Describe("AuthParam", func() {
 				Expect(err).To(BeAssignableToTypeOf(vErrs))
 				vErrs = err.(errs.ValidationErrors)
 				Expect(vErrs).To(HaveLen(4))
-				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "username", Message: "username is required"}))
-				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "email", Message: "email is required"}))
-				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "contactNumber", Message: "contact number is required"}))
-				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "password", Message: "password is required"}))
+				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "username", Message: "Username is required"}))
+				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "email", Message: "Email is required"}))
+				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "contactNumber", Message: "Contact number is required"}))
+				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "password", Message: "Password is required"}))
 			})
 
 			It("returns error for invalid email format", func() {
@@ -45,7 +45,7 @@ var _ = Describe("AuthParam", func() {
 				}
 				err := p.ValidateSignUp()
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(ContainElement(errs.ValidationError{Field: "email", Message: "email format is invalid"}))
+				Expect(err).To(ContainElement(errs.ValidationError{Field: "email", Message: "Email format is invalid"}))
 			})
 
 			It("returns error for short password", func() {
@@ -57,7 +57,7 @@ var _ = Describe("AuthParam", func() {
 				}
 				err := p.ValidateSignUp()
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(ContainElement(errs.ValidationError{Field: "password", Message: "password must be at least 8 characters"}))
+				Expect(err).To(ContainElement(errs.ValidationError{Field: "password", Message: "Password must be at least 8 characters"}))
 			})
 
 			It("returns error for short contact number", func() {
@@ -69,7 +69,7 @@ var _ = Describe("AuthParam", func() {
 				}
 				err := p.ValidateSignUp()
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(ContainElement(errs.ValidationError{Field: "contactNumber", Message: "contact number must have at least 10 digits"}))
+				Expect(err).To(ContainElement(errs.ValidationError{Field: "contactNumber", Message: "Contact number must have at least 10 digits"}))
 			})
 		})
 	})
@@ -93,8 +93,8 @@ var _ = Describe("AuthParam", func() {
 				Expect(err).To(BeAssignableToTypeOf(vErrs))
 				vErrs = err.(errs.ValidationErrors)
 				Expect(vErrs).To(HaveLen(2))
-				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "email", Message: "email is required"}))
-				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "password", Message: "password is required"}))
+				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "email", Message: "Email is required"}))
+				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "password", Message: "Password is required"}))
 			})
 		})
 	})

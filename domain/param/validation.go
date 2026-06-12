@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"fyp/domain/errs"
 	"regexp"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -28,10 +29,21 @@ var emailRegex = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
 // The boolean reports whether the value was too long.
 func maxLengthError(field, label, value string, max int) (errs.ValidationError, bool) {
 	if utf8.RuneCountInString(value) > max {
+		capitalizedLabel := capitalizeFirst(label)
 		return errs.ValidationError{
 			Field:   field,
-			Message: fmt.Sprintf("%s must be at most %d characters", label, max),
+			Message: fmt.Sprintf("%s must be at most %d characters", capitalizedLabel, max),
 		}, true
 	}
 	return errs.ValidationError{}, false
+}
+
+// capitalizeFirst capitalizes the first character of a string.
+func capitalizeFirst(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	r := []rune(s)
+	r[0] = unicode.ToUpper(r[0])
+	return string(r)
 }

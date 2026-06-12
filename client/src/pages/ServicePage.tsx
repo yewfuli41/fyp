@@ -289,7 +289,7 @@ export default function ServicePage() {
                                             <Button variant="primary" size="sm" onClick={() => openEdit(svc)}>
                                                 Edit
                                             </Button>
-                                            <Button variant="secondary" size="sm" onClick={() => openDelete(svc)}>
+                                            <Button variant="danger" size="sm" onClick={() => openDelete(svc)}>
                                                 Delete
                                             </Button>
                                         </div>

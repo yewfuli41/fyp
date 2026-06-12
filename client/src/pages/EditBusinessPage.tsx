@@ -262,7 +262,7 @@ export default function EditBusinessPage() {
                 ))}
                 {fieldErrors.workingHours && <div className="text-danger mb-2">{fieldErrors.workingHours}</div>}
                 
-                <Button variant="secondary" onClick={handleAddWorkingHour} className="mb-4">
+                <Button variant="link" onClick={handleAddWorkingHour} className="mb-4">
                     Add Working Hour
                 </Button>
 

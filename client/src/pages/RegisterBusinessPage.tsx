@@ -161,7 +161,6 @@ export default function RegisterBusinessPage() {
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
                         isInvalid={!!fieldErrors.address}
-                        required
                     />
                     <Form.Control.Feedback type="invalid">{fieldErrors.address}</Form.Control.Feedback>
                 </Form.Group>
@@ -188,7 +187,6 @@ export default function RegisterBusinessPage() {
                         onChange={(e) => setBusinessContactNumber(e.target.value)}
                         maxLength={FIELD_LIMITS.businessContactNumber}
                         isInvalid={!!fieldErrors.businessContactNumber}
-                        required
                     />
                     <Form.Control.Feedback type="invalid">{fieldErrors.businessContactNumber}</Form.Control.Feedback>
                 </Form.Group>
@@ -201,7 +199,6 @@ export default function RegisterBusinessPage() {
                         onChange={(e) => setBusinessEmail(e.target.value)}
                         maxLength={FIELD_LIMITS.businessEmail}
                         isInvalid={!!fieldErrors.businessEmail}
-                        required
                     />
                     <Form.Control.Feedback type="invalid">{fieldErrors.businessEmail}</Form.Control.Feedback>
                 </Form.Group>

@@ -299,11 +299,11 @@ export default function ServicePage() {
                                         {svc.description || "No description"}
                                     </p>
                                     <br></br>
-                                    <h3 className="h6 fw-bold mt-3 mb-2">Service Packages</h3>
+                                    <h3 className="h6 fw-bold mt-3 mb-2 text-start">Service Packages</h3>
                                     {svc.servicePackages.length === 0 ? (
                                         <p className="text-muted mb-0">No packages</p>
                                     ) : (
-                                        <div className="d-flex flex-column gap-2">
+                                        <div className="d-flex flex-column gap-2 text-start">   
                                             {svc.servicePackages.map(pkg => (
                                                 <div key={pkg.servicePackageId}>
                                                     <div className="fw-semibold">

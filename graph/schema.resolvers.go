@@ -269,6 +269,11 @@ func (r *mutationResolver) DeleteService(ctx context.Context, serviceID string) 
 	return true, nil
 }
 
+// RegisterStaff is the resolver for the registerStaff field.
+func (r *mutationResolver) RegisterStaff(ctx context.Context, staff *model.StaffInput) (bool, error) {
+	panic(fmt.Errorf("not implemented: RegisterStaff - registerStaff"))
+}
+
 // Empty is the resolver for the _empty field.
 func (r *queryResolver) Empty(ctx context.Context) (*string, error) {
 	panic(fmt.Errorf("not implemented: Empty - _empty"))

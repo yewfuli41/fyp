@@ -197,6 +197,14 @@ type Staff struct {
 	DeletedAt          *string              `json:"deletedAt,omitempty"`
 }
 
+type StaffInput struct {
+	Name          string              `json:"name"`
+	Email         string              `json:"email"`
+	ContactNumber string              `json:"contactNumber"`
+	Position      string              `json:"position"`
+	WorkingHours  []*WorkingHourInput `json:"workingHours"`
+}
+
 type StaffWorkingHour struct {
 	StaffWorkHourID string    `json:"staffWorkHourId"`
 	StaffID         string    `json:"staffId"`

@@ -9,7 +9,9 @@ import { FIELD_LIMITS } from "../utils/fieldLimits";
 
 const DAYS_OF_WEEK = [
     "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
-];
+]
+
+const TIME_INTERVAL = 30
 
 const toTimeInputValue = (time: string): string => {
     if (!time) return "";
@@ -17,6 +19,32 @@ const toTimeInputValue = (time: string): string => {
     if (parts.length < 2) return "";
     return `${parts[0].padStart(2, "0")}:${parts[1].padStart(2, "0")}`;
 };
+
+const generateTimeArray = (minInterval: number): string[] => {
+    const array:string[] = []
+    for (let i = 0; i <24 ; i++){
+        const hour = i.toString().padStart(2, "0")
+        for (let j = 0; j < (60/minInterval); j++){
+            const minutes = (minInterval*j).toString().padStart(2, "0")
+            array.push(hour+":"+minutes)
+        }
+    }
+    return array;
+}
+
+const startTimeSlice = (endTime: string, timeArray: string[]): string[]=> {
+    const index = timeArray.indexOf(endTime)
+    if (index === -1)
+        return timeArray
+    return timeArray.slice(0, index)
+}
+
+const endTimeSlice = (startTime: string, timeArray: string[]): string[]=> {
+    const index = timeArray.indexOf(startTime)
+    if (index === -1)
+        return timeArray
+    return timeArray.slice(index+1)
+}
 
 export default function RegisterBusinessPage() {
     const navigate = useNavigate();
@@ -36,7 +64,7 @@ export default function RegisterBusinessPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState("");
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-
+    const timeArray = generateTimeArray(TIME_INTERVAL)
     useEffect(() => {
         if (!activeToken) return;
 
@@ -207,7 +235,7 @@ export default function RegisterBusinessPage() {
                 {workingHours.map((wh, index) => (
                     <React.Fragment key={index}>
                     <Row key={index} className="mb-2 align-items-end">
-                        <Col>
+                        <Col md={4}>
                             <Form.Group>
                                 <Form.Label>Day</Form.Label>
                                 <Form.Select
@@ -220,24 +248,30 @@ export default function RegisterBusinessPage() {
                                 </Form.Select>
                             </Form.Group>
                         </Col>
-                        <Col>
+                        <Col md={3}>
                             <Form.Group>
                                 <Form.Label>Start Time</Form.Label>
-                                <Form.Control
-                                    type="time"
+                                <Form.Select
                                     value={toTimeInputValue(wh.startTime)}
                                     onChange={(e) => handleWorkingHourChange(index, "startTime", e.target.value + ":00")}
-                                />
+                                >
+                                    {startTimeSlice(toTimeInputValue(wh.endTime), timeArray).map(time => (
+                                        <option key={time} value={time}>{time}</option>
+                                    ))}
+                                </Form.Select>
                             </Form.Group>
                         </Col>
-                        <Col>
+                        <Col md={3}>
                             <Form.Group>
                                 <Form.Label>End Time</Form.Label>
-                                <Form.Control
-                                    type="time"
+                                <Form.Select
                                     value={toTimeInputValue(wh.endTime)}
                                     onChange={(e) => handleWorkingHourChange(index, "endTime", e.target.value + ":00")}
-                                />
+                                >
+                                    {endTimeSlice(toTimeInputValue(wh.startTime), timeArray).map(time => (
+                                        <option key={time} value={time}>{time}</option>
+                                    ))}
+                                </Form.Select>
                             </Form.Group>
                         </Col>
                         <Col xs="auto">

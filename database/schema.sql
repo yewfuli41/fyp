@@ -58,6 +58,8 @@ CREATE TABLE IF NOT EXISTS staff (
     staff_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE REFERENCES users(user_id) ON DELETE RESTRICT,
     business_id BIGINT NOT NULL REFERENCES business_profiles(business_id) ON DELETE CASCADE,
+    staff_name VARCHAR(255) NOT NULL,
+    staff_contact_number VARCHAR(20),
     position VARCHAR(100),
     deleted_at TIMESTAMPTZ,
     UNIQUE (user_id, business_id)

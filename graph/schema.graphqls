@@ -253,6 +253,14 @@ input ServiceInput {
   servicePackages: [ServicePackageInput!]!
 }
 
+input StaffInput{
+  name: String!
+  email: String!
+  contactNumber: String!
+  position: String!
+  workingHours: [WorkingHourInput!]!
+}
+
 type Mutation {
   signUp(user: SignUpInput!): AuthPayload!
   logIn(user: LogInInput!): AuthPayload!
@@ -262,4 +270,5 @@ type Mutation {
   createService(service: ServiceInput!): Service!
   updateService(serviceId: ID!, service: ServiceInput!): Service!
   deleteService(serviceId: ID!): Boolean!
+  registerStaff(staff: StaffInput): Boolean!
 }

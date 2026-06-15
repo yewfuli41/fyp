@@ -316,7 +316,7 @@ export default function EditBusinessPage() {
                         Cancel
                     </Button>
                     <Button variant="primary" type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? "Saving..." : "Save"}
+                        {isSubmitting ? "Saving..." : "Save Changes"}
                     </Button>
                 </div>
 

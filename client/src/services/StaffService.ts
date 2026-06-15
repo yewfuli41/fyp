@@ -9,8 +9,8 @@ export interface WorkingHour {
 export interface StaffInput{
     name: string;
     email: string;
-    contactNumber: string;
-    position: string;
+    contactNumber?: string;
+    position?: string;
     workingHours: WorkingHour[];
 }
 

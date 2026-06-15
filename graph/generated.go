@@ -188,8 +188,10 @@ type ComplexityRoot struct {
 	Staff struct {
 		Business           func(childComplexity int) int
 		BusinessID         func(childComplexity int) int
+		ContactNumber      func(childComplexity int) int
 		DeletedAt          func(childComplexity int) int
 		LeaveApplications  func(childComplexity int) int
+		Name               func(childComplexity int) int
 		Position           func(childComplexity int) int
 		RecurringSchedules func(childComplexity int) int
 		ServiceSlots       func(childComplexity int) int
@@ -972,6 +974,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Staff.BusinessID(childComplexity), true
+	case "Staff.contactNumber":
+		if e.ComplexityRoot.Staff.ContactNumber == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Staff.ContactNumber(childComplexity), true
 	case "Staff.deletedAt":
 		if e.ComplexityRoot.Staff.DeletedAt == nil {
 			break
@@ -984,6 +992,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Staff.LeaveApplications(childComplexity), true
+	case "Staff.name":
+		if e.ComplexityRoot.Staff.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Staff.Name(childComplexity), true
 	case "Staff.position":
 		if e.ComplexityRoot.Staff.Position == nil {
 			break
@@ -1506,6 +1520,10 @@ func (ec *executionContext) childFields_Staff(ctx context.Context, field graphql
 		return ec.fieldContext_Staff_businessId(ctx, field)
 	case "business":
 		return ec.fieldContext_Staff_business(ctx, field)
+	case "name":
+		return ec.fieldContext_Staff_name(ctx, field)
+	case "contactNumber":
+		return ec.fieldContext_Staff_contactNumber(ctx, field)
 	case "position":
 		return ec.fieldContext_Staff_position(ctx, field)
 	case "workingHours":
@@ -5028,6 +5046,52 @@ func (ec *executionContext) fieldContext_Staff_business(_ context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Staff_name(ctx context.Context, field graphql.CollectedField, obj *model.Staff) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Staff_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Staff_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Staff", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Staff_contactNumber(ctx context.Context, field graphql.CollectedField, obj *model.Staff) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Staff_contactNumber(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ContactNumber, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Staff_contactNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Staff", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _Staff_position(ctx context.Context, field graphql.CollectedField, obj *model.Staff) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -8118,6 +8182,16 @@ func (ec *executionContext) _Staff(ctx context.Context, sel ast.SelectionSet, ob
 			}
 		case "business":
 			out.Values[i] = ec._Staff_business(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Staff_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "contactNumber":
+			out.Values[i] = ec._Staff_contactNumber(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

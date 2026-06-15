@@ -7,6 +7,7 @@ import ProfilePage from "./pages/ProfilePage";
 import EditBusinessPage from "./pages/EditBusinessPage";
 import RegisterBusinessPage from "./pages/RegisterBusinessPage";
 import ServicePage from "./pages/ServicePage";
+import RegisterStaffPage from "./pages/RegisterStaffPage"
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function HomePage() {
@@ -50,6 +51,7 @@ function App() {
       <Route element={<ProtectedRoute roles={["OWNER"]} />}>
         <Route path="/edit-business" element={<EditBusinessPage />} />
         <Route path="/services" element={<ServicePage />} />
+        <Route path="/register-staff" element={<RegisterStaffPage/>}/>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

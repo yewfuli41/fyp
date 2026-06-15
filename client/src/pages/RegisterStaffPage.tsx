@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Alert, Button, Container, Form, Spinner, Row, Col } from "react-bootstrap";
+import { Alert, Button, Container, Form, Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import saveIcon from "../assets/save.jpg";
 import { useAuth } from "../auth/AuthContext";
 import { userProfile } from "../services/ProfileService";
-import { updateBusinessProfile, type BusinessProfileInput, type WorkingHour } from "../services/BusinessService";
+import { registerStaff, type StaffInput, type WorkingHour } from "../services/StaffService";
 import { applyGraphQLErrors } from "../utils/graphqlErrors";
 import { FIELD_LIMITS } from "../utils/fieldLimits";
 
 const DAYS_OF_WEEK = [
     "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
-];
+]
 
 const TIME_INTERVAL = 30
 
@@ -20,7 +19,6 @@ const toTimeInputValue = (time: string): string => {
     if (parts.length < 2) return "";
     return `${parts[0].padStart(2, "0")}:${parts[1].padStart(2, "0")}`;
 };
-
 
 const generateTimeArray = (minInterval: number): string[] => {
     const array: string[] = []
@@ -48,79 +46,56 @@ const endTimeSlice = (startTime: string, timeArray: string[]): string[] => {
     return timeArray.slice(index + 1)
 }
 
-export default function EditBusinessPage() {
+export default function RegisterStaffPage() {
     const navigate = useNavigate();
-    const { token } = useAuth();
+    const { token, login } = useAuth();
     const activeToken = token ?? localStorage.getItem("token");
 
-    const [businessName, setBusinessName] = useState("");
-    const [description, setDescription] = useState("");
-    const [address, setAddress] = useState("");
-    const [imageUrl, setImageUrl] = useState("");
-    const [businessContactNumber, setBusinessContactNumber] = useState("");
-    const [businessEmail, setBusinessEmail] = useState("");
-    const [workingHours, setWorkingHours] = useState<WorkingHour[]>([]);
+    const [staffName, setStaffName] = useState("");
+    const [staffEmail, setStaffEmail] = useState("");
+    const [staffContactNumber, setStaffContactNumber] = useState("");
+    const [position, setPosition] = useState("")
+    const [businessWorkingHours, setBusinessWorkingHours] = useState<WorkingHour[]>([])
+    const [staffWorkingHours, setStaffWorkingHours] = useState<WorkingHour[]>([
+        { day: "monday", startTime: "09:00:00", endTime: "18:00:00" }
+    ]);
 
-    const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState("");
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const [successMessage, setSuccessMessage] = useState("");
     const timeArray = generateTimeArray(TIME_INTERVAL)
+
     useEffect(() => {
         if (!activeToken) return;
 
-        const fetchBusinessData = async () => {
+        const checkExistingBusiness = async () => {
             try {
                 const result = await userProfile(activeToken);
                 if (result.data?.userProfile?.businessProfile) {
-                    const bp = result.data.userProfile.businessProfile;
-                    setBusinessName(bp.businessName);
-                    setDescription(bp.description || "");
-                    setAddress(bp.address || "");
-                    setImageUrl(bp.imageUrl || "");
-                    setBusinessContactNumber(bp.businessContactNumber || "");
-                    setBusinessEmail(bp.businessEmail || "");
-                    setWorkingHours(bp.workingHours.map((wh: any) => ({
-                        day: wh.day.toLowerCase(),
-                        startTime: wh.startTime.split("T")[1]?.slice(0, 8) ?? "09:00:00",
-                        endTime: wh.endTime.split("T")[1]?.slice(0, 8) ?? "18:00:00"
-                    })));
-                } else {
-                    navigate("/register-business");
+                    const businessWorkingHours = result.data.userProfile.businessProfile.workingHours
+                    setBusinessWorkingHours(businessWorkingHours)
                 }
-            } catch {
-                setFormError("Failed to load business data.");
-            } finally {
-                setIsLoading(false);
+            } catch (err) {
+                console.error("Failed to check existing business:", err);
             }
         };
 
-        fetchBusinessData();
+        checkExistingBusiness();
     }, [activeToken, navigate]);
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImageUrl(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
     const handleAddWorkingHour = () => {
-        setWorkingHours([...workingHours, { day: "monday", startTime: "09:00:00", endTime: "18:00:00" }]);
+        setStaffWorkingHours([...staffWorkingHours, { day: "monday", startTime: "09:00:00", endTime: "18:00:00" }]);
     };
 
     const handleRemoveWorkingHour = (index: number) => {
-        setWorkingHours(workingHours.filter((_, i) => i !== index));
+        setStaffWorkingHours(staffWorkingHours.filter((_, i) => i !== index));
     };
 
     const handleWorkingHourChange = (index: number, field: keyof WorkingHour, value: string) => {
-        const newWorkingHours = [...workingHours];
+        const newWorkingHours = [...staffWorkingHours];
         newWorkingHours[index] = { ...newWorkingHours[index], [field]: value };
-        setWorkingHours(newWorkingHours);
+        setStaffWorkingHours(newWorkingHours);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -131,25 +106,41 @@ export default function EditBusinessPage() {
         setFormError("");
         setFieldErrors({});
 
-        const input: BusinessProfileInput = {
-            businessName,
-            description: description || undefined,
-            address,
-            imageUrl: imageUrl || undefined,
-            businessContactNumber,
-            businessEmail,
-            workingHours
+        const input: StaffInput = {
+            name: staffName,
+            email: staffEmail,
+            contactNumber: staffContactNumber || undefined,
+            position,
+            workingHours: staffWorkingHours,
         };
 
         try {
-            const result = await updateBusinessProfile(activeToken, input);
+            const result = await registerStaff(activeToken, input);
             if (applyGraphQLErrors(result, {
                 setFieldErrors,
                 setFormError,
-                fallbackMessage: "Failed to update business profile",
+                fallbackMessage: "Failed to register staff",
             })) return;
 
-            navigate("/profile");
+            const profileResult = await userProfile(activeToken);
+            const profile = profileResult.data?.userProfile;
+
+            if (profile) {
+                login(activeToken, {
+                    userId: Number(profile.userId),
+                    username: profile.username,
+                    email: profile.email,
+                    contactNumber: profile.contactNumber,
+                    businessProfile: profile.businessProfile,
+                    staffProfile: profile.staffProfile,
+                });
+            }
+            setSuccessMessage("✓ Staff registered successfully")
+            setStaffName("");
+            setStaffEmail("");
+            setStaffContactNumber("");
+            setStaffWorkingHours([{ day: "monday", startTime: "09:00:00", endTime: "18:00:00" }]);
+            setPosition("");
         } catch {
             setFormError("Something went wrong. Please try again.");
         } finally {
@@ -157,102 +148,62 @@ export default function EditBusinessPage() {
         }
     };
 
-    if (isLoading) {
-        return (
-            <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: "50vh" }}>
-                <Spinner animation="border" variant="primary" />
-            </Container>
-        );
-    }
-
     return (
         <Container className="py-5">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <Button variant="link" onClick={() => navigate(-1)}>
-                    <span style={{ fontSize: "1.3rem" }}>&larr; Back</span>
-                </Button>
-                <h1 className="mb-0">Edit Business Profile</h1>
-                <Button variant="link" type="submit" form="edit-business-form" disabled={isSubmitting} className="p-0">
-                    <img src={saveIcon} alt="Save" style={{ width: "55px", height: "55px", objectFit: "contain" }} />
-                    <span style={{ fontSize: "1.3rem" }}>Save</span>
-                </Button>
-            </div>
+            <h1>Register Staff</h1>
             {formError && <Alert variant="danger">{formError}</Alert>}
-
-            <Form id="edit-business-form" onSubmit={handleSubmit}>
+            {successMessage && <Alert variant="success">{successMessage}</Alert>}
+            <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
-                    <Form.Label>Business Name</Form.Label>
+                    <Form.Label>Name</Form.Label>
                     <Form.Control
                         type="text"
-                        value={businessName}
-                        onChange={(e) => setBusinessName(e.target.value)}
-                        maxLength={FIELD_LIMITS.businessName}
-                        isInvalid={!!fieldErrors.businessName}
+                        value={staffName}
+                        onChange={(e) => setStaffName(e.target.value)}
+                        maxLength={FIELD_LIMITS.staffName}
+                        isInvalid={!!fieldErrors.staffName}
                     />
-                    <Form.Control.Feedback type="invalid">{fieldErrors.businessName}</Form.Control.Feedback>
+                    <Form.Control.Feedback type="invalid">{fieldErrors.staffName}</Form.Control.Feedback>
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                    <Form.Label>Description</Form.Label>
-                    <Form.Control
-                        as="textarea"
-                        rows={3}
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                    />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                    <Form.Label>Address</Form.Label>
+                    <Form.Label>Email</Form.Label>
                     <Form.Control
                         type="text"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        isInvalid={!!fieldErrors.address}
+                        value={staffEmail}
+                        onChange={(e) => setStaffEmail(e.target.value)}
+                        maxLength={FIELD_LIMITS.email}
+                        isInvalid={!!fieldErrors.staffEmail}
                     />
-                    <Form.Control.Feedback type="invalid">{fieldErrors.address}</Form.Control.Feedback>
+                    <Form.Control.Feedback type="invalid">{fieldErrors.staffEmail}</Form.Control.Feedback>
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                    <Form.Label>Business Image</Form.Label>
-                    <Form.Control
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                    />
-                    {imageUrl && (
-                        <div className="mt-2">
-                            <img src={imageUrl} alt="Preview" style={{ maxWidth: "200px", maxHeight: "200px" }} />
-                        </div>
-                    )}
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                    <Form.Label>Business Contact Number</Form.Label>
+                    <Form.Label>Contact Number</Form.Label>
                     <Form.Control
                         type="text"
-                        value={businessContactNumber}
-                        onChange={(e) => setBusinessContactNumber(e.target.value)}
-                        maxLength={FIELD_LIMITS.businessContactNumber}
-                        isInvalid={!!fieldErrors.businessContactNumber}
+                        value={staffContactNumber}
+                        onChange={(e) => setStaffContactNumber(e.target.value)}
+                        maxLength={FIELD_LIMITS.staffContactNumber}
+                        isInvalid={!!fieldErrors.staffContactNumber}
                     />
-                    <Form.Control.Feedback type="invalid">{fieldErrors.businessContactNumber}</Form.Control.Feedback>
+                    <Form.Control.Feedback type="invalid">{fieldErrors.staffContactNumber}</Form.Control.Feedback>
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                    <Form.Label>Business Email</Form.Label>
+                    <Form.Label>Position</Form.Label>
                     <Form.Control
-                        type="email"
-                        value={businessEmail}
-                        onChange={(e) => setBusinessEmail(e.target.value)}
-                        maxLength={FIELD_LIMITS.businessEmail}
-                        isInvalid={!!fieldErrors.businessEmail}
+                        type="text"
+                        value={position}
+                        onChange={(e) => setPosition(e.target.value)}
+                        maxLength={FIELD_LIMITS.position}
+                        isInvalid={!!fieldErrors.position}
                     />
-                    <Form.Control.Feedback type="invalid">{fieldErrors.businessEmail}</Form.Control.Feedback>
+                    <Form.Control.Feedback type="invalid">{fieldErrors.position}</Form.Control.Feedback>
                 </Form.Group>
 
                 <h3 className="mt-4">Working Hours</h3>
-                {workingHours.map((wh, index) => (
+                {staffWorkingHours.map((wh, index) => (
                     <React.Fragment key={index}>
                         <Row key={index} className="mb-2 align-items-end">
                             <Col md={4}>
@@ -316,10 +267,9 @@ export default function EditBusinessPage() {
                         Cancel
                     </Button>
                     <Button variant="primary" type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? "Saving..." : "Save"}
+                        {isSubmitting ? "Registering..." : "Register Staff"}
                     </Button>
                 </div>
-
             </Form>
         </Container>
     );

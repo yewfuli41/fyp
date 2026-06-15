@@ -11,4 +11,7 @@ export const FIELD_LIMITS = {
     serviceName: 255,
     servicePackageName: 255,
     packageItemName: 255,
+    staffName: 255,
+    staffContactNumber: 30,
+    position: 100,
 } as const;

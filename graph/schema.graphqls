@@ -110,6 +110,8 @@ type Staff {
   user: User!
   businessId: ID!
   business: BusinessProfile!
+  name: String!
+  contactNumber: String!
   position: String
   workingHours: [StaffWorkingHour!]!
   leaveApplications: [LeaveApplication!]!

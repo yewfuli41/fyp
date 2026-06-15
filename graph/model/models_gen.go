@@ -189,6 +189,8 @@ type Staff struct {
 	User               *User                `json:"user"`
 	BusinessID         string               `json:"businessId"`
 	Business           *BusinessProfile     `json:"business"`
+	Name               string               `json:"name"`
+	ContactNumber      string               `json:"contactNumber"`
 	Position           *string              `json:"position,omitempty"`
 	WorkingHours       []*StaffWorkingHour  `json:"workingHours"`
 	LeaveApplications  []*LeaveApplication  `json:"leaveApplications"`

@@ -70,6 +70,30 @@ func (p BusinessProfileParam) ValidateRegisterBusinessProfile() error {
 		}
 	}
 
+	byDay := make(map[string][]int)
+	for i, wh := range p.WorkingHours {
+		byDay[wh.Day] = append(byDay[wh.Day], i)
+	}
+	overlapping := make(map[int]bool)
+	for _, indices := range byDay {
+		for i := 0; i < len(indices); i++ {
+			for j := i + 1; j < len(indices); j++ {
+				a := p.WorkingHours[indices[i]]
+				b := p.WorkingHours[indices[j]]
+				if a.StartTime.Before(b.EndTime) && b.StartTime.Before(a.EndTime) {
+					overlapping[indices[i]] = true
+					overlapping[indices[j]] = true
+				}
+			}
+		}
+	}
+	for i := range overlapping {
+		validationErrs = append(validationErrs, errs.ValidationError{
+			Field:   fmt.Sprintf("workingHours[%d]", i),
+			Message: "Working hours overlap with another entry on the same day",
+		})
+	}
+
 	if len(validationErrs) > 0 {
 		return validationErrs
 	}

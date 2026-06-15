@@ -28,3 +28,6 @@ mock:
 .PHONY: database
 database:
 	psql -U $(DB_USER) -d fyp -p 5433
+
+database-wsl:
+	sudo -u postgres psql -d fyp -p 5433

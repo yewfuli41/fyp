@@ -47,7 +47,7 @@ export default function ServicePage() {
     const [deletingService, setDeletingService] = useState<Service | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState("");
-
+    const [search, setSearch] = useState("");
     const fetchServices = useCallback(async () => {
         if (!activeToken) return;
         try {
@@ -229,6 +229,25 @@ export default function ServicePage() {
         }
     };
 
+    const filteredServices = services.filter(svc => {
+        const searchText = search.toLowerCase();
+
+        return (
+            svc.serviceName.toLowerCase().includes(searchText) ||
+
+            svc.servicePackages.some(pkg =>
+                pkg.servicePackageName
+                    .toLowerCase()
+                    .includes(searchText) ||
+
+                pkg.packageItems.some(item =>
+                    item.packageItemName
+                        .toLowerCase()
+                        .includes(searchText)
+                )
+            )
+        );
+    });
     // ── Render ─────────────────────────────────────────────────────────────────
 
     if (isLoading) {
@@ -263,23 +282,28 @@ export default function ServicePage() {
                 &larr; Back
             </Button>
 
-            <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-                <h1 className="mb-2 fs-1">Services</h1>
-                <div className="d-flex gap-2">
-                    <Button variant="primary" onClick={openAdd}>Add Service</Button>
-                    <Button variant="outline-secondary" onClick={() => navigate("/service-slots")}>
-                        Manage Service Slots
-                    </Button>
-                </div> 
+            <h1 className="mb-2 fs-1 text-start">Services</h1>
+            <div className="d-flex align-items-center gap-2 mb-4">
+                <Button variant="primary" onClick={openAdd}>Add Service</Button>
+                <Button variant="outline-secondary" onClick={() => navigate("/service-slots")}>
+                    Manage Service Slots
+                </Button>
+                <Form.Control
+                    type="text"
+                    placeholder="Search services and packages..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    style={{ width: "300px" }}
+                />
             </div>
 
             {pageError && <Alert variant="danger">{pageError}</Alert>}
 
-            {services.length === 0 ? (
+            {filteredServices.length === 0 ? (
                 <Alert variant="info" style={{ maxWidth: 1200 }}>No services yet. Click "Add Service" to get started.</Alert>
             ) : (
                 <Row className="g-4">
-                    {services.map(svc => (
+                    {filteredServices.map(svc => (
                         <Col key={svc.serviceId} md={6}>
                             <Card className="shadow-sm h-100">
                                 <Card.Body className="p-4">

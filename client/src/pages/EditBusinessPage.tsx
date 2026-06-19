@@ -82,6 +82,7 @@ export default function EditBusinessPage() {
         const newWorkingHours = [...workingHours];
         newWorkingHours[index] = { ...newWorkingHours[index], [field]: value };
         setWorkingHours(newWorkingHours);
+        setFieldErrors(prev => ({ ...prev, [`workingHours[${index}]`]: "" }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -146,7 +147,10 @@ export default function EditBusinessPage() {
                     <Form.Control
                         type="text"
                         value={businessName}
-                        onChange={(e) => setBusinessName(e.target.value)}
+                        onChange={(e) => {
+                            setBusinessName(e.target.value);
+                            setFieldErrors(prev => ({ ...prev, businessName: "" }));
+                        }}
                         maxLength={FIELD_LIMITS.businessName}
                         isInvalid={!!fieldErrors.businessName}
                     />
@@ -168,7 +172,10 @@ export default function EditBusinessPage() {
                     <Form.Control
                         type="text"
                         value={address}
-                        onChange={(e) => setAddress(e.target.value)}
+                        onChange={(e) => {
+                            setAddress(e.target.value);
+                            setFieldErrors(prev => ({ ...prev, address: "" }));
+                        }}
                         isInvalid={!!fieldErrors.address}
                     />
                     <Form.Control.Feedback type="invalid">{fieldErrors.address}</Form.Control.Feedback>
@@ -193,7 +200,10 @@ export default function EditBusinessPage() {
                     <Form.Control
                         type="text"
                         value={businessContactNumber}
-                        onChange={(e) => setBusinessContactNumber(e.target.value)}
+                        onChange={(e) => {
+                            setBusinessContactNumber(e.target.value);
+                            setFieldErrors(prev => ({ ...prev, businessContactNumber: "" }));
+                        }}
                         maxLength={FIELD_LIMITS.businessContactNumber}
                         isInvalid={!!fieldErrors.businessContactNumber}
                     />
@@ -205,7 +215,10 @@ export default function EditBusinessPage() {
                     <Form.Control
                         type="email"
                         value={businessEmail}
-                        onChange={(e) => setBusinessEmail(e.target.value)}
+                        onChange={(e) => {
+                            setBusinessEmail(e.target.value);
+                            setFieldErrors(prev => ({ ...prev, businessEmail: "" }));
+                        }}
                         maxLength={FIELD_LIMITS.businessEmail}
                         isInvalid={!!fieldErrors.businessEmail}
                     />

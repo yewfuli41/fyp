@@ -1,0 +1,39 @@
+type BusinessProfile {
+  businessId: ID!
+  ownerUserId: ID!
+  owner: User!
+  businessName: String!
+  description: String
+  address: String!
+  imageUrl: String
+  businessContactNumber: String!
+  businessEmail: String!
+  workingHours: [BusinessWorkingHour!]!
+  services: [Service!]!
+  staff: [Staff!]!
+}
+
+type BusinessWorkingHour {
+  businessWorkHourId: ID!
+  businessId: ID!
+  business: BusinessProfile!
+  day: DayOfWeek!
+  startTime: Time!
+  endTime: Time!
+  deletedAt: DateTime
+}
+
+input BusinessProfileInput {
+  businessName: String!
+  description: String
+  address: String!
+  imageUrl: String
+  businessContactNumber: String!
+  businessEmail: String!
+  workingHours: [WorkingHourInput!]!
+}
+
+extend type Mutation {
+  registerBusinessProfile(business: BusinessProfileInput!): BusinessProfile!
+  updateBusinessProfile(business: BusinessProfileInput!): BusinessProfile!
+}

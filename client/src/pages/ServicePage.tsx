@@ -55,7 +55,7 @@ export default function ServicePage() {
             if (result.errors?.length) {
                 setPageError(result.errors[0].message);
             } else {
-                setServices(result.data?.businessServices ?? []);
+                setServices(result.data?.displayServices ?? []);
             }
         } catch {
             setPageError("Failed to load services.");
@@ -283,11 +283,13 @@ export default function ServicePage() {
             </Button>
 
             <h1 className="mb-2 fs-1 text-start">Services</h1>
-            <div className="d-flex align-items-center gap-2 mb-4">
-                <Button variant="primary" onClick={openAdd}>Add Service</Button>
-                <Button variant="outline-secondary" onClick={() => navigate("/service-slots")}>
-                    Manage Service Slots
-                </Button>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <div className="d-flex gap-2">
+                    <Button variant="primary" onClick={openAdd}>Add Service</Button>
+                    <Button variant="outline-secondary" onClick={() => navigate("/service-slots")}>
+                        Manage Service Slots
+                    </Button>
+                </div>
                 <Form.Control
                     type="text"
                     placeholder="Search services and packages..."
@@ -370,7 +372,10 @@ export default function ServicePage() {
                             <Form.Control
                                 type="text"
                                 value={formInput.serviceName}
-                                onChange={e => setFormInput(prev => ({ ...prev, serviceName: e.target.value }))}
+                                onChange={e => {
+                                    setFormInput(prev => ({ ...prev, serviceName: e.target.value }));
+                                    setFieldErrors(prev => ({ ...prev, serviceName: "" }));
+                                }}
                                 maxLength={FIELD_LIMITS.serviceName}
                                 isInvalid={!!fieldErrors.serviceName}
                             />
@@ -420,7 +425,9 @@ export default function ServicePage() {
                                         value={pkg.servicePackageName}
                                         onChange={e => updatePackage(pkgIdx, "servicePackageName", e.target.value)}
                                         maxLength={FIELD_LIMITS.servicePackageName}
+                                        isInvalid={!!fieldErrors.servicePackageName}
                                     />
+                                     <Form.Control.Feedback type="invalid">{fieldErrors.servicePackageName}</Form.Control.Feedback>
                                 </Form.Group>
 
                                 <Form.Group className="mb-3">
@@ -447,6 +454,7 @@ export default function ServicePage() {
                                             value={item.packageItemName}
                                             onChange={e => updateItem(pkgIdx, itemIdx, e.target.value)}
                                             maxLength={FIELD_LIMITS.packageItemName}
+                                            isInvalid={!!fieldErrors.packageItemName}
                                         />
                                         {pkg.packageItems.length > 1 && (
                                             <Button
@@ -457,6 +465,7 @@ export default function ServicePage() {
                                                 ✕
                                             </Button>
                                         )}
+                                        <Form.Control.Feedback type="invalid">{fieldErrors.packageItemName}</Form.Control.Feedback>
                                     </div>
                                 ))}
                             </div>

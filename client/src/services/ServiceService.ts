@@ -65,12 +65,12 @@ const serializeInput = (service: ServiceInput): string => `{
 export const getBusinessServices = async (token: string) => {
     const query = `
         query {
-            businessServices {
+            displayServices {
                 ${SERVICE_FIELDS}
             }
         }
     `;
-    return await doGraphQL<{ businessServices: Service[] }>(query, token);
+    return await doGraphQL<{ displayServices: Service[] }>(query, token);
 };
 
 export const createService = async (token: string, service: ServiceInput) => {

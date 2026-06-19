@@ -1,0 +1,55 @@
+type Service {
+  serviceId: ID!
+  businessId: ID!
+  business: BusinessProfile!
+  serviceName: String!
+  description: String
+  servicePackages: [ServicePackage!]!
+  deletedAt: DateTime
+}
+
+type ServicePackage {
+  servicePackageId: ID!
+  serviceId: ID!
+  service: Service!
+  servicePackageName: String!
+  description: String
+  packageItems: [PackageItem!]!
+  serviceSlotPackages: [ServiceSlotPackage!]!
+  recurringSchedules: [RecurringSchedule!]!
+  deletedAt: DateTime
+}
+
+type PackageItem {
+  packageItemId: ID!
+  servicePackageId: ID!
+  servicePackage: ServicePackage!
+  packageItemName: String!
+  deletedAt: DateTime
+}
+
+input PackageItemInput {
+  packageItemName: String!
+}
+
+input ServicePackageInput {
+  servicePackageName: String!
+  description: String
+  packageItems: [PackageItemInput!]!
+}
+
+input ServiceInput {
+  serviceName: String!
+  description: String
+  servicePackages: [ServicePackageInput!]!
+}
+
+extend type Query {
+  displayServices: [Service!]!
+}
+
+extend type Mutation {
+  createService(service: ServiceInput!): Service!
+  updateService(serviceId: ID!, service: ServiceInput!): Service!
+  deleteService(serviceId: ID!): Boolean!
+}

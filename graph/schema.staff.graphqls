@@ -1,0 +1,52 @@
+type Staff {
+  staffId: ID!
+  userId: ID!
+  user: User!
+  businessId: ID!
+  business: BusinessProfile!
+  name: String!
+  contactNumber: String!
+  position: String
+  workingHours: [StaffWorkingHour!]!
+  leaveApplications: [LeaveApplication!]!
+  serviceSlots: [ServiceSlot!]!
+  recurringSchedules: [RecurringSchedule!]!
+  deletedAt: DateTime
+}
+
+type StaffWorkingHour {
+  staffWorkHourId: ID!
+  staffId: ID!
+  staff: Staff!
+  day: DayOfWeek!
+  startTime: Time!
+  endTime: Time!
+  deletedAt: DateTime
+}
+
+type LeaveApplication {
+  leaveId: ID!
+  staffId: ID!
+  staff: Staff!
+  startDate: Date!
+  endDate: Date!
+  justification: String
+  fileUrl: String
+  status: LeaveStatus!
+  remark: String
+  decidedAt: DateTime
+  deletedAt: DateTime
+  createdAt: DateTime!
+}
+
+input StaffInput{
+  name: String!
+  email: String!
+  contactNumber: String!
+  position: String!
+  workingHours: [WorkingHourInput!]!
+}
+
+extend type Mutation {
+  registerStaff(staff: StaffInput): Boolean!
+}

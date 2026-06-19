@@ -65,7 +65,6 @@ export default function LogInPage() {
         businessProfile: payload.user.businessProfile,
         staffProfile: payload.user.staffProfile,
       });
-      console.log(payload.user);
       navigate("/");
     } catch {
       setFormError("Something went wrong. Please try again.");
@@ -87,7 +86,10 @@ export default function LogInPage() {
             <Form.Control
               type="text"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setFieldErrors(prev => ({ ...prev, email: "" }));
+              }}
               isInvalid={!!fieldErrors.email}
             />
             <Form.Control.Feedback type="invalid">
@@ -99,7 +101,10 @@ export default function LogInPage() {
             controlId="password"
             label="Password"
             value={password}
-            onChange={setPassword}
+            onChange={(v) => {
+              setPassword(v);
+              setFieldErrors(prev => ({ ...prev, password: "" }));
+            }}
             isInvalid={!!fieldErrors.password}
             errorMessage={fieldErrors.password}
             className="mb-4"

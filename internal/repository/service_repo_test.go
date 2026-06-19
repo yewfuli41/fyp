@@ -169,6 +169,60 @@ var _ = Describe("ServiceRepo", func() {
 		})
 	})
 
+	Describe("GetServicePackagesByServiceID", func() {
+		It("returns packages for a service", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_package_id, service_id, service_package_name, description FROM service_packages")).
+				WithArgs(int64(10)).
+				WillReturnRows(sqlmock.NewRows(pkgCols).
+					AddRow(20, 10, "Deep Tissue", nil).
+					AddRow(21, 10, "Swedish", nil))
+
+			results, err := repo.GetServicePackagesByServiceID(ctx, 10)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(results).To(HaveLen(2))
+			Expect(results[0].ServicePackageID).To(Equal(int64(20)))
+		})
+
+		It("returns empty slice when no packages exist", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_package_id, service_id, service_package_name, description FROM service_packages")).
+				WithArgs(int64(99)).
+				WillReturnRows(sqlmock.NewRows(pkgCols))
+
+			results, err := repo.GetServicePackagesByServiceID(ctx, 99)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(results).To(BeEmpty())
+		})
+	})
+
+	Describe("GetPackageItemsByPackageID", func() {
+		It("returns items for a package", func() {
+			itemCols := []string{"package_item_id", "service_package_id", "package_item_name"}
+
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT package_item_id, service_package_id, package_item_name FROM package_items")).
+				WithArgs(int64(20)).
+				WillReturnRows(sqlmock.NewRows(itemCols).
+					AddRow(1, 20, "Oil").
+					AddRow(2, 20, "Lotion"))
+
+			results, err := repo.GetPackageItemsByPackageID(ctx, 20)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(results).To(HaveLen(2))
+			Expect(results[0].PackageItemName).To(Equal("Oil"))
+		})
+
+		It("returns empty slice when no items exist", func() {
+			itemCols := []string{"package_item_id", "service_package_id", "package_item_name"}
+
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT package_item_id, service_package_id, package_item_name FROM package_items")).
+				WithArgs(int64(99)).
+				WillReturnRows(sqlmock.NewRows(itemCols))
+
+			results, err := repo.GetPackageItemsByPackageID(ctx, 99)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(results).To(BeEmpty())
+		})
+	})
+
 	Describe("HasBookingForService", func() {
 		It("returns true if bookings exist", func() {
 			mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*)")).

@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
 	"fyp/internal/interfaces/mocks"
@@ -105,9 +106,40 @@ var _ = Describe("ServiceService", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(result).To(BeNil())
 		})
+
+		It("rolls back when InsertService fails", func() {
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().
+				InsertService(ctx, mock.AnythingOfType("*sql.Tx"), serviceParam).
+				Return(nil, fmt.Errorf("insert error")).
+				Once()
+			dbMock.ExpectRollback()
+
+			result, err := serviceSvc.CreateService(ctx, serviceParam)
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError("insert error"))
+		})
+
+		It("rolls back when InsertServicePackage fails", func() {
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().
+				InsertService(ctx, mock.AnythingOfType("*sql.Tx"), serviceParam).
+				Return(createdSvc, nil).
+				Once()
+			serviceRepo.EXPECT().
+				InsertServicePackage(ctx, mock.AnythingOfType("*sql.Tx"), mock.Anything).
+				Return(nil, fmt.Errorf("pkg error")).
+				Once()
+			dbMock.ExpectRollback()
+
+			result, err := serviceSvc.CreateService(ctx, serviceParam)
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError("pkg error"))
+		})
 	})
 
 	Describe("UpdateService", func() {
+
 		var (
 			serviceParam param.ServiceParam
 			updatedSvc   *param.ServiceParam
@@ -167,6 +199,21 @@ var _ = Describe("ServiceService", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.ServiceName).To(Equal("Updated Massage"))
 		})
+
+		It("rolls back when DeleteServicePackagesByServiceID fails", func() {
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().
+				UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), serviceParam).
+				Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().
+				DeleteServicePackagesByServiceID(ctx, mock.AnythingOfType("*sql.Tx"), int64(10)).
+				Return(fmt.Errorf("delete pkg error")).Once()
+			dbMock.ExpectRollback()
+
+			result, err := serviceSvc.UpdateService(ctx, serviceParam)
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError("delete pkg error"))
+		})
 	})
 
 	Describe("DeleteService", func() {
@@ -186,6 +233,13 @@ var _ = Describe("ServiceService", func() {
 			err := serviceSvc.DeleteService(ctx, 10, 1)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("booking exists"))
+		})
+
+		It("returns error when HasBookingForService fails", func() {
+			serviceRepo.EXPECT().HasBookingForService(ctx, int64(10)).Return(false, fmt.Errorf("db error")).Once()
+
+			err := serviceSvc.DeleteService(ctx, 10, 1)
+			Expect(err).To(MatchError("db error"))
 		})
 	})
 
@@ -211,6 +265,24 @@ var _ = Describe("ServiceService", func() {
 			Expect(result).To(HaveLen(1))
 			Expect(result[0].ServicePackages).To(HaveLen(1))
 			Expect(result[0].ServicePackages[0].PackageItems).To(HaveLen(1))
+		})
+
+		It("returns error when GetServicesByBusinessID fails", func() {
+			serviceRepo.EXPECT().GetServicesByBusinessID(ctx, int64(1)).Return(nil, fmt.Errorf("db error")).Once()
+
+			result, err := serviceSvc.GetServicesByBusinessID(ctx, 1)
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError("db error"))
+		})
+
+		It("returns error when GetServicePackagesByServiceID fails", func() {
+			services := []param.ServiceParam{{ServiceID: 10, ServiceName: "Massage"}}
+			serviceRepo.EXPECT().GetServicesByBusinessID(ctx, int64(1)).Return(services, nil).Once()
+			serviceRepo.EXPECT().GetServicePackagesByServiceID(ctx, int64(10)).Return(nil, fmt.Errorf("pkg error")).Once()
+
+			result, err := serviceSvc.GetServicesByBusinessID(ctx, 1)
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError("pkg error"))
 		})
 	})
 })

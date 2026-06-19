@@ -48,7 +48,7 @@ func (p SignUpParam) ValidateSignUp() error {
 	}
 
 	if p.Password == "" {
-		validationErrs = append(validationErrs, errs.ValidationError{Field: "password", Message: "password is required"})
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "password", Message: "Password is required"})
 	} else if len(p.Password) < minPasswordLength {
 		validationErrs = append(validationErrs, errs.ValidationError{
 			Field:   "password",

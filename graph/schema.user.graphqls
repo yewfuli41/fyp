@@ -1,0 +1,44 @@
+type User {
+  userId: ID!
+  username: String!
+  email: String!
+  contactNumber: String!
+  failedLoginAttempts: Int!
+  lockedUntil: DateTime
+  businessProfile: BusinessProfile
+  staffProfile: Staff
+  bookings: [Booking!]!
+}
+
+type AuthPayload {
+  token: String!
+  user: User!
+}
+
+input SignUpInput {
+  username: String!
+  email: String!
+  contactNumber: String!
+  password: String!
+}
+
+input LogInInput{
+  email: String!
+  password: String!
+}
+
+input UpdateProfileInput{
+  username: String!
+  email: String!
+  contactNumber: String
+}
+
+extend type Query {
+  userProfile: User
+}
+
+extend type Mutation {
+  signUp(user: SignUpInput!): AuthPayload!
+  logIn(user: LogInInput!): AuthPayload!
+  updateProfile(user: UpdateProfileInput!): User!
+}

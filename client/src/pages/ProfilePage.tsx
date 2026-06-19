@@ -188,7 +188,10 @@ export default function ProfilePage() {
                       aria-label="Username"
                       type="text"
                       value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      onChange={(e) => {
+                        setUsername(e.target.value);
+                        setFieldErrors(prev => ({ ...prev, username: "" }));
+                      }}
                       maxLength={FIELD_LIMITS.username}
                       isInvalid={!!fieldErrors.username}
                     />
@@ -215,7 +218,10 @@ export default function ProfilePage() {
                       aria-label="Email"
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setFieldErrors(prev => ({ ...prev, email: "" }));
+                      }}
                       maxLength={FIELD_LIMITS.email}
                       isInvalid={!!fieldErrors.email}
                     />
@@ -242,7 +248,10 @@ export default function ProfilePage() {
                       aria-label="Contact number"
                       type="text"
                       value={contactNumber}
-                      onChange={(e) => setContactNumber(e.target.value)}
+                      onChange={(e) => {
+                        setContactNumber(e.target.value);
+                        setFieldErrors(prev => ({ ...prev, contactNumber: "" }));
+                      }}
                       maxLength={FIELD_LIMITS.contactNumber}
                       isInvalid={!!fieldErrors.contactNumber}
                     />

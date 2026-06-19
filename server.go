@@ -4,6 +4,7 @@ import (
 	"fyp/app"
 	"fyp/config"
 	"fyp/graph"
+	"fyp/graph/resolver"
 	authMiddleware "fyp/internal/middleware"
 	"os"
 
@@ -45,7 +46,7 @@ func server(app *app.App, cfg *config.Config) {
 		port = defaultPort
 	}
 
-	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: graph.NewResolver(app)}))
+	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: resolver.NewResolver(app)}))
 
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.GET{})

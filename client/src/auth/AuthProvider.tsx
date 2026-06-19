@@ -50,12 +50,12 @@ export function AuthProvider({
   const hasRoles: AuthContextValue["hasRoles"] = 
     (requiredRoles) => {
       if (!user) return false;
-      let role = "CUSTOMER"
+      const roles: string[] = ["CUSTOMER"]
       if(user.businessProfile)
-        role = "OWNER"
-      else if(user.staffProfile)
-        role = "STAFF"
-      return requiredRoles.includes(role)
+        roles.push("OWNER")
+      if(user.staffProfile)
+        roles.push("STAFF")
+      return requiredRoles.some(role => roles.includes(role));
   };
 
   return (

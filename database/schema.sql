@@ -158,3 +158,14 @@ CREATE INDEX IF NOT EXISTS idx_recurring_schedules_staff_id ON recurring_schedul
 CREATE INDEX IF NOT EXISTS idx_recurring_schedules_service_package_id ON recurring_schedules(service_package_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings(user_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_slot_package_id ON bookings(slot_package_id);
+CREATE UNIQUE INDEX services_unique_name
+ON services (business_id, LOWER(service_name))
+WHERE deleted_at IS NULL;
+
+CREATE UNIQUE INDEX service_packages_unique_name
+ON service_packages (service_id, LOWER(service_package_name))
+WHERE deleted_at IS NULL;
+
+CREATE UNIQUE INDEX package_items_unique_name
+ON package_items (service_package_id, LOWER(package_item_name))
+WHERE deleted_at IS NULL;

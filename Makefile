@@ -21,7 +21,12 @@ migrate:
 
 test:
 	go test -coverprofile=coverage.out -v ./...
-	go tool cover -html=coverage.out
+	go tool cover -html=coverage.out -o coverage.html
+	@if command -v open >/dev/null 2>&1; then \
+		open coverage.html; \
+	elif command -v explorer.exe >/dev/null 2>&1; then \
+		explorer.exe coverage.html; \
+	fi
 
 mock:
 	mockery

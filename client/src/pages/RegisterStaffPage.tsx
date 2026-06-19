@@ -57,6 +57,7 @@ export default function RegisterStaffPage() {
         const newWorkingHours = [...staffWorkingHours];
         newWorkingHours[index] = { ...newWorkingHours[index], [field]: value };
         setStaffWorkingHours(newWorkingHours);
+        setFieldErrors(prev => ({ ...prev, [`workingHours[${index}]`]: "" }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -120,7 +121,10 @@ export default function RegisterStaffPage() {
                     <Form.Control
                         type="text"
                         value={staffName}
-                        onChange={(e) => setStaffName(e.target.value)}
+                        onChange={(e) => {
+                            setStaffName(e.target.value);
+                            setFieldErrors(prev => ({ ...prev, staffName: "" }));
+                        }}
                         maxLength={FIELD_LIMITS.staffName}
                         isInvalid={!!fieldErrors.staffName}
                     />
@@ -132,7 +136,10 @@ export default function RegisterStaffPage() {
                     <Form.Control
                         type="text"
                         value={staffEmail}
-                        onChange={(e) => setStaffEmail(e.target.value)}
+                        onChange={(e) => {
+                            setStaffEmail(e.target.value);
+                            setFieldErrors(prev => ({ ...prev, staffEmail: "" }));
+                        }}
                         maxLength={FIELD_LIMITS.email}
                         isInvalid={!!fieldErrors.staffEmail}
                     />
@@ -144,7 +151,10 @@ export default function RegisterStaffPage() {
                     <Form.Control
                         type="text"
                         value={staffContactNumber}
-                        onChange={(e) => setStaffContactNumber(e.target.value)}
+                        onChange={(e) => {
+                            setStaffContactNumber(e.target.value);
+                            setFieldErrors(prev => ({ ...prev, staffContactNumber: "" }));
+                        }}
                         maxLength={FIELD_LIMITS.staffContactNumber}
                         isInvalid={!!fieldErrors.staffContactNumber}
                     />
@@ -156,7 +166,10 @@ export default function RegisterStaffPage() {
                     <Form.Control
                         type="text"
                         value={position}
-                        onChange={(e) => setPosition(e.target.value)}
+                        onChange={(e) => {
+                            setPosition(e.target.value);
+                            setFieldErrors(prev => ({ ...prev, position: "" }));
+                        }}
                         maxLength={FIELD_LIMITS.position}
                         isInvalid={!!fieldErrors.position}
                     />

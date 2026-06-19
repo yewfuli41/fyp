@@ -26,6 +26,7 @@ var _ = Describe("AuthService", func() {
 		authSvc    interface {
 			SignUp(context.Context, param.SignUpParam) (*param.AuthResult, error)
 			LogIn(context.Context, param.LogInParam) (*param.AuthResult, error)
+			GetUserProfile(context.Context, string) (*param.AuthUserParam, error)
 		}
 	)
 
@@ -294,6 +295,27 @@ var _ = Describe("AuthService", func() {
 
 			Expect(result).To(BeNil())
 			Expect(err).To(MatchError(updateErr))
+		})
+	})
+
+	Describe("GetUserProfile", func() {
+		It("returns the user when found", func() {
+			expected := &param.AuthUserParam{UserID: 42, Email: "test@example.com", Username: "finn"}
+			authRepo.EXPECT().GetUser(ctx, "test@example.com").Return(expected, nil).Once()
+
+			result, err := authSvc.GetUserProfile(ctx, "test@example.com")
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(expected))
+		})
+
+		It("returns error when repo fails", func() {
+			authRepo.EXPECT().GetUser(ctx, "missing@example.com").Return(nil, sql.ErrNoRows).Once()
+
+			result, err := authSvc.GetUserProfile(ctx, "missing@example.com")
+
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError(sql.ErrNoRows))
 		})
 	})
 })

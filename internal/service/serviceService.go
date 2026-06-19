@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"fyp/database"
+	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
 )
@@ -34,6 +35,11 @@ func (s *serviceService) CreateService(ctx context.Context, p param.ServiceParam
 
 		created, err := s.serviceRepo.InsertService(ctx, tx, p)
 		if err != nil {
+			if database.IsUniqueViolation(err, "services_unique_name") {
+				return errs.ValidationErrors{
+					{Field: "serviceName", Message: "Service name already exists"},
+				}
+			}
 			return err
 		}
 
@@ -41,11 +47,21 @@ func (s *serviceService) CreateService(ctx context.Context, p param.ServiceParam
 			pkg.ServiceID = created.ServiceID
 			createdPkg, err := s.serviceRepo.InsertServicePackage(ctx, tx, pkg)
 			if err != nil {
+				if database.IsUniqueViolation(err, "service_packages_unique_name") {
+					return errs.ValidationErrors{
+						{Field: "servicePackageName", Message: "Service package already exists"},
+					}
+				}
 				return err
 			}
 			for _, item := range pkg.PackageItems {
 				item.ServicePackageID = createdPkg.ServicePackageID
 				if err := s.serviceRepo.InsertPackageItem(ctx, tx, item); err != nil {
+					if database.IsUniqueViolation(err, "package_items_unique_name") {
+						return errs.ValidationErrors{
+							{Field: "packageItemName", Message: "Package item already exists"},
+						}
+					}
 					return err
 				}
 			}
@@ -74,6 +90,11 @@ func (s *serviceService) UpdateService(ctx context.Context, p param.ServiceParam
 
 		updated, err := s.serviceRepo.UpdateService(ctx, tx, p)
 		if err != nil {
+			if database.IsUniqueViolation(err, "services_unique_name") {
+				return errs.ValidationErrors{
+					{Field: "serviceName", Message: "Service name already exists"},
+				}
+			}
 			return err
 		}
 
@@ -85,11 +106,21 @@ func (s *serviceService) UpdateService(ctx context.Context, p param.ServiceParam
 			pkg.ServiceID = updated.ServiceID
 			createdPkg, err := s.serviceRepo.InsertServicePackage(ctx, tx, pkg)
 			if err != nil {
+				if database.IsUniqueViolation(err, "service_packages_unique_name") {
+					return errs.ValidationErrors{
+						{Field: "servicePackageName", Message: "Service package already exists"},
+					}
+				}
 				return err
 			}
 			for _, item := range pkg.PackageItems {
 				item.ServicePackageID = createdPkg.ServicePackageID
 				if err := s.serviceRepo.InsertPackageItem(ctx, tx, item); err != nil {
+					if database.IsUniqueViolation(err, "package_items_unique_name") {
+						return errs.ValidationErrors{
+							{Field: "packageItemName", Message: "Package item already exists"},
+						}
+					}
 					return err
 				}
 			}

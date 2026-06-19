@@ -271,12 +271,27 @@ func (r *mutationResolver) DeleteService(ctx context.Context, serviceID string) 
 
 // RegisterStaff is the resolver for the registerStaff field.
 func (r *mutationResolver) RegisterStaff(ctx context.Context, staff *model.StaffInput) (bool, error) {
-	panic(fmt.Errorf("not implemented: RegisterStaff - registerStaff"))
-}
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return false, graphErrs.ToGraphQLError(err)
+	}
 
-// Empty is the resolver for the _empty field.
-func (r *queryResolver) Empty(ctx context.Context) (*string, error) {
-	panic(fmt.Errorf("not implemented: Empty - _empty"))
+	businessProfile, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, currentUser.UserID)
+	if err != nil {
+		return false, graphErrs.ToGraphQLError(err)
+	}
+
+	staffParam := param.StaffParam{
+		BusinessID:         businessProfile.BusinessID,
+		StaffName:          staff.Name,
+		StaffContactNumber: staff.ContactNumber,
+		Position:           staff.Position,
+	}
+
+	if err := r.App.StaffService.RegisterStaff(ctx, businessProfile, staffParam); err != nil {
+		return false, graphErrs.ToGraphQLError(err)
+	}
+	return true, nil
 }
 
 // UserProfile is the resolver for the userProfile field.

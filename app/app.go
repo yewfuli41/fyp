@@ -13,6 +13,7 @@ type App struct {
 	ProfileService  interfaces.IProfileService
 	BusinessService interfaces.IBusinessService
 	ServiceService  interfaces.IServiceService
+	StaffService    interfaces.IStaffService
 }
 
 func NewApp(db *sql.DB, authConfig config.AuthConfig) *App {
@@ -24,10 +25,13 @@ func NewApp(db *sql.DB, authConfig config.AuthConfig) *App {
 	businessService := service.NewBusinessService(db, businessRepo)
 	serviceRepo := repository.NewServiceRepo(db)
 	serviceService := service.NewServiceService(db, serviceRepo)
+	staffRepo := repository.NewStaffRepo(db)
+	staffService := service.NewStaffService(db, staffRepo)
 	return &App{
 		AuthService:     authService,
 		ProfileService:  profileService,
 		BusinessService: businessService,
 		ServiceService:  serviceService,
+		StaffService:    staffService,
 	}
 }

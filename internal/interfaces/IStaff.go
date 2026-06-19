@@ -11,5 +11,5 @@ type IStaffRepo interface {
 }
 
 type IStaffService interface {
-	RegisterStaff(ctx context.Context, param param.StaffParam, businessWorkingHours param.WorkingHourParam)
+	RegisterStaff(ctx context.Context, ownerParam *param.BusinessProfileParam, staffParam param.StaffParam) error
 }

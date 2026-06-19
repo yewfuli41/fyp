@@ -120,7 +120,6 @@ type ComplexityRoot struct {
 
 	Query struct {
 		BusinessServices func(childComplexity int) int
-		Empty            func(childComplexity int) int
 		UserProfile      func(childComplexity int) int
 	}
 
@@ -236,7 +235,6 @@ type MutationResolver interface {
 	RegisterStaff(ctx context.Context, staff *model.StaffInput) (bool, error)
 }
 type QueryResolver interface {
-	Empty(ctx context.Context) (*string, error)
 	UserProfile(ctx context.Context) (*model.User, error)
 	BusinessServices(ctx context.Context) ([]*model.Service, error)
 }
@@ -667,12 +665,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.BusinessServices(childComplexity), true
-	case "Query._empty":
-		if e.ComplexityRoot.Query.Empty == nil {
-			break
-		}
-
-		return e.ComplexityRoot.Query.Empty(childComplexity), true
 
 	case "Query.userProfile":
 		if e.ComplexityRoot.Query.UserProfile == nil {
@@ -3555,29 +3547,6 @@ func (ec *executionContext) _PackageItem_deletedAt(ctx context.Context, field gr
 }
 func (ec *executionContext) fieldContext_PackageItem_deletedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("PackageItem", field, false, false, errors.New("field of type DateTime does not have child fields"))
-}
-
-func (ec *executionContext) _Query__empty(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_Query__empty(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Query().Empty(ctx)
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
-			return ec.marshalOString2ᚖstring(ctx, selections, v)
-		},
-		true,
-		false,
-	)
-}
-func (ec *executionContext) fieldContext_Query__empty(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("Query", field, true, true, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _Query_userProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -7697,25 +7666,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "_empty":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query__empty(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "userProfile":
 			field := field
 

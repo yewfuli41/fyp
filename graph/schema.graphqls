@@ -200,7 +200,6 @@ type Booking {
 }
 
 type Query {
-  _empty: String
   userProfile: User
   businessServices: [Service!]!
 }

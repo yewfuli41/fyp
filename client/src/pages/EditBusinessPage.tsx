@@ -7,46 +7,7 @@ import { userProfile } from "../services/ProfileService";
 import { updateBusinessProfile, type BusinessProfileInput, type WorkingHour } from "../services/BusinessService";
 import { applyGraphQLErrors } from "../utils/graphqlErrors";
 import { FIELD_LIMITS } from "../utils/fieldLimits";
-
-const DAYS_OF_WEEK = [
-    "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
-];
-
-const TIME_INTERVAL = 30
-
-const toTimeInputValue = (time: string): string => {
-    if (!time) return "";
-    const parts = time.split(":");
-    if (parts.length < 2) return "";
-    return `${parts[0].padStart(2, "0")}:${parts[1].padStart(2, "0")}`;
-};
-
-
-const generateTimeArray = (minInterval: number): string[] => {
-    const array: string[] = []
-    for (let i = 0; i < 24; i++) {
-        const hour = i.toString().padStart(2, "0")
-        for (let j = 0; j < (60 / minInterval); j++) {
-            const minutes = (minInterval * j).toString().padStart(2, "0")
-            array.push(hour + ":" + minutes)
-        }
-    }
-    return array;
-}
-
-const startTimeSlice = (endTime: string, timeArray: string[]): string[] => {
-    const index = timeArray.indexOf(endTime)
-    if (index === -1)
-        return timeArray
-    return timeArray.slice(0, index)
-}
-
-const endTimeSlice = (startTime: string, timeArray: string[]): string[] => {
-    const index = timeArray.indexOf(startTime)
-    if (index === -1)
-        return timeArray
-    return timeArray.slice(index + 1)
-}
+import { DAYS_OF_WEEK, startTimeSlice, endTimeSlice, toTimeInputValue} from "../utils/time";
 
 export default function EditBusinessPage() {
     const navigate = useNavigate();
@@ -65,7 +26,7 @@ export default function EditBusinessPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState("");
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-    const timeArray = generateTimeArray(TIME_INTERVAL)
+
     useEffect(() => {
         if (!activeToken) return;
 
@@ -275,7 +236,7 @@ export default function EditBusinessPage() {
                                         value={toTimeInputValue(wh.startTime)}
                                         onChange={(e) => handleWorkingHourChange(index, "startTime", e.target.value + ":00")}
                                     >
-                                        {startTimeSlice(toTimeInputValue(wh.endTime), timeArray).map(time => (
+                                        {startTimeSlice(toTimeInputValue(wh.endTime)).map(time => (
                                             <option key={time} value={time}>{time}</option>
                                         ))}
                                     </Form.Select>
@@ -288,7 +249,7 @@ export default function EditBusinessPage() {
                                         value={toTimeInputValue(wh.endTime)}
                                         onChange={(e) => handleWorkingHourChange(index, "endTime", e.target.value + ":00")}
                                     >
-                                        {endTimeSlice(toTimeInputValue(wh.startTime), timeArray).map(time => (
+                                        {endTimeSlice(toTimeInputValue(wh.startTime)).map(time => (
                                             <option key={time} value={time}>{time}</option>
                                         ))}
                                     </Form.Select>

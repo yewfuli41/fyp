@@ -1,3 +1,4 @@
 .env.*
 fyp
 coverage.out
+coverage.html

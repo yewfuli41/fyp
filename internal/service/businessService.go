@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"fyp/database"
+	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
 )
@@ -89,6 +91,9 @@ func (s *businessService) UpdateBusinessProfile(ctx context.Context, businessPar
 func (s *businessService) GetBusinessProfileByOwnerID(ctx context.Context, ownerID int64) (*param.BusinessProfileParam, error) {
 	businessProfile, err := s.businessRepo.GetBusinessProfileByOwnerID(ctx, ownerID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrBusinessProfileNotFound
+		}
 		return nil, err
 	}
 

@@ -14,19 +14,21 @@ type App struct {
 	BusinessService interfaces.IBusinessService
 	ServiceService  interfaces.IServiceService
 	StaffService    interfaces.IStaffService
+	EmailService    interfaces.IEmailService
 }
 
-func NewApp(db *sql.DB, authConfig config.AuthConfig) *App {
+func NewApp(db *sql.DB, cfg *config.Config) *App {
 	authRepo := repository.NewAuthRepo(db)
-	authService := service.NewAuthService(authRepo, authConfig)
+	authService := service.NewAuthService(authRepo, cfg.Auth)
 	profileRepo := repository.NewProfileRepo(db)
 	profileService := service.NewProfileService(profileRepo)
 	businessRepo := repository.NewBusinessRepo(db)
 	businessService := service.NewBusinessService(db, businessRepo)
 	serviceRepo := repository.NewServiceRepo(db)
 	serviceService := service.NewServiceService(db, serviceRepo)
+	emailService := service.NewSendGridEmailService(cfg.Email)
 	staffRepo := repository.NewStaffRepo(db)
-	staffService := service.NewStaffService(db, staffRepo)
+	staffService := service.NewStaffService(db, staffRepo, businessRepo, authRepo, emailService)
 	return &App{
 		AuthService:     authService,
 		ProfileService:  profileService,

@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { userProfile, updateProfile } from "../services/ProfileService";
 import { applyGraphQLErrors, type FieldErrors } from "../utils/graphqlErrors";
-import { FIELD_LIMITS } from "../utils/fieldLimits";
+import { FIELD_LIMITS, shouldClearEmailError, shouldClearContactNumberError } from "../utils/fieldLimits";
 import userIcon from "../assets/user-icon-simple-design-free-vector.jpg";
 import emailIcon from "../assets/message-icon-logo-design-vector.webp";
 import phoneIcon from "../assets/phone--v1.jpg";
@@ -219,8 +219,9 @@ export default function ProfilePage() {
                       type="email"
                       value={email}
                       onChange={(e) => {
-                        setEmail(e.target.value);
-                        setFieldErrors(prev => ({ ...prev, email: "" }));
+                        setEmail(e.target.value)
+                        if (shouldClearEmailError(fieldErrors.email, e.target.value))
+                          setFieldErrors(prev => ({ ...prev, email: "" }))
                       }}
                       maxLength={FIELD_LIMITS.email}
                       isInvalid={!!fieldErrors.email}
@@ -249,8 +250,9 @@ export default function ProfilePage() {
                       type="text"
                       value={contactNumber}
                       onChange={(e) => {
-                        setContactNumber(e.target.value);
-                        setFieldErrors(prev => ({ ...prev, contactNumber: "" }));
+                        setContactNumber(e.target.value)
+                        if (shouldClearContactNumberError(fieldErrors.contactNumber, e.target.value))
+                          setFieldErrors(prev => ({ ...prev, contactNumber: "" }))
                       }}
                       maxLength={FIELD_LIMITS.contactNumber}
                       isInvalid={!!fieldErrors.contactNumber}
@@ -272,13 +274,15 @@ export default function ProfilePage() {
             Change Password
           </Button>
           {businessProfile ? (
-            <Button
-              type="button"
-              className="profile-action-button profile-action-button-wide"
-              onClick={() => navigate("/edit-business")}
-            >
-              Edit Business Profile
-            </Button>
+            <>
+              <Button
+                type="button"
+                className="profile-action-button profile-action-button-wide"
+                onClick={() => navigate("/edit-business")}
+              >
+                Edit Business Profile
+              </Button>
+            </>
           ) : (
             <Button
               type="button"

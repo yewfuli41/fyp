@@ -16,6 +16,7 @@ type IServiceRepo interface {
 	GetServicesByBusinessID(ctx context.Context, businessID int64) ([]param.ServiceParam, error)
 	GetServicePackagesByServiceID(ctx context.Context, serviceID int64) ([]param.ServicePackageParam, error)
 	GetPackageItemsByPackageID(ctx context.Context, servicePackageID int64) ([]param.PackageItemParam, error)
+	GetPackageItemsByPackageIDIncludeDeleted(ctx context.Context, servicePackageID int64) ([]param.PackageItemParam, error)
 	HasBookingForService(ctx context.Context, serviceID int64) (bool, error)
 }
 

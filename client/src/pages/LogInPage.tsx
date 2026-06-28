@@ -6,11 +6,12 @@ import { useAuth } from "../auth/AuthContext";
 import PasswordInput from "../components/PasswordInput";
 import { logIn } from "../services/LogInService";
 import { parseGraphQLErrors } from "../utils/graphqlErrors";
+import { shouldClearEmailError, shouldClearPasswordError } from "../utils/fieldLimits";
 import "../styles/auth.css";
 
 export default function LogInPage() {
   const navigate = useNavigate();
-  const { login, isLoggedIn } = useAuth();
+  const { login, isLoggedIn, user } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,14 +21,14 @@ export default function LogInPage() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      navigate("/");
+      navigate(user?.staffProfile && user.mustResetPassword ? "/reset-password" : "/");
     }
     const msg = sessionStorage.getItem("authMessage");
     if(msg){
       setFormError(msg);
       sessionStorage.removeItem("authMessage");
     }
-  }, [isLoggedIn, navigate]);
+  }, [isLoggedIn, user, navigate]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -57,15 +58,18 @@ export default function LogInPage() {
         return;
       }
 
-      login(payload.token, {
+      const loggedInUser = {
         userId: Number(payload.user.userId),
         username: payload.user.username,
         email: payload.user.email,
         contactNumber: payload.user.contactNumber,
+        mustResetPassword: payload.user.mustResetPassword,
         businessProfile: payload.user.businessProfile,
         staffProfile: payload.user.staffProfile,
-      });
-      navigate("/");
+      };
+
+      login(payload.token, loggedInUser);
+      //navigate(loggedInUser.staffProfile && loggedInUser.mustResetPassword ? "/reset-password" : "/");
     } catch {
       setFormError("Something went wrong. Please try again.");
     } finally {
@@ -87,8 +91,9 @@ export default function LogInPage() {
               type="text"
               value={email}
               onChange={(e) => {
-                setEmail(e.target.value);
-                setFieldErrors(prev => ({ ...prev, email: "" }));
+                setEmail(e.target.value)
+                if (shouldClearEmailError(fieldErrors.email, e.target.value))
+                  setFieldErrors(prev => ({ ...prev, email: "" }))
               }}
               isInvalid={!!fieldErrors.email}
             />
@@ -101,9 +106,10 @@ export default function LogInPage() {
             controlId="password"
             label="Password"
             value={password}
-            onChange={(v) => {
-              setPassword(v);
-              setFieldErrors(prev => ({ ...prev, password: "" }));
+            onChange={(value) => {
+              setPassword(value)
+              if (shouldClearPasswordError(fieldErrors.password, value))
+                setFieldErrors(prev => ({ ...prev, password: "" }))
             }}
             isInvalid={!!fieldErrors.password}
             errorMessage={fieldErrors.password}

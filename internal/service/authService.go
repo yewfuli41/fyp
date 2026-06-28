@@ -126,6 +126,36 @@ func (a *authService) GetUserProfile(ctx context.Context, email string) (*param.
 	return user, nil
 }
 
+func (s *authService) ResetPassword(ctx context.Context, resetPasswordParam param.ResetPasswordParam) error {
+	if err := resetPasswordParam.ValidateResetPassword(); err != nil {
+		return err
+	}
+
+	user, err := s.authRepo.GetUser(ctx, resetPasswordParam.Email)
+	if err != nil {
+		return err
+	}
+
+	if !user.MustResetPassword {
+		return errs.ValidationErrors{
+			{Field: "password", Message: "Password reset is not required"},
+		}
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(resetPasswordParam.NewPassword)); err == nil {
+		return errs.ValidationErrors{
+			{Field: "password", Message: "New password must be different from the temporary password"},
+		}
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(resetPasswordParam.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	return s.authRepo.UpdatePassword(ctx, resetPasswordParam.UserID, string(hashedPassword))
+}
+
 func (s *authService) GenerateToken(user *param.AuthUserParam) (string, error) {
 	now := time.Now()
 	expiresAt := now.Add(time.Duration(s.authConfig.JWTExpirationHours * float64(time.Hour)))

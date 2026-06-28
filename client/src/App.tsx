@@ -8,13 +8,15 @@ import EditBusinessPage from "./pages/EditBusinessPage";
 import RegisterBusinessPage from "./pages/RegisterBusinessPage";
 import ServicePage from "./pages/ServicePage";
 import RegisterStaffPage from "./pages/RegisterStaffPage"
+import StaffManagementPage from "./pages/StaffManagementPage"
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function HomePage() {
   const { isLoggedIn, user, message, logout } = useAuth();
 
   return (
-    <Container className="py-5 text-center">
+      <Container className="py-5 text-center">
       <h1>Welcome</h1>
       {isLoggedIn && user ? (
         <>
@@ -48,10 +50,14 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/register-business" element={<RegisterBusinessPage />} />
       </Route>
+      <Route element={<ProtectedRoute roles={["STAFF"]} />}>
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+      </Route>
       <Route element={<ProtectedRoute roles={["OWNER"]} />}>
         <Route path="/edit-business" element={<EditBusinessPage />} />
         <Route path="/services" element={<ServicePage />} />
         <Route path="/register-staff" element={<RegisterStaffPage/>}/>
+        <Route path="/staff" element={<StaffManagementPage/>}/>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

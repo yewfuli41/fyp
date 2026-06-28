@@ -329,7 +329,7 @@ export default function ServicePage() {
                                     {svc.servicePackages.length === 0 ? (
                                         <p className="text-muted mb-0">No packages</p>
                                     ) : (
-                                        <div className="d-flex flex-column gap-2 text-start">   
+                                        <div className="d-flex flex-column gap-2 text-start">
                                             {svc.servicePackages.map(pkg => (
                                                 <div key={pkg.servicePackageId}>
                                                     <div className="fw-semibold">
@@ -402,73 +402,78 @@ export default function ServicePage() {
                         {formInput.servicePackages.map((pkg, pkgIdx) => {
                             const isDefault = pkg.servicePackageName === formInput.serviceName;
                             return (
-                            <div key={pkgIdx} className="border rounded p-3 mb-3 bg-light">
-                                <div className="d-flex justify-content-between align-items-start mb-2">
-                                    <strong>Package {pkgIdx + 1}</strong>
-                                    {isDefault ? (
-                                        <small className="text-muted fst-italic">Default package</small>
-                                    ) : (
-                                        <Button
-                                            size="sm"
-                                            variant="outline-danger"
-                                            onClick={() => removePackage(pkgIdx)}
-                                        >
-                                            Remove
-                                        </Button>
-                                    )}
-                                </div>
-
-                                <Form.Group className="mb-2">
-                                    <Form.Label>Package Name </Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        value={pkg.servicePackageName}
-                                        onChange={e => updatePackage(pkgIdx, "servicePackageName", e.target.value)}
-                                        maxLength={FIELD_LIMITS.servicePackageName}
-                                        isInvalid={!!fieldErrors.servicePackageName}
-                                    />
-                                     <Form.Control.Feedback type="invalid">{fieldErrors.servicePackageName}</Form.Control.Feedback>
-                                </Form.Group>
-
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Package Description</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        value={pkg.description ?? ""}
-                                        onChange={e => updatePackage(pkgIdx, "description", e.target.value)}
-                                    />
-                                </Form.Group>
-
-                                <div className="d-flex justify-content-between align-items-center mb-2">
-                                    <small className="text-muted fw-semibold">Package Items</small>
-                                    <Button size="sm" variant="link" onClick={() => addItem(pkgIdx)}>
-                                        + Add Item
-                                    </Button>
-                                </div>
-
-                                {pkg.packageItems.map((item, itemIdx) => (
-                                    <div key={itemIdx} className="d-flex gap-2 mb-2">
-                                        <Form.Control
-                                            type="text"
-                                            placeholder="Item name"
-                                            value={item.packageItemName}
-                                            onChange={e => updateItem(pkgIdx, itemIdx, e.target.value)}
-                                            maxLength={FIELD_LIMITS.packageItemName}
-                                            isInvalid={!!fieldErrors.packageItemName}
-                                        />
-                                        {pkg.packageItems.length > 1 && (
+                                <div key={pkgIdx} className="border rounded p-3 mb-3 bg-light">
+                                    <div className="d-flex justify-content-between align-items-start mb-2">
+                                        <strong>Package {pkgIdx + 1}</strong>
+                                        {isDefault ? (
+                                            <small className="text-muted fst-italic">Default package</small>
+                                        ) : (
                                             <Button
                                                 size="sm"
                                                 variant="outline-danger"
-                                                onClick={() => removeItem(pkgIdx, itemIdx)}
+                                                onClick={() => removePackage(pkgIdx)}
                                             >
-                                                ✕
+                                                Remove
                                             </Button>
                                         )}
-                                        <Form.Control.Feedback type="invalid">{fieldErrors.packageItemName}</Form.Control.Feedback>
                                     </div>
-                                ))}
-                            </div>
+
+                                    <Form.Group className="mb-2">
+                                        <Form.Label>Package Name </Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            value={pkg.servicePackageName}
+                                            onChange={e => updatePackage(pkgIdx, "servicePackageName", e.target.value)}
+                                            maxLength={FIELD_LIMITS.servicePackageName}
+                                            isInvalid={!!fieldErrors[`servicePackageName[${pkgIdx}]`]}
+                                        />
+                                        <Form.Control.Feedback type="invalid">{fieldErrors[`servicePackageName[${pkgIdx}]`]}</Form.Control.Feedback>
+                                    </Form.Group>
+
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Package Description</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            value={pkg.description ?? ""}
+                                            onChange={e => updatePackage(pkgIdx, "description", e.target.value)}
+                                        />
+                                    </Form.Group>
+
+                                    <div className="d-flex justify-content-between align-items-center mb-2">
+                                        <small className="text-muted fw-semibold">Package Items</small>
+                                        <Button size="sm" variant="link" onClick={() => addItem(pkgIdx)}>
+                                            + Add Item
+                                        </Button>
+                                    </div>
+
+                                    {pkg.packageItems.map((item, itemIdx) => (
+                                        <div key={itemIdx} className="mb-2">
+                                            <div className="d-flex gap-2">
+                                                <Form.Control
+                                                    type="text"
+                                                    placeholder="Item name"
+                                                    value={item.packageItemName}
+                                                    onChange={e => updateItem(pkgIdx, itemIdx, e.target.value)}
+                                                    maxLength={FIELD_LIMITS.packageItemName}
+                                                />
+                                                {pkg.packageItems.length > 1 && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline-danger"
+                                                        onClick={() => removeItem(pkgIdx, itemIdx)}
+                                                    >
+                                                        ✕
+                                                    </Button>
+                                                )}
+                                            </div>
+                                            {fieldErrors[`packageItemName[${pkgIdx}][${itemIdx}]`] && (
+                                                <div className="text-danger small mt-1">
+                                                    {fieldErrors[`packageItemName[${pkgIdx}][${itemIdx}]`]}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
                             );
                         })}
                     </Modal.Body>

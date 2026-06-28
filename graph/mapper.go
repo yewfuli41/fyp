@@ -25,6 +25,7 @@ func MapUser(user *param.AuthUserParam) *model.User {
 		ContactNumber:       *user.ContactNumber,
 		FailedLoginAttempts: int32(user.FailedLoginAttempts),
 		LockedUntil:         lockedUntil,
+		MustResetPassword:   user.MustResetPassword,
 		StaffProfile:        nil,
 		Bookings:            []*model.Booking{},
 	}
@@ -91,5 +92,28 @@ func MapBusinessProfile(businessProfile *param.BusinessProfileParam, owner *para
 		WorkingHours:          workingHours,
 		Services:              []*model.Service{},
 		Staff:                 []*model.Staff{},
+	}
+}
+
+func MapStaff(staff *param.StaffParam) *model.Staff {
+	if staff == nil {
+		return nil
+	}
+
+	position := staff.Position
+
+	return &model.Staff{
+		StaffID:            strconv.FormatInt(staff.StaffID, 10),
+		UserID:             strconv.FormatInt(staff.UserID, 10),
+		BusinessID:         strconv.FormatInt(staff.BusinessID, 10),
+		Name:               staff.StaffName,
+		Email:              staff.StaffEmail,
+		MustResetPassword:  staff.MustResetPassword,
+		ContactNumber:      staff.StaffContactNumber,
+		Position:           &position,
+		WorkingHours:       []*model.StaffWorkingHour{},
+		LeaveApplications:  []*model.LeaveApplication{},
+		ServiceSlots:       []*model.ServiceSlot{},
+		RecurringSchedules: []*model.RecurringSchedule{},
 	}
 }

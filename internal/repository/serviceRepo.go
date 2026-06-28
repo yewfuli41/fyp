@@ -38,8 +38,8 @@ func (r *serviceRepo) InsertServicePackage(ctx context.Context, tx *sql.Tx, p pa
 
 func (r *serviceRepo) InsertPackageItem(ctx context.Context, tx *sql.Tx, p param.PackageItemParam) error {
 	_, err := tx.ExecContext(ctx, `
-		INSERT INTO package_items (service_package_id, package_item_name)
-		VALUES ($1, $2)
+		INSERT INTO package_items (service_package_id, package_item_name, created_at)
+		VALUES ($1, $2, NOW())
 	`, p.ServicePackageID, p.PackageItemName)
 	return err
 }
@@ -132,6 +132,29 @@ func (r *serviceRepo) GetPackageItemsByPackageID(ctx context.Context, servicePac
 		SELECT package_item_id, service_package_id, package_item_name
 		FROM package_items
 		WHERE service_package_id = $1 AND deleted_at IS NULL
+		ORDER BY package_item_id
+	`, servicePackageID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []param.PackageItemParam
+	for rows.Next() {
+		var item param.PackageItemParam
+		if err := rows.Scan(&item.PackageItemID, &item.ServicePackageID, &item.PackageItemName); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, nil
+}
+
+func (r *serviceRepo) GetPackageItemsByPackageIDIncludeDeleted(ctx context.Context, servicePackageID int64) ([]param.PackageItemParam, error) {
+	rows, err := r.DB.QueryContext(ctx, `
+		SELECT package_item_id, service_package_id, package_item_name
+		FROM package_items
+		WHERE service_package_id = $1
 		ORDER BY package_item_id
 	`, servicePackageID)
 	if err != nil {

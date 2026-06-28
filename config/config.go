@@ -8,7 +8,14 @@ import (
 )
 
 type Config struct {
-	Auth AuthConfig `yaml:"auth"`
+	Auth  AuthConfig  `yaml:"auth"`
+	Email EmailConfig `yaml:"-"`
+}
+
+type EmailConfig struct {
+	SendGridAPIKey string
+	FromEmail      string
+	FromName       string
 }
 
 type AuthConfig struct {
@@ -32,5 +39,8 @@ func Load(path string) (*Config, error) {
 	if cfg.Auth.JWTSecret == "" {
 		return nil, errors.New("JWT_SECRET is required in environment variables")
 	}
+	cfg.Email.SendGridAPIKey = os.Getenv("SENDGRID_API_KEY")
+	cfg.Email.FromEmail = os.Getenv("FROM_EMAIL")
+	cfg.Email.FromName = os.Getenv("FROM_NAME")
 	return cfg, nil
 }

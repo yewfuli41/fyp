@@ -174,6 +174,63 @@ func (_c *MockIAuthService_LogIn_Call) RunAndReturn(run func(ctx context.Context
 	return _c
 }
 
+// ResetPassword provides a mock function for the type MockIAuthService
+func (_mock *MockIAuthService) ResetPassword(ctx context.Context, resetPasswordParam param.ResetPasswordParam) error {
+	ret := _mock.Called(ctx, resetPasswordParam)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ResetPassword")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, param.ResetPasswordParam) error); ok {
+		r0 = returnFunc(ctx, resetPasswordParam)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIAuthService_ResetPassword_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ResetPassword'
+type MockIAuthService_ResetPassword_Call struct {
+	*mock.Call
+}
+
+// ResetPassword is a helper method to define mock.On call
+//   - ctx context.Context
+//   - resetPasswordParam param.ResetPasswordParam
+func (_e *MockIAuthService_Expecter) ResetPassword(ctx interface{}, resetPasswordParam interface{}) *MockIAuthService_ResetPassword_Call {
+	return &MockIAuthService_ResetPassword_Call{Call: _e.mock.On("ResetPassword", ctx, resetPasswordParam)}
+}
+
+func (_c *MockIAuthService_ResetPassword_Call) Run(run func(ctx context.Context, resetPasswordParam param.ResetPasswordParam)) *MockIAuthService_ResetPassword_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 param.ResetPasswordParam
+		if args[1] != nil {
+			arg1 = args[1].(param.ResetPasswordParam)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIAuthService_ResetPassword_Call) Return(err error) *MockIAuthService_ResetPassword_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIAuthService_ResetPassword_Call) RunAndReturn(run func(ctx context.Context, resetPasswordParam param.ResetPasswordParam) error) *MockIAuthService_ResetPassword_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SignUp provides a mock function for the type MockIAuthService
 func (_mock *MockIAuthService) SignUp(ctx context.Context, param1 param.SignUpParam) (*param.AuthResult, error) {
 	ret := _mock.Called(ctx, param1)

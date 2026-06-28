@@ -21,7 +21,7 @@ var _ = Describe("UserScanner", func() {
 		var err error
 		db, mock, err = sqlmock.New()
 		Expect(err).NotTo(HaveOccurred())
-		cols = []string{"user_id", "username", "email", "contact_number", "password", "failed_login_attempts", "locked_until"}
+		cols = []string{"user_id", "username", "email", "contact_number", "password", "failed_login_attempts", "locked_until", "must_reset_password"}
 	})
 
 	Describe("ScanUser", func() {
@@ -29,7 +29,7 @@ var _ = Describe("UserScanner", func() {
 			lockedUntil := time.Now().Add(time.Hour).Truncate(time.Second).UTC()
 			contactNumber := "1234567890"
 			rows := sqlmock.NewRows(cols).
-				AddRow(1, "testuser", "test@example.com", contactNumber, "password", 0, lockedUntil)
+				AddRow(1, "testuser", "test@example.com", contactNumber, "password", 0, lockedUntil, true)
 
 			mock.ExpectQuery("SELECT").WillReturnRows(rows)
 			row := db.QueryRow("SELECT")
@@ -44,11 +44,12 @@ var _ = Describe("UserScanner", func() {
 			Expect(user.Password).To(Equal("password"))
 			Expect(user.FailedLoginAttempts).To(Equal(0))
 			Expect(*user.LockedUntil).To(Equal(lockedUntil))
+			Expect(user.MustResetPassword).To(BeTrue())
 		})
 
 		It("scans a user row with NULL optional fields", func() {
 			rows := sqlmock.NewRows(cols).
-				AddRow(1, "testuser", "test@example.com", nil, "password", 0, nil)
+				AddRow(1, "testuser", "test@example.com", nil, "password", 0, nil, false)
 
 			mock.ExpectQuery("SELECT").WillReturnRows(rows)
 			row := db.QueryRow("SELECT")
@@ -62,7 +63,7 @@ var _ = Describe("UserScanner", func() {
 
 		It("returns an error if scanning fails", func() {
 			rows := sqlmock.NewRows(cols).
-				AddRow(1, "testuser", "test@example.com", "1234567890", "password", 0, "invalid-time")
+				AddRow(1, "testuser", "test@example.com", "1234567890", "password", 0, "invalid-time", false)
 
 			mock.ExpectQuery("SELECT").WillReturnRows(rows)
 			row := db.QueryRow("SELECT")

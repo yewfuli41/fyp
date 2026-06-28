@@ -17,6 +17,7 @@ export const logIn = async(
                     username
                     email
                     contactNumber
+                    mustResetPassword
                     businessProfile {
                         businessId
                     }

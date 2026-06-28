@@ -5,6 +5,8 @@ type Staff {
   businessId: ID!
   business: BusinessProfile!
   name: String!
+  email: String!
+  mustResetPassword: Boolean!
   contactNumber: String!
   position: String
   workingHours: [StaffWorkingHour!]!
@@ -47,6 +49,19 @@ input StaffInput{
   workingHours: [WorkingHourInput!]!
 }
 
+input UpdateStaffInput {
+  name: String!
+  email: String!
+  contactNumber: String!
+  position: String!
+}
+
+extend type Query {
+  displayStaff: [Staff!]!
+}
+
 extend type Mutation {
   registerStaff(staff: StaffInput): Boolean!
+  updateStaff(staffId: ID!, staff: UpdateStaffInput!): Staff!
+  deleteStaff(staffId: ID!): Boolean!
 }

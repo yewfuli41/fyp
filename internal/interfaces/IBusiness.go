@@ -13,6 +13,7 @@ type IBusinessRepo interface {
 	DeleteBusinessWorkingHours(ctx context.Context, tx *sql.Tx, businessID int64) error
 	GetBusinessProfileByOwnerID(ctx context.Context, ownerID int64) (*param.BusinessProfileParam, error)
 	GetBusinessWorkingHours(ctx context.Context, businessID int64) ([]param.WorkingHourParam, error)
+	BusinessEmailExists(ctx context.Context, businessEmail string) (bool, error)
 }
 
 type IBusinessService interface {

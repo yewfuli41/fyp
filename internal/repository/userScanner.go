@@ -23,6 +23,7 @@ func ScanUser(row rowScanner) (*param.AuthUserParam, error) {
 		&user.Password,
 		&user.FailedLoginAttempts,
 		&lockedUntil,
+		&user.MustResetPassword,
 	); err != nil {
 		return nil, err
 	}

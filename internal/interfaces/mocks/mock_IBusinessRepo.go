@@ -39,6 +39,72 @@ func (_m *MockIBusinessRepo) EXPECT() *MockIBusinessRepo_Expecter {
 	return &MockIBusinessRepo_Expecter{mock: &_m.Mock}
 }
 
+// BusinessEmailExists provides a mock function for the type MockIBusinessRepo
+func (_mock *MockIBusinessRepo) BusinessEmailExists(ctx context.Context, businessEmail string) (bool, error) {
+	ret := _mock.Called(ctx, businessEmail)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BusinessEmailExists")
+	}
+
+	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return returnFunc(ctx, businessEmail)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) bool); ok {
+		r0 = returnFunc(ctx, businessEmail)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, businessEmail)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBusinessRepo_BusinessEmailExists_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BusinessEmailExists'
+type MockIBusinessRepo_BusinessEmailExists_Call struct {
+	*mock.Call
+}
+
+// BusinessEmailExists is a helper method to define mock.On call
+//   - ctx context.Context
+//   - businessEmail string
+func (_e *MockIBusinessRepo_Expecter) BusinessEmailExists(ctx interface{}, businessEmail interface{}) *MockIBusinessRepo_BusinessEmailExists_Call {
+	return &MockIBusinessRepo_BusinessEmailExists_Call{Call: _e.mock.On("BusinessEmailExists", ctx, businessEmail)}
+}
+
+func (_c *MockIBusinessRepo_BusinessEmailExists_Call) Run(run func(ctx context.Context, businessEmail string)) *MockIBusinessRepo_BusinessEmailExists_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBusinessRepo_BusinessEmailExists_Call) Return(b bool, err error) *MockIBusinessRepo_BusinessEmailExists_Call {
+	_c.Call.Return(b, err)
+	return _c
+}
+
+func (_c *MockIBusinessRepo_BusinessEmailExists_Call) RunAndReturn(run func(ctx context.Context, businessEmail string) (bool, error)) *MockIBusinessRepo_BusinessEmailExists_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeleteBusinessWorkingHours provides a mock function for the type MockIBusinessRepo
 func (_mock *MockIBusinessRepo) DeleteBusinessWorkingHours(ctx context.Context, tx *sql.Tx, businessID int64) error {
 	ret := _mock.Called(ctx, tx, businessID)

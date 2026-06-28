@@ -149,6 +149,15 @@ func (b *businessRepo) GetBusinessProfileByOwnerID(ctx context.Context, ownerID 
 	return businessProfile, nil
 }
 
+func (b *businessRepo) BusinessEmailExists(ctx context.Context, businessEmail string) (bool, error) {
+	var exists bool
+	err := b.DB.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM business_profiles WHERE business_email = $1)`, businessEmail).Scan(&exists)
+	if err != nil {
+		return false, nil
+	}
+	return exists, nil
+}
+
 func (b *businessRepo) GetBusinessWorkingHours(ctx context.Context, businessID int64) ([]param.WorkingHourParam, error) {
 	rows, err := b.DB.QueryContext(ctx, `
 		SELECT

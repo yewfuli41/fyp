@@ -31,7 +31,7 @@ var _ = Describe("AuthRepo", func() {
 
 		repo = repository.NewAuthRepo(db)
 		ctx = context.Background()
-		userCols = []string{"user_id", "username", "email", "contact_number", "password", "failed_login_attempts", "locked_until"}
+		userCols = []string{"user_id", "username", "email", "contact_number", "password", "failed_login_attempts", "locked_until", "must_reset_password"}
 	})
 
 	AfterEach(func() {
@@ -48,9 +48,9 @@ var _ = Describe("AuthRepo", func() {
 			}
 
 			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO users")).
-				WithArgs(signUpParam.Username, signUpParam.Email, signUpParam.ContactNumber, signUpParam.Password).
+				WithArgs(signUpParam.Username, signUpParam.Email, signUpParam.ContactNumber, signUpParam.Password, signUpParam.MustResetPassword).
 				WillReturnRows(sqlmock.NewRows(userCols).
-					AddRow(1, signUpParam.Username, signUpParam.Email, signUpParam.ContactNumber, signUpParam.Password, 0, nil))
+					AddRow(1, signUpParam.Username, signUpParam.Email, signUpParam.ContactNumber, signUpParam.Password, 0, nil, false))
 
 			user, err := repo.SignUp(ctx, signUpParam)
 
@@ -68,7 +68,7 @@ var _ = Describe("AuthRepo", func() {
 			}
 
 			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO users")).
-				WithArgs(signUpParam.Username, signUpParam.Email, signUpParam.ContactNumber, signUpParam.Password).
+				WithArgs(signUpParam.Username, signUpParam.Email, signUpParam.ContactNumber, signUpParam.Password, signUpParam.MustResetPassword).
 				WillReturnError(errors.New("db error"))
 
 			user, err := repo.SignUp(ctx, signUpParam)
@@ -88,7 +88,7 @@ var _ = Describe("AuthRepo", func() {
 			mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM users WHERE email = $1")).
 				WithArgs(logInParam.Email).
 				WillReturnRows(sqlmock.NewRows(userCols).
-					AddRow(1, "testuser", logInParam.Email, "12345678", "hashedpassword", 0, nil))
+					AddRow(1, "testuser", logInParam.Email, "12345678", "hashedpassword", 0, nil, false))
 
 			user, err := repo.GetUser(ctx, logInParam.Email)
 
@@ -107,7 +107,7 @@ var _ = Describe("AuthRepo", func() {
 			mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM users WHERE email = $1")).
 				WithArgs(logInParam.Email).
 				WillReturnRows(sqlmock.NewRows(userCols).
-					AddRow(1, "testuser", logInParam.Email, "12345678", "hashedpassword", 3, lockedUntil))
+					AddRow(1, "testuser", logInParam.Email, "12345678", "hashedpassword", 3, lockedUntil, true))
 
 			user, err := repo.GetUser(ctx, logInParam.Email)
 
@@ -116,6 +116,7 @@ var _ = Describe("AuthRepo", func() {
 			Expect(*user.ContactNumber).To(Equal("12345678"))
 			Expect(user.FailedLoginAttempts).To(Equal(3))
 			Expect(*user.LockedUntil).To(Equal(lockedUntil))
+			Expect(user.MustResetPassword).To(BeTrue())
 		})
 
 		It("returns sql.ErrNoRows if user is not found", func() {
@@ -164,6 +165,18 @@ var _ = Describe("AuthRepo", func() {
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("update error"))
+		})
+	})
+
+	Describe("UpdatePassword", func() {
+		It("updates the password and clears the reset flag", func() {
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET password = $1, must_reset_password = FALSE WHERE user_id = $2")).
+				WithArgs("hashed-password", int64(1)).
+				WillReturnResult(sqlmock.NewResult(1, 1))
+
+			err := repo.UpdatePassword(ctx, 1, "hashed-password")
+
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 })

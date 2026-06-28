@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     password TEXT NOT NULL,
     failed_login_attempts INT NOT NULL DEFAULT 0,
     locked_until TIMESTAMPTZ NULL,
+    must_reset_password BOOLEAN NOT NULL DEFAULT FALSE,
     CHECK (failed_login_attempts >= 0)
 );
 
@@ -51,6 +52,7 @@ CREATE TABLE IF NOT EXISTS package_items (
     package_item_id BIGSERIAL PRIMARY KEY,
     service_package_id BIGINT NOT NULL REFERENCES service_packages(service_package_id) ON DELETE CASCADE,
     package_item_name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMPTZ
 );
 

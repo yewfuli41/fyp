@@ -25,16 +25,45 @@ const generateTimeArray = (minInterval: number): string[] => {
 
 const TIME_ARRAY = generateTimeArray(TIME_INTERVAL)
 
-export const startTimeSlice = (endTime: string): string[]=> {
-    const index = TIME_ARRAY.indexOf(endTime)
-    if (index === -1)
-        return TIME_ARRAY
-    return TIME_ARRAY.slice(0, index)
+type OptionParam = {
+    businessStartTime: string,
+    businessEndTime: string
 }
 
-export const endTimeSlice = (startTime: string): string[]=> {
-    const index = TIME_ARRAY.indexOf(startTime)
-    if (index === -1)
+export const startTimeSlice = (endTime: string, options?: OptionParam): string[]=> {
+    var startIndex = 0, endIndex: number;
+    if(options === undefined)
+        endIndex = TIME_ARRAY.indexOf(endTime)
+    else if (endTime < options.businessEndTime){
+        startIndex = TIME_ARRAY.indexOf(options.businessStartTime)
+        endIndex = TIME_ARRAY.indexOf(endTime)
+    }
+    else{
+        startIndex = TIME_ARRAY.indexOf(options.businessStartTime)
+        endIndex = TIME_ARRAY.indexOf(options.businessEndTime) 
+        if (endIndex === -1)
+            return TIME_ARRAY
+        endIndex +=1 
+    }
+    if (startIndex === -1 || endIndex === -1)
         return TIME_ARRAY
-    return TIME_ARRAY.slice(index+1)
+    return TIME_ARRAY.slice(startIndex, endIndex)
+}
+
+export const endTimeSlice = (startTime: string, options?: OptionParam): string[]=> {
+    var startIndex: number, endIndex: number;
+    if(options === undefined || startTime > options.businessStartTime)
+        startIndex = TIME_ARRAY.indexOf(startTime) + 1
+    else 
+        startIndex = TIME_ARRAY.indexOf(options.businessStartTime)
+    if (startIndex === -1) 
+        return TIME_ARRAY
+    else if(options){
+        endIndex = TIME_ARRAY.indexOf(options.businessEndTime) 
+        if (endIndex === -1) 
+            return TIME_ARRAY
+        return TIME_ARRAY.slice(startIndex, endIndex +1)
+    }
+    else
+        return TIME_ARRAY.slice(startIndex)
 }

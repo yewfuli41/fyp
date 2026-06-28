@@ -6,6 +6,7 @@ package mocks
 
 import (
 	"context"
+	"database/sql"
 	"fyp/domain/param"
 
 	mock "github.com/stretchr/testify/mock"
@@ -170,6 +171,212 @@ func (_c *MockIAuthRepo_SignUp_Call) Return(authUserParam *param.AuthUserParam, 
 }
 
 func (_c *MockIAuthRepo_SignUp_Call) RunAndReturn(run func(ctx context.Context, param1 param.SignUpParam) (*param.AuthUserParam, error)) *MockIAuthRepo_SignUp_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SignUpTx provides a mock function for the type MockIAuthRepo
+func (_mock *MockIAuthRepo) SignUpTx(ctx context.Context, tx *sql.Tx, param1 param.SignUpParam) (*param.AuthUserParam, error) {
+	ret := _mock.Called(ctx, tx, param1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SignUpTx")
+	}
+
+	var r0 *param.AuthUserParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, param.SignUpParam) (*param.AuthUserParam, error)); ok {
+		return returnFunc(ctx, tx, param1)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, param.SignUpParam) *param.AuthUserParam); ok {
+		r0 = returnFunc(ctx, tx, param1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*param.AuthUserParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *sql.Tx, param.SignUpParam) error); ok {
+		r1 = returnFunc(ctx, tx, param1)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIAuthRepo_SignUpTx_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SignUpTx'
+type MockIAuthRepo_SignUpTx_Call struct {
+	*mock.Call
+}
+
+// SignUpTx is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx *sql.Tx
+//   - param1 param.SignUpParam
+func (_e *MockIAuthRepo_Expecter) SignUpTx(ctx interface{}, tx interface{}, param1 interface{}) *MockIAuthRepo_SignUpTx_Call {
+	return &MockIAuthRepo_SignUpTx_Call{Call: _e.mock.On("SignUpTx", ctx, tx, param1)}
+}
+
+func (_c *MockIAuthRepo_SignUpTx_Call) Run(run func(ctx context.Context, tx *sql.Tx, param1 param.SignUpParam)) *MockIAuthRepo_SignUpTx_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *sql.Tx
+		if args[1] != nil {
+			arg1 = args[1].(*sql.Tx)
+		}
+		var arg2 param.SignUpParam
+		if args[2] != nil {
+			arg2 = args[2].(param.SignUpParam)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIAuthRepo_SignUpTx_Call) Return(authUserParam *param.AuthUserParam, err error) *MockIAuthRepo_SignUpTx_Call {
+	_c.Call.Return(authUserParam, err)
+	return _c
+}
+
+func (_c *MockIAuthRepo_SignUpTx_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, param1 param.SignUpParam) (*param.AuthUserParam, error)) *MockIAuthRepo_SignUpTx_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdatePassword provides a mock function for the type MockIAuthRepo
+func (_mock *MockIAuthRepo) UpdatePassword(ctx context.Context, userID int64, hashedPassword string) error {
+	ret := _mock.Called(ctx, userID, hashedPassword)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdatePassword")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string) error); ok {
+		r0 = returnFunc(ctx, userID, hashedPassword)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIAuthRepo_UpdatePassword_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdatePassword'
+type MockIAuthRepo_UpdatePassword_Call struct {
+	*mock.Call
+}
+
+// UpdatePassword is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID int64
+//   - hashedPassword string
+func (_e *MockIAuthRepo_Expecter) UpdatePassword(ctx interface{}, userID interface{}, hashedPassword interface{}) *MockIAuthRepo_UpdatePassword_Call {
+	return &MockIAuthRepo_UpdatePassword_Call{Call: _e.mock.On("UpdatePassword", ctx, userID, hashedPassword)}
+}
+
+func (_c *MockIAuthRepo_UpdatePassword_Call) Run(run func(ctx context.Context, userID int64, hashedPassword string)) *MockIAuthRepo_UpdatePassword_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIAuthRepo_UpdatePassword_Call) Return(err error) *MockIAuthRepo_UpdatePassword_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIAuthRepo_UpdatePassword_Call) RunAndReturn(run func(ctx context.Context, userID int64, hashedPassword string) error) *MockIAuthRepo_UpdatePassword_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateUserEmailTx provides a mock function for the type MockIAuthRepo
+func (_mock *MockIAuthRepo) UpdateUserEmailTx(ctx context.Context, tx *sql.Tx, userID int64, email string) error {
+	ret := _mock.Called(ctx, tx, userID, email)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateUserEmailTx")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, int64, string) error); ok {
+		r0 = returnFunc(ctx, tx, userID, email)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIAuthRepo_UpdateUserEmailTx_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateUserEmailTx'
+type MockIAuthRepo_UpdateUserEmailTx_Call struct {
+	*mock.Call
+}
+
+// UpdateUserEmailTx is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx *sql.Tx
+//   - userID int64
+//   - email string
+func (_e *MockIAuthRepo_Expecter) UpdateUserEmailTx(ctx interface{}, tx interface{}, userID interface{}, email interface{}) *MockIAuthRepo_UpdateUserEmailTx_Call {
+	return &MockIAuthRepo_UpdateUserEmailTx_Call{Call: _e.mock.On("UpdateUserEmailTx", ctx, tx, userID, email)}
+}
+
+func (_c *MockIAuthRepo_UpdateUserEmailTx_Call) Run(run func(ctx context.Context, tx *sql.Tx, userID int64, email string)) *MockIAuthRepo_UpdateUserEmailTx_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *sql.Tx
+		if args[1] != nil {
+			arg1 = args[1].(*sql.Tx)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIAuthRepo_UpdateUserEmailTx_Call) Return(err error) *MockIAuthRepo_UpdateUserEmailTx_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIAuthRepo_UpdateUserEmailTx_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, userID int64, email string) error) *MockIAuthRepo_UpdateUserEmailTx_Call {
 	_c.Call.Return(run)
 	return _c
 }

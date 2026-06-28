@@ -5,7 +5,7 @@ import { useAuth } from "../auth/AuthContext";
 import { userProfile } from "../services/ProfileService";
 import { registerBusinessProfile, type BusinessProfileInput, type WorkingHour } from "../services/BusinessService";
 import { applyGraphQLErrors } from "../utils/graphqlErrors";
-import { FIELD_LIMITS } from "../utils/fieldLimits";
+import { FIELD_LIMITS, shouldClearEmailError, shouldClearContactNumberError } from "../utils/fieldLimits";
 import { DAYS_OF_WEEK, startTimeSlice, endTimeSlice, toTimeInputValue} from "../utils/time";
 
 export default function RegisterBusinessPage() {
@@ -182,8 +182,9 @@ export default function RegisterBusinessPage() {
                         type="text"
                         value={businessContactNumber}
                         onChange={(e) => {
-                            setBusinessContactNumber(e.target.value);
-                            setFieldErrors(prev => ({ ...prev, businessContactNumber: "" }));
+                            setBusinessContactNumber(e.target.value)
+                            if (shouldClearContactNumberError(fieldErrors.businessContactNumber, e.target.value))
+                                setFieldErrors(prev => ({ ...prev, businessContactNumber: "" }))
                         }}
                         maxLength={FIELD_LIMITS.businessContactNumber}
                         isInvalid={!!fieldErrors.businessContactNumber}
@@ -197,8 +198,9 @@ export default function RegisterBusinessPage() {
                         type="email"
                         value={businessEmail}
                         onChange={(e) => {
-                            setBusinessEmail(e.target.value);
-                            setFieldErrors(prev => ({ ...prev, businessEmail: "" }));
+                            setBusinessEmail(e.target.value)
+                            if (shouldClearEmailError(fieldErrors.businessEmail, e.target.value))
+                                setFieldErrors(prev => ({ ...prev, businessEmail: "" }))
                         }}
                         maxLength={FIELD_LIMITS.businessEmail}
                         isInvalid={!!fieldErrors.businessEmail}

@@ -101,13 +101,16 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CreateService           func(childComplexity int, service model.ServiceInput) int
 		DeleteService           func(childComplexity int, serviceID string) int
+		DeleteStaff             func(childComplexity int, staffID string) int
 		LogIn                   func(childComplexity int, user model.LogInInput) int
 		RegisterBusinessProfile func(childComplexity int, business model.BusinessProfileInput) int
 		RegisterStaff           func(childComplexity int, staff *model.StaffInput) int
+		ResetPassword           func(childComplexity int, newPassword string) int
 		SignUp                  func(childComplexity int, user model.SignUpInput) int
 		UpdateBusinessProfile   func(childComplexity int, business model.BusinessProfileInput) int
 		UpdateProfile           func(childComplexity int, user model.UpdateProfileInput) int
 		UpdateService           func(childComplexity int, serviceID string, service model.ServiceInput) int
+		UpdateStaff             func(childComplexity int, staffID string, staff model.UpdateStaffInput) int
 	}
 
 	PackageItem struct {
@@ -120,6 +123,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		DisplayServices func(childComplexity int) int
+		DisplayStaff    func(childComplexity int) int
 		UserProfile     func(childComplexity int) int
 	}
 
@@ -189,7 +193,9 @@ type ComplexityRoot struct {
 		BusinessID         func(childComplexity int) int
 		ContactNumber      func(childComplexity int) int
 		DeletedAt          func(childComplexity int) int
+		Email              func(childComplexity int) int
 		LeaveApplications  func(childComplexity int) int
+		MustResetPassword  func(childComplexity int) int
 		Name               func(childComplexity int) int
 		Position           func(childComplexity int) int
 		RecurringSchedules func(childComplexity int) int
@@ -217,6 +223,7 @@ type ComplexityRoot struct {
 		Email               func(childComplexity int) int
 		FailedLoginAttempts func(childComplexity int) int
 		LockedUntil         func(childComplexity int) int
+		MustResetPassword   func(childComplexity int) int
 		StaffProfile        func(childComplexity int) int
 		UserID              func(childComplexity int) int
 		Username            func(childComplexity int) int
@@ -230,12 +237,16 @@ type MutationResolver interface {
 	UpdateService(ctx context.Context, serviceID string, service model.ServiceInput) (*model.Service, error)
 	DeleteService(ctx context.Context, serviceID string) (bool, error)
 	RegisterStaff(ctx context.Context, staff *model.StaffInput) (bool, error)
+	UpdateStaff(ctx context.Context, staffID string, staff model.UpdateStaffInput) (*model.Staff, error)
+	DeleteStaff(ctx context.Context, staffID string) (bool, error)
 	SignUp(ctx context.Context, user model.SignUpInput) (*model.AuthPayload, error)
 	LogIn(ctx context.Context, user model.LogInInput) (*model.AuthPayload, error)
+	ResetPassword(ctx context.Context, newPassword string) (bool, error)
 	UpdateProfile(ctx context.Context, user model.UpdateProfileInput) (*model.User, error)
 }
 type QueryResolver interface {
 	DisplayServices(ctx context.Context) ([]*model.Service, error)
+	DisplayStaff(ctx context.Context) ([]*model.Staff, error)
 	UserProfile(ctx context.Context) (*model.User, error)
 }
 
@@ -550,6 +561,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteService(childComplexity, args["serviceId"].(string)), true
+	case "Mutation.deleteStaff":
+		if e.ComplexityRoot.Mutation.DeleteStaff == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteStaff_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteStaff(childComplexity, args["staffId"].(string)), true
 	case "Mutation.logIn":
 		if e.ComplexityRoot.Mutation.LogIn == nil {
 			break
@@ -583,6 +605,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.RegisterStaff(childComplexity, args["staff"].(*model.StaffInput)), true
+	case "Mutation.resetPassword":
+		if e.ComplexityRoot.Mutation.ResetPassword == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_resetPassword_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.ResetPassword(childComplexity, args["newPassword"].(string)), true
 	case "Mutation.signUp":
 		if e.ComplexityRoot.Mutation.SignUp == nil {
 			break
@@ -627,6 +660,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateService(childComplexity, args["serviceId"].(string), args["service"].(model.ServiceInput)), true
+	case "Mutation.updateStaff":
+		if e.ComplexityRoot.Mutation.UpdateStaff == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateStaff_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateStaff(childComplexity, args["staffId"].(string), args["staff"].(model.UpdateStaffInput)), true
 
 	case "PackageItem.deletedAt":
 		if e.ComplexityRoot.PackageItem.DeletedAt == nil {
@@ -665,6 +709,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.DisplayServices(childComplexity), true
+	case "Query.displayStaff":
+		if e.ComplexityRoot.Query.DisplayStaff == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.DisplayStaff(childComplexity), true
 
 	case "Query.userProfile":
 		if e.ComplexityRoot.Query.UserProfile == nil {
@@ -978,12 +1028,24 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Staff.DeletedAt(childComplexity), true
+	case "Staff.email":
+		if e.ComplexityRoot.Staff.Email == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Staff.Email(childComplexity), true
 	case "Staff.leaveApplications":
 		if e.ComplexityRoot.Staff.LeaveApplications == nil {
 			break
 		}
 
 		return e.ComplexityRoot.Staff.LeaveApplications(childComplexity), true
+	case "Staff.mustResetPassword":
+		if e.ComplexityRoot.Staff.MustResetPassword == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Staff.MustResetPassword(childComplexity), true
 	case "Staff.name":
 		if e.ComplexityRoot.Staff.Name == nil {
 			break
@@ -1112,6 +1174,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.User.LockedUntil(childComplexity), true
+	case "User.mustResetPassword":
+		if e.ComplexityRoot.User.MustResetPassword == nil {
+			break
+		}
+
+		return e.ComplexityRoot.User.MustResetPassword(childComplexity), true
 	case "User.staffProfile":
 		if e.ComplexityRoot.User.StaffProfile == nil {
 			break
@@ -1147,6 +1215,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputSignUpInput,
 		ec.unmarshalInputStaffInput,
 		ec.unmarshalInputUpdateProfileInput,
+		ec.unmarshalInputUpdateStaffInput,
 		ec.unmarshalInputWorkingHourInput,
 	)
 	first := true
@@ -1518,6 +1587,10 @@ func (ec *executionContext) childFields_Staff(ctx context.Context, field graphql
 		return ec.fieldContext_Staff_business(ctx, field)
 	case "name":
 		return ec.fieldContext_Staff_name(ctx, field)
+	case "email":
+		return ec.fieldContext_Staff_email(ctx, field)
+	case "mustResetPassword":
+		return ec.fieldContext_Staff_mustResetPassword(ctx, field)
 	case "contactNumber":
 		return ec.fieldContext_Staff_contactNumber(ctx, field)
 	case "position":
@@ -1570,6 +1643,8 @@ func (ec *executionContext) childFields_User(ctx context.Context, field graphql.
 		return ec.fieldContext_User_failedLoginAttempts(ctx, field)
 	case "lockedUntil":
 		return ec.fieldContext_User_lockedUntil(ctx, field)
+	case "mustResetPassword":
+		return ec.fieldContext_User_mustResetPassword(ctx, field)
 	case "businessProfile":
 		return ec.fieldContext_User_businessProfile(ctx, field)
 	case "staffProfile":
@@ -1724,6 +1799,20 @@ func (ec *executionContext) field_Mutation_deleteService_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteStaff_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "staffId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["staffId"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_logIn_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1763,6 +1852,20 @@ func (ec *executionContext) field_Mutation_registerStaff_args(ctx context.Contex
 		return nil, err
 	}
 	args["staff"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_resetPassword_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "newPassword",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["newPassword"] = arg0
 	return args, nil
 }
 
@@ -1827,6 +1930,28 @@ func (ec *executionContext) field_Mutation_updateService_args(ctx context.Contex
 		return nil, err
 	}
 	args["service"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateStaff_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "staffId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["staffId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "staff",
+		func(ctx context.Context, v any) (model.UpdateStaffInput, error) {
+			return ec.unmarshalNUpdateStaffInput2fypᚋgraphᚋmodelᚐUpdateStaffInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["staff"] = arg1
 	return args, nil
 }
 
@@ -3297,6 +3422,94 @@ func (ec *executionContext) fieldContext_Mutation_registerStaff(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_updateStaff(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateStaff(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateStaff(ctx, fc.Args["staffId"].(string), fc.Args["staff"].(model.UpdateStaffInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Staff) graphql.Marshaler {
+			return ec.marshalNStaff2ᚖfypᚋgraphᚋmodelᚐStaff(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateStaff(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Staff(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateStaff_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteStaff(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteStaff(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteStaff(ctx, fc.Args["staffId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteStaff(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteStaff_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_signUp(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3379,6 +3592,50 @@ func (ec *executionContext) fieldContext_Mutation_logIn(ctx context.Context, fie
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_logIn_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_resetPassword(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_resetPassword(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().ResetPassword(ctx, fc.Args["newPassword"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_resetPassword(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_resetPassword_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3580,6 +3837,38 @@ func (ec *executionContext) fieldContext_Query_displayServices(_ context.Context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_Service(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_displayStaff(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_displayStaff(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().DisplayStaff(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.Staff) graphql.Marshaler {
+			return ec.marshalNStaff2ᚕᚖfypᚋgraphᚋmodelᚐStaffᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_displayStaff(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Staff(ctx, field)
 		},
 	}
 	return fc, nil
@@ -5042,6 +5331,52 @@ func (ec *executionContext) fieldContext_Staff_name(_ context.Context, field gra
 	return graphql.NewScalarFieldContext("Staff", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
+func (ec *executionContext) _Staff_email(ctx context.Context, field graphql.CollectedField, obj *model.Staff) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Staff_email(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Email, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Staff_email(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Staff", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Staff_mustResetPassword(ctx context.Context, field graphql.CollectedField, obj *model.Staff) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Staff_mustResetPassword(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.MustResetPassword, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Staff_mustResetPassword(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Staff", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
 func (ec *executionContext) _Staff_contactNumber(ctx context.Context, field graphql.CollectedField, obj *model.Staff) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5545,6 +5880,29 @@ func (ec *executionContext) _User_lockedUntil(ctx context.Context, field graphql
 }
 func (ec *executionContext) fieldContext_User_lockedUntil(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("User", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _User_mustResetPassword(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_User_mustResetPassword(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.MustResetPassword, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_User_mustResetPassword(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("User", field, false, false, errors.New("field of type Boolean does not have child fields"))
 }
 
 func (ec *executionContext) _User_businessProfile(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
@@ -7082,6 +7440,57 @@ func (ec *executionContext) unmarshalInputUpdateProfileInput(ctx context.Context
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateStaffInput(ctx context.Context, obj any) (model.UpdateStaffInput, error) {
+	var it model.UpdateStaffInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "email", "contactNumber", "position"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "email":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Email = data
+		case "contactNumber":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contactNumber"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ContactNumber = data
+		case "position":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("position"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Position = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputWorkingHourInput(ctx context.Context, obj any) (model.WorkingHourInput, error) {
 	var it model.WorkingHourInput
 	if obj == nil {
@@ -7551,6 +7960,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "updateStaff":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateStaff(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteStaff":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteStaff(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "signUp":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_signUp(ctx, field)
@@ -7561,6 +7984,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "logIn":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_logIn(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "resetPassword":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_resetPassword(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -7680,6 +8110,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_displayServices(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "displayStaff":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_displayStaff(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -8144,6 +8596,16 @@ func (ec *executionContext) _Staff(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "email":
+			out.Values[i] = ec._Staff_email(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "mustResetPassword":
+			out.Values[i] = ec._Staff_mustResetPassword(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "contactNumber":
 			out.Values[i] = ec._Staff_contactNumber(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -8300,6 +8762,11 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "lockedUntil":
 			out.Values[i] = ec._User_lockedUntil(ctx, field, obj)
+		case "mustResetPassword":
+			out.Values[i] = ec._User_mustResetPassword(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "businessProfile":
 			out.Values[i] = ec._User_businessProfile(ctx, field, obj)
 		case "staffProfile":
@@ -9103,6 +9570,10 @@ func (ec *executionContext) unmarshalNSignUpInput2fypᚋgraphᚋmodelᚐSignUpIn
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNStaff2fypᚋgraphᚋmodelᚐStaff(ctx context.Context, sel ast.SelectionSet, v model.Staff) graphql.Marshaler {
+	return ec._Staff(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNStaff2ᚕᚖfypᚋgraphᚋmodelᚐStaffᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Staff) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -9189,6 +9660,11 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 
 func (ec *executionContext) unmarshalNUpdateProfileInput2fypᚋgraphᚋmodelᚐUpdateProfileInput(ctx context.Context, v any) (model.UpdateProfileInput, error) {
 	res, err := ec.unmarshalInputUpdateProfileInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateStaffInput2fypᚋgraphᚋmodelᚐUpdateStaffInput(ctx context.Context, v any) (model.UpdateStaffInput, error) {
+	res, err := ec.unmarshalInputUpdateStaffInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

@@ -190,6 +190,8 @@ type Staff struct {
 	BusinessID         string               `json:"businessId"`
 	Business           *BusinessProfile     `json:"business"`
 	Name               string               `json:"name"`
+	Email              string               `json:"email"`
+	MustResetPassword  bool                 `json:"mustResetPassword"`
 	ContactNumber      string               `json:"contactNumber"`
 	Position           *string              `json:"position,omitempty"`
 	WorkingHours       []*StaffWorkingHour  `json:"workingHours"`
@@ -223,6 +225,13 @@ type UpdateProfileInput struct {
 	ContactNumber *string `json:"contactNumber,omitempty"`
 }
 
+type UpdateStaffInput struct {
+	Name          string `json:"name"`
+	Email         string `json:"email"`
+	ContactNumber string `json:"contactNumber"`
+	Position      string `json:"position"`
+}
+
 type User struct {
 	UserID              string           `json:"userId"`
 	Username            string           `json:"username"`
@@ -230,6 +239,7 @@ type User struct {
 	ContactNumber       string           `json:"contactNumber"`
 	FailedLoginAttempts int32            `json:"failedLoginAttempts"`
 	LockedUntil         *string          `json:"lockedUntil,omitempty"`
+	MustResetPassword   bool             `json:"mustResetPassword"`
 	BusinessProfile     *BusinessProfile `json:"businessProfile,omitempty"`
 	StaffProfile        *Staff           `json:"staffProfile,omitempty"`
 	Bookings            []*Booking       `json:"bookings"`

@@ -6,7 +6,7 @@ import { useAuth } from "../auth/AuthContext";
 import PasswordInput from "../components/PasswordInput";
 import { signUp } from "../services/SignUpService";
 import { parseGraphQLErrors, type FieldErrors } from "../utils/graphqlErrors";
-import { FIELD_LIMITS } from "../utils/fieldLimits";
+import { FIELD_LIMITS, shouldClearEmailError, shouldClearContactNumberError, shouldClearPasswordError } from "../utils/fieldLimits";
 import "../styles/auth.css";
 
 export default function SignUpPage() {
@@ -113,10 +113,8 @@ export default function SignUpPage() {
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value)
-                setFieldErrors(prev => ({
-                  ...prev,
-                  email: "",
-                }))
+                if (shouldClearEmailError(fieldErrors.email, e.target.value))
+                  setFieldErrors(prev => ({ ...prev, email: "" }))
               }}
               maxLength={FIELD_LIMITS.email}
               isInvalid={!!fieldErrors.email}
@@ -133,10 +131,8 @@ export default function SignUpPage() {
               value={contactNumber}
               onChange={(e) => {
                 setContactNumber(e.target.value)
-                setFieldErrors(prev => ({
-                  ...prev,
-                  contactNumber: "",
-                }))
+                if (shouldClearContactNumberError(fieldErrors.contactNumber, e.target.value))
+                  setFieldErrors(prev => ({ ...prev, contactNumber: "" }))
               }}
               maxLength={FIELD_LIMITS.contactNumber}
               isInvalid={!!fieldErrors.contactNumber}
@@ -152,11 +148,8 @@ export default function SignUpPage() {
             value={password}
             onChange={(value) => {
               setPassword(value)
-              setFieldErrors(prev => {
-                const next = { ...prev }
-                delete next.password
-                return next
-              })
+              if (shouldClearPasswordError(fieldErrors.password, value))
+                setFieldErrors(prev => { const next = { ...prev }; delete next.password; return next })
             }}
             isInvalid={!!fieldErrors.password}
             errorMessage={fieldErrors.password}

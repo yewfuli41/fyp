@@ -99,8 +99,6 @@ var _ = Describe("ServiceService", func() {
 
 		It("returns validation error", func() {
 			invalidParam := param.ServiceParam{ServiceName: ""}
-			dbMock.ExpectBegin()
-			dbMock.ExpectRollback()
 
 			result, err := serviceSvc.CreateService(ctx, invalidParam)
 			Expect(err).To(HaveOccurred())

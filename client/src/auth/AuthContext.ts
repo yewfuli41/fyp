@@ -5,6 +5,7 @@ export type User = {
   username: string;
   email: string;
   contactNumber?: string;
+  mustResetPassword?: boolean;
   businessProfile?: BusinessProfile;
   staffProfile?: Staff;
 };

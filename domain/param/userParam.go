@@ -15,4 +15,5 @@ type AuthUserParam struct {
 	Password            string
 	FailedLoginAttempts int
 	LockedUntil         *time.Time
+	MustResetPassword   bool
 }

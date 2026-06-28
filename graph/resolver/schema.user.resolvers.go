@@ -7,6 +7,9 @@ package resolver
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/graph"
 	"fyp/graph/graphErrs"
@@ -45,21 +48,42 @@ func (r *mutationResolver) LogIn(ctx context.Context, user model.LogInInput) (*m
 	mappedUser := graph.MapUser(result.User)
 
 	businessProfile, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, result.User.UserID)
-	if err != nil {
-		// If no business profile is found, we just return the user without it.
-		// We don't want to return an error if it's just not found.
-		return &model.AuthPayload{
-			Token: result.Token,
-			User:  mappedUser,
-		}, nil
+	if err == nil {
+		mappedUser.BusinessProfile = graph.MapBusinessProfile(businessProfile, result.User)
+	} else if !errors.Is(err, errs.ErrBusinessProfileNotFound) {
+		return nil, graphErrs.ToGraphQLError(err)
 	}
 
-	mappedUser.BusinessProfile = graph.MapBusinessProfile(businessProfile, result.User)
+	staffProfile, err := r.App.StaffService.GetStaffProfileByUserID(ctx, result.User.UserID)
+	if err == nil {
+		mappedUser.StaffProfile = graph.MapStaff(staffProfile)
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
 
 	return &model.AuthPayload{
 		Token: result.Token,
 		User:  mappedUser,
 	}, nil
+}
+
+// ResetPassword is the resolver for the resetPassword field.
+func (r *mutationResolver) ResetPassword(ctx context.Context, newPassword string) (bool, error) {
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return false, graphErrs.ToGraphQLError(err)
+	}
+
+	err = r.App.AuthService.ResetPassword(ctx, param.ResetPasswordParam{
+		UserID:      currentUser.UserID,
+		Email:       currentUser.Email,
+		NewPassword: newPassword,
+	})
+	if err != nil {
+		return false, graphErrs.ToGraphQLError(err)
+	}
+
+	return true, nil
 }
 
 // UpdateProfile is the resolver for the updateProfile field.
@@ -98,13 +122,18 @@ func (r *queryResolver) UserProfile(ctx context.Context) (*model.User, error) {
 	mappedUser := graph.MapUser(userInfo)
 
 	businessProfile, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, userInfo.UserID)
-	if err != nil {
-		// If no business profile is found, we just return the user without it.
-		// We don't want to return an error if it's just not found.
-		return mappedUser, nil
+	if err == nil {
+		mappedUser.BusinessProfile = graph.MapBusinessProfile(businessProfile, userInfo)
+	} else if !errors.Is(err, errs.ErrBusinessProfileNotFound) {
+		return nil, graphErrs.ToGraphQLError(err)
 	}
 
-	mappedUser.BusinessProfile = graph.MapBusinessProfile(businessProfile, userInfo)
+	staffProfile, err := r.App.StaffService.GetStaffProfileByUserID(ctx, userInfo.UserID)
+	if err == nil {
+		mappedUser.StaffProfile = graph.MapStaff(staffProfile)
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
 
 	return mappedUser, nil
 }

@@ -8,6 +8,7 @@ import (
 	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
+	"strings"
 )
 
 type serviceService struct {
@@ -22,45 +23,69 @@ func NewServiceService(db *sql.DB, serviceRepo interfaces.IServiceRepo) interfac
 	}
 }
 
+func validatePackageDuplicates(packages []param.ServicePackageParam) errs.ValidationErrors {
+	var validationErrs errs.ValidationErrors
+	seenPkgNames := make(map[string]bool)
+	for i, pkg := range packages {
+		lower := strings.ToLower(pkg.ServicePackageName)
+		if seenPkgNames[lower] {
+			validationErrs = append(validationErrs, errs.ValidationError{
+				Field: fmt.Sprintf("servicePackageName[%d]", i), Message: "Service package name already exists",
+			})
+		}
+		seenPkgNames[lower] = true
+
+		seenItemNames := make(map[string]bool)
+		for j, item := range pkg.PackageItems {
+			lowerItem := strings.ToLower(item.PackageItemName)
+			if seenItemNames[lowerItem] {
+				validationErrs = append(validationErrs, errs.ValidationError{
+					Field: fmt.Sprintf("packageItemName[%d][%d]", i, j), Message: "Package item name already exists",
+				})
+			}
+			seenItemNames[lowerItem] = true
+		}
+	}
+	return validationErrs
+}
+
 func (s *serviceService) CreateService(ctx context.Context, p param.ServiceParam) (*param.ServiceParam, error) {
+	if err := p.Validate(); err != nil {
+		return nil, err
+	}
+
+	if len(p.ServicePackages) == 0 {
+		p.ServicePackages = []param.ServicePackageParam{{ServicePackageName: p.ServiceName}}
+	}
+
+	if validationErrs := validatePackageDuplicates(p.ServicePackages); len(validationErrs) > 0 {
+		return nil, validationErrs
+	}
+
 	var result *param.ServiceParam
 	err := s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
-		if err := p.Validate(); err != nil {
-			return err
-		}
-
-		if len(p.ServicePackages) == 0 {
-			p.ServicePackages = []param.ServicePackageParam{{ServicePackageName: p.ServiceName}}
-		}
-
 		created, err := s.serviceRepo.InsertService(ctx, tx, p)
 		if err != nil {
 			if database.IsUniqueViolation(err, "services_unique_name") {
-				return errs.ValidationErrors{
-					{Field: "serviceName", Message: "Service name already exists"},
-				}
+				return errs.ValidationErrors{{Field: "serviceName", Message: "Service name already exists"}}
 			}
 			return err
 		}
 
-		for _, pkg := range p.ServicePackages {
+		for i, pkg := range p.ServicePackages {
 			pkg.ServiceID = created.ServiceID
 			createdPkg, err := s.serviceRepo.InsertServicePackage(ctx, tx, pkg)
 			if err != nil {
 				if database.IsUniqueViolation(err, "service_packages_unique_name") {
-					return errs.ValidationErrors{
-						{Field: "servicePackageName", Message: "Service package already exists"},
-					}
+					return errs.ValidationErrors{{Field: fmt.Sprintf("servicePackageName[%d]", i), Message: "Service package name already exists"}}
 				}
 				return err
 			}
-			for _, item := range pkg.PackageItems {
+			for j, item := range pkg.PackageItems {
 				item.ServicePackageID = createdPkg.ServicePackageID
 				if err := s.serviceRepo.InsertPackageItem(ctx, tx, item); err != nil {
 					if database.IsUniqueViolation(err, "package_items_unique_name") {
-						return errs.ValidationErrors{
-							{Field: "packageItemName", Message: "Package item already exists"},
-						}
+						return errs.ValidationErrors{{Field: fmt.Sprintf("packageItemName[%d][%d]", i, j), Message: "Package item name already exists"}}
 					}
 					return err
 				}
@@ -78,22 +103,24 @@ func (s *serviceService) CreateService(ctx context.Context, p param.ServiceParam
 }
 
 func (s *serviceService) UpdateService(ctx context.Context, p param.ServiceParam) (*param.ServiceParam, error) {
+	if err := p.Validate(); err != nil {
+		return nil, err
+	}
+
+	if len(p.ServicePackages) == 0 {
+		p.ServicePackages = []param.ServicePackageParam{{ServicePackageName: p.ServiceName}}
+	}
+
+	if validationErrs := validatePackageDuplicates(p.ServicePackages); len(validationErrs) > 0 {
+		return nil, validationErrs
+	}
+
 	var result *param.ServiceParam
 	err := s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
-		if err := p.Validate(); err != nil {
-			return err
-		}
-
-		if len(p.ServicePackages) == 0 {
-			p.ServicePackages = []param.ServicePackageParam{{ServicePackageName: p.ServiceName}}
-		}
-
 		updated, err := s.serviceRepo.UpdateService(ctx, tx, p)
 		if err != nil {
 			if database.IsUniqueViolation(err, "services_unique_name") {
-				return errs.ValidationErrors{
-					{Field: "serviceName", Message: "Service name already exists"},
-				}
+				return errs.ValidationErrors{{Field: "serviceName", Message: "Service name already exists"}}
 			}
 			return err
 		}
@@ -102,24 +129,20 @@ func (s *serviceService) UpdateService(ctx context.Context, p param.ServiceParam
 			return err
 		}
 
-		for _, pkg := range p.ServicePackages {
+		for i, pkg := range p.ServicePackages {
 			pkg.ServiceID = updated.ServiceID
 			createdPkg, err := s.serviceRepo.InsertServicePackage(ctx, tx, pkg)
 			if err != nil {
 				if database.IsUniqueViolation(err, "service_packages_unique_name") {
-					return errs.ValidationErrors{
-						{Field: "servicePackageName", Message: "Service package already exists"},
-					}
+					return errs.ValidationErrors{{Field: fmt.Sprintf("servicePackageName[%d]", i), Message: "Service package name already exists"}}
 				}
 				return err
 			}
-			for _, item := range pkg.PackageItems {
+			for j, item := range pkg.PackageItems {
 				item.ServicePackageID = createdPkg.ServicePackageID
 				if err := s.serviceRepo.InsertPackageItem(ctx, tx, item); err != nil {
 					if database.IsUniqueViolation(err, "package_items_unique_name") {
-						return errs.ValidationErrors{
-							{Field: "packageItemName", Message: "Package item already exists"},
-						}
+						return errs.ValidationErrors{{Field: fmt.Sprintf("packageItemName[%d][%d]", i, j), Message: "Package item name already exists"}}
 					}
 					return err
 				}

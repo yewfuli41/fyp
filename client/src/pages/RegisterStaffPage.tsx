@@ -5,7 +5,7 @@ import { useAuth } from "../auth/AuthContext";
 import { userProfile } from "../services/ProfileService";
 import { registerStaff, type StaffInput, type WorkingHour } from "../services/StaffService";
 import { applyGraphQLErrors } from "../utils/graphqlErrors";
-import { FIELD_LIMITS } from "../utils/fieldLimits";
+import { FIELD_LIMITS, shouldClearEmailError, shouldClearContactNumberError } from "../utils/fieldLimits";
 import { DAYS_OF_WEEK, startTimeSlice, endTimeSlice, toTimeInputValue} from "../utils/time";
 
 export default function RegisterStaffPage() {
@@ -26,7 +26,6 @@ export default function RegisterStaffPage() {
     const [formError, setFormError] = useState("");
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [successMessage, setSuccessMessage] = useState("");
-
     useEffect(() => {
         if (!activeToken) return;
 
@@ -71,7 +70,7 @@ export default function RegisterStaffPage() {
         const input: StaffInput = {
             name: staffName,
             email: staffEmail,
-            contactNumber: staffContactNumber || undefined,
+            contactNumber: staffContactNumber,
             position,
             workingHours: staffWorkingHours,
         };
@@ -137,8 +136,9 @@ export default function RegisterStaffPage() {
                         type="text"
                         value={staffEmail}
                         onChange={(e) => {
-                            setStaffEmail(e.target.value);
-                            setFieldErrors(prev => ({ ...prev, staffEmail: "" }));
+                            setStaffEmail(e.target.value)
+                            if (shouldClearEmailError(fieldErrors.staffEmail, e.target.value))
+                                setFieldErrors(prev => ({ ...prev, staffEmail: "" }))
                         }}
                         maxLength={FIELD_LIMITS.email}
                         isInvalid={!!fieldErrors.staffEmail}
@@ -152,8 +152,9 @@ export default function RegisterStaffPage() {
                         type="text"
                         value={staffContactNumber}
                         onChange={(e) => {
-                            setStaffContactNumber(e.target.value);
-                            setFieldErrors(prev => ({ ...prev, staffContactNumber: "" }));
+                            setStaffContactNumber(e.target.value)
+                            if (shouldClearContactNumberError(fieldErrors.staffContactNumber, e.target.value))
+                                setFieldErrors(prev => ({ ...prev, staffContactNumber: "" }))
                         }}
                         maxLength={FIELD_LIMITS.staffContactNumber}
                         isInvalid={!!fieldErrors.staffContactNumber}

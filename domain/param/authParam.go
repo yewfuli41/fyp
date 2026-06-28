@@ -7,15 +7,22 @@ import (
 )
 
 type SignUpParam struct {
-	Username      string
-	Email         string
-	ContactNumber string
-	Password      string
+	Username          string
+	Email             string
+	ContactNumber     string
+	Password          string
+	MustResetPassword bool
 }
 
 type LogInParam struct {
 	Email    string
 	Password string
+}
+
+type ResetPasswordParam struct {
+	UserID      int64
+	Email       string
+	NewPassword string
 }
 
 func (p SignUpParam) ValidateSignUp() error {
@@ -72,6 +79,25 @@ func (p LogInParam) ValidateLogIn() error {
 
 	if p.Password == "" {
 		validationErrs = append(validationErrs, errs.ValidationError{Field: "password", Message: "Password is required"})
+	}
+
+	if len(validationErrs) > 0 {
+		return validationErrs
+	}
+
+	return nil
+}
+
+func (p ResetPasswordParam) ValidateResetPassword() error {
+	var validationErrs errs.ValidationErrors
+
+	if p.NewPassword == "" {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "password", Message: "Password is required"})
+	} else if len(p.NewPassword) < minPasswordLength {
+		validationErrs = append(validationErrs, errs.ValidationError{
+			Field:   "password",
+			Message: fmt.Sprintf("Password must be at least %d characters", minPasswordLength),
+		})
 	}
 
 	if len(validationErrs) > 0 {

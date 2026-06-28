@@ -5,6 +5,7 @@ type User {
   contactNumber: String!
   failedLoginAttempts: Int!
   lockedUntil: DateTime
+  mustResetPassword: Boolean!
   businessProfile: BusinessProfile
   staffProfile: Staff
   bookings: [Booking!]!
@@ -40,5 +41,6 @@ extend type Query {
 extend type Mutation {
   signUp(user: SignUpInput!): AuthPayload!
   logIn(user: LogInInput!): AuthPayload!
+  resetPassword(newPassword: String!): Boolean!
   updateProfile(user: UpdateProfileInput!): User!
 }

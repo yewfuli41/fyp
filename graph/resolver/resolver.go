@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"fyp/app"
+	"strconv"
 )
 
 // This file will not be regenerated automatically.
@@ -17,4 +18,8 @@ func NewResolver(app *app.App) *Resolver {
 	return &Resolver{
 		App: app,
 	}
+}
+
+func parseID(id string) (int64, error) {
+	return strconv.ParseInt(id, 10, 64)
 }

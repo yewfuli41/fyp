@@ -255,6 +255,74 @@ func (_c *MockIStaffRepo_GetStaffByUserID_Call) RunAndReturn(run func(ctx contex
 	return _c
 }
 
+// GetStaffWorkingHours provides a mock function for the type MockIStaffRepo
+func (_mock *MockIStaffRepo) GetStaffWorkingHours(ctx context.Context, staffID int64) ([]param.WorkingHourParam, error) {
+	ret := _mock.Called(ctx, staffID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetStaffWorkingHours")
+	}
+
+	var r0 []param.WorkingHourParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) ([]param.WorkingHourParam, error)); ok {
+		return returnFunc(ctx, staffID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) []param.WorkingHourParam); ok {
+		r0 = returnFunc(ctx, staffID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]param.WorkingHourParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, staffID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIStaffRepo_GetStaffWorkingHours_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetStaffWorkingHours'
+type MockIStaffRepo_GetStaffWorkingHours_Call struct {
+	*mock.Call
+}
+
+// GetStaffWorkingHours is a helper method to define mock.On call
+//   - ctx context.Context
+//   - staffID int64
+func (_e *MockIStaffRepo_Expecter) GetStaffWorkingHours(ctx interface{}, staffID interface{}) *MockIStaffRepo_GetStaffWorkingHours_Call {
+	return &MockIStaffRepo_GetStaffWorkingHours_Call{Call: _e.mock.On("GetStaffWorkingHours", ctx, staffID)}
+}
+
+func (_c *MockIStaffRepo_GetStaffWorkingHours_Call) Run(run func(ctx context.Context, staffID int64)) *MockIStaffRepo_GetStaffWorkingHours_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIStaffRepo_GetStaffWorkingHours_Call) Return(workingHourParams []param.WorkingHourParam, err error) *MockIStaffRepo_GetStaffWorkingHours_Call {
+	_c.Call.Return(workingHourParams, err)
+	return _c
+}
+
+func (_c *MockIStaffRepo_GetStaffWorkingHours_Call) RunAndReturn(run func(ctx context.Context, staffID int64) ([]param.WorkingHourParam, error)) *MockIStaffRepo_GetStaffWorkingHours_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // HasBookingForStaff provides a mock function for the type MockIStaffRepo
 func (_mock *MockIStaffRepo) HasBookingForStaff(ctx context.Context, staffID int64) (bool, error) {
 	ret := _mock.Called(ctx, staffID)

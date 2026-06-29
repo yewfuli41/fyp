@@ -21,6 +21,7 @@ export interface Staff {
     mustResetPassword: boolean;
     contactNumber: string;
     position?: string;
+    workingHours?: WorkingHour[];
 }
 
 export interface UpdateStaffInput {
@@ -37,6 +38,11 @@ const STAFF_FIELDS = `
     mustResetPassword
     contactNumber
     position
+    workingHours {
+        day
+        startTime
+        endTime
+    }
 `;
 
 const toTimeScalar = (time: string): string => {

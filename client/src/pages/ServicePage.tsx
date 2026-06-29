@@ -295,7 +295,7 @@ export default function ServicePage() {
                     placeholder="Search services and packages..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    style={{ width: "300px" }}
+                    style={{ width: "440px" }}
                 />
             </div>
 

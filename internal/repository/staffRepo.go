@@ -85,6 +85,29 @@ func (s *staffRepo) GetStaffByUserID(ctx context.Context, userID int64) (*param.
 	return &staff, nil
 }
 
+func (s *staffRepo) GetStaffWorkingHours(ctx context.Context, staffID int64) ([]param.WorkingHourParam, error) {
+	rows, err := s.DB.QueryContext(ctx, `
+		SELECT day, start_time, end_time
+		FROM staff_working_hours
+		WHERE staff_id = $1 AND deleted_at IS NULL
+		ORDER BY start_time
+	`, staffID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var hours []param.WorkingHourParam
+	for rows.Next() {
+		var wh param.WorkingHourParam
+		if err := rows.Scan(&wh.Day, &wh.StartTime, &wh.EndTime); err != nil {
+			return nil, err
+		}
+		hours = append(hours, wh)
+	}
+	return hours, rows.Err()
+}
+
 func (s *staffRepo) GetStaffByBusinessID(ctx context.Context, businessID int64) ([]param.StaffParam, error) {
 	rows, err := s.DB.QueryContext(ctx, `
 		SELECT

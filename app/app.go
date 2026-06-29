@@ -12,9 +12,10 @@ type App struct {
 	AuthService     interfaces.IAuthService
 	ProfileService  interfaces.IProfileService
 	BusinessService interfaces.IBusinessService
-	ServiceService  interfaces.IServiceService
-	StaffService    interfaces.IStaffService
-	EmailService    interfaces.IEmailService
+	ServiceService     interfaces.IServiceService
+	StaffService       interfaces.IStaffService
+	ServiceSlotService interfaces.IServiceSlotService
+	EmailService       interfaces.IEmailService
 }
 
 func NewApp(db *sql.DB, cfg *config.Config) *App {
@@ -29,11 +30,15 @@ func NewApp(db *sql.DB, cfg *config.Config) *App {
 	emailService := service.NewSendGridEmailService(cfg.Email)
 	staffRepo := repository.NewStaffRepo(db)
 	staffService := service.NewStaffService(db, staffRepo, businessRepo, authRepo, emailService)
+	serviceSlotRepo := repository.NewServiceSlotRepo(db)
+	serviceSlotService := service.NewServiceSlotService(db, serviceSlotRepo)
 	return &App{
-		AuthService:     authService,
-		ProfileService:  profileService,
-		BusinessService: businessService,
-		ServiceService:  serviceService,
-		StaffService:    staffService,
+		AuthService:        authService,
+		ProfileService:     profileService,
+		BusinessService:    businessService,
+		ServiceService:     serviceService,
+		StaffService:       staffService,
+		ServiceSlotService: serviceSlotService,
+		EmailService:       emailService,
 	}
 }

@@ -166,6 +166,15 @@ type ServiceSlot struct {
 	Creator             *User                 `json:"creator,omitempty"`
 }
 
+type ServiceSlotInput struct {
+	StaffID           *string     `json:"staffId,omitempty"`
+	Date              *string     `json:"date,omitempty"`
+	DaysOfWeek        []DayOfWeek `json:"daysOfWeek,omitempty"`
+	StartTime         time.Time   `json:"startTime"`
+	EndTime           time.Time   `json:"endTime"`
+	ServicePackageIds []string    `json:"servicePackageIds"`
+}
+
 type ServiceSlotPackage struct {
 	SlotPackageID    string          `json:"slotPackageId"`
 	ServicePackageID string          `json:"servicePackageId"`

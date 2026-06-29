@@ -95,6 +95,55 @@ func MapBusinessProfile(businessProfile *param.BusinessProfileParam, owner *para
 	}
 }
 
+func MapServiceSlot(s *param.ServiceSlotParam) *model.ServiceSlot {
+	if s == nil {
+		return nil
+	}
+
+	slotID := strconv.FormatInt(s.ServiceSlotID, 10)
+
+	var staffIDStr *string
+	var staffModel *model.Staff
+	if s.StaffID != nil {
+		idStr := strconv.FormatInt(*s.StaffID, 10)
+		staffIDStr = &idStr
+		staffModel = MapStaff(&param.StaffParam{StaffID: *s.StaffID, StaffName: s.StaffName})
+	}
+
+	packages := make([]*model.ServiceSlotPackage, len(s.Packages))
+	for i, pkg := range s.Packages {
+		packages[i] = &model.ServiceSlotPackage{
+			SlotPackageID:    strconv.FormatInt(pkg.SlotPackageID, 10),
+			ServicePackageID: strconv.FormatInt(pkg.ServicePackageID, 10),
+			ServiceSlotID:    slotID,
+			ServicePackage: &model.ServicePackage{
+				ServicePackageID:   strconv.FormatInt(pkg.ServicePackageID, 10),
+				ServiceID:          strconv.FormatInt(pkg.ServiceID, 10),
+				ServicePackageName: pkg.ServicePackageName,
+				Service: &model.Service{
+					ServiceID:       strconv.FormatInt(pkg.ServiceID, 10),
+					ServiceName:     pkg.ServiceName,
+					ServicePackages: []*model.ServicePackage{},
+				},
+				PackageItems:        []*model.PackageItem{},
+				ServiceSlotPackages: []*model.ServiceSlotPackage{},
+				RecurringSchedules:  []*model.RecurringSchedule{},
+			},
+			Bookings: []*model.Booking{},
+		}
+	}
+
+	return &model.ServiceSlot{
+		ServiceSlotID:       slotID,
+		StaffID:             staffIDStr,
+		Staff:               staffModel,
+		Date:                s.Date,
+		StartTime:           s.StartTime,
+		EndTime:             s.EndTime,
+		ServiceSlotPackages: packages,
+	}
+}
+
 func MapStaff(staff *param.StaffParam) *model.Staff {
 	if staff == nil {
 		return nil
@@ -102,8 +151,19 @@ func MapStaff(staff *param.StaffParam) *model.Staff {
 
 	position := staff.Position
 
+	staffIDStr := strconv.FormatInt(staff.StaffID, 10)
+	workingHours := make([]*model.StaffWorkingHour, len(staff.WorkingHours))
+	for i, wh := range staff.WorkingHours {
+		workingHours[i] = &model.StaffWorkingHour{
+			StaffID:   staffIDStr,
+			Day:       model.DayOfWeek(wh.Day),
+			StartTime: wh.StartTime,
+			EndTime:   wh.EndTime,
+		}
+	}
+
 	return &model.Staff{
-		StaffID:            strconv.FormatInt(staff.StaffID, 10),
+		StaffID:            staffIDStr,
 		UserID:             strconv.FormatInt(staff.UserID, 10),
 		BusinessID:         strconv.FormatInt(staff.BusinessID, 10),
 		Name:               staff.StaffName,
@@ -111,7 +171,7 @@ func MapStaff(staff *param.StaffParam) *model.Staff {
 		MustResetPassword:  staff.MustResetPassword,
 		ContactNumber:      staff.StaffContactNumber,
 		Position:           &position,
-		WorkingHours:       []*model.StaffWorkingHour{},
+		WorkingHours:       workingHours,
 		LeaveApplications:  []*model.LeaveApplication{},
 		ServiceSlots:       []*model.ServiceSlot{},
 		RecurringSchedules: []*model.RecurringSchedule{},

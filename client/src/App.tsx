@@ -9,6 +9,7 @@ import RegisterBusinessPage from "./pages/RegisterBusinessPage";
 import ServicePage from "./pages/ServicePage";
 import RegisterStaffPage from "./pages/RegisterStaffPage"
 import StaffManagementPage from "./pages/StaffManagementPage"
+import CalendarPage from "./pages/CalendarPage"
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -58,6 +59,7 @@ function App() {
         <Route path="/services" element={<ServicePage />} />
         <Route path="/register-staff" element={<RegisterStaffPage/>}/>
         <Route path="/staff" element={<StaffManagementPage/>}/>
+        <Route path="/service-slots" element={<CalendarPage/>}/>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

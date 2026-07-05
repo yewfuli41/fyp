@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import type { WorkingHour } from "../services/StaffService";
 
 export type User = {
   userId: number;
@@ -16,6 +17,7 @@ export type BusinessProfile = {
 
 export type Staff = {
   staffId: number;
+  workingHours?: WorkingHour[];
 }
 
 export type AuthPayload = {

@@ -8,6 +8,7 @@ package resolver
 import (
 	"context"
 	"fmt"
+	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/graph"
 	"fyp/graph/graphErrs"
@@ -22,7 +23,7 @@ func (r *mutationResolver) CreateServiceSlot(ctx context.Context, input model.Se
 		return nil, graphErrs.ToGraphQLError(err)
 	}
 
-	businessProfile, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, currentUser.UserID)
+	businessID, staffScope, err := resolveBusinessScope(ctx, r.Resolver, currentUser)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
 	}
@@ -34,6 +35,10 @@ func (r *mutationResolver) CreateServiceSlot(ctx context.Context, input model.Se
 			return nil, fmt.Errorf("invalid staff ID")
 		}
 		staffID = &sid
+	}
+	if staffScope != nil {
+		// A staff member can only ever create slots for themselves.
+		staffID = staffScope
 	}
 
 	packageIDs := make([]int64, 0, len(input.ServicePackageIds))
@@ -55,7 +60,7 @@ func (r *mutationResolver) CreateServiceSlot(ctx context.Context, input model.Se
 	}
 
 	p := param.ServiceSlotParam{
-		BusinessID:        businessProfile.BusinessID,
+		BusinessID:        businessID,
 		StaffID:           staffID,
 		Date:              date,
 		DaysOfWeek:        daysOfWeek,
@@ -72,6 +77,74 @@ func (r *mutationResolver) CreateServiceSlot(ctx context.Context, input model.Se
 	return graph.MapServiceSlot(result), nil
 }
 
+// UpdateServiceSlot is the resolver for the updateServiceSlot field.
+func (r *mutationResolver) UpdateServiceSlot(ctx context.Context, serviceSlotID string, input model.ServiceSlotInput, applyToFutureRecurring bool) (*model.ServiceSlot, error) {
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	businessID, staffScope, err := resolveBusinessScope(ctx, r.Resolver, currentUser)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	slotID, err := parseID(serviceSlotID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid service slot ID")
+	}
+
+	var staffID *int64
+	if input.StaffID != nil && *input.StaffID != "" {
+		sid, err := parseID(*input.StaffID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid staff ID")
+		}
+		staffID = &sid
+	}
+	if staffScope != nil {
+		// A staff member can't reassign their slot away from themselves —
+		// the service layer also enforces this against the existing row.
+		staffID = staffScope
+	}
+
+	packageIDs := make([]int64, 0, len(input.ServicePackageIds))
+	for _, id := range input.ServicePackageIds {
+		pid, err := parseID(id)
+		if err != nil {
+			return nil, fmt.Errorf("invalid package ID")
+		}
+		packageIDs = append(packageIDs, pid)
+	}
+
+	date := ""
+	if input.Date != nil {
+		date = *input.Date
+	}
+	daysOfWeek := make([]string, 0, len(input.DaysOfWeek))
+	for _, d := range input.DaysOfWeek {
+		daysOfWeek = append(daysOfWeek, string(d))
+	}
+
+	p := param.ServiceSlotParam{
+		ServiceSlotID:     slotID,
+		BusinessID:        businessID,
+		StaffID:           staffID,
+		Date:              date,
+		DaysOfWeek:        daysOfWeek,
+		StartTime:         input.StartTime,
+		EndTime:           input.EndTime,
+		ServicePackageIDs: packageIDs,
+		CreatedBy:         currentUser.UserID,
+	}
+
+	result, err := r.App.ServiceSlotService.UpdateServiceSlot(ctx, p, applyToFutureRecurring, staffScope)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	return graph.MapServiceSlot(result), nil
+}
+
 // ReassignServiceSlotStaff is the resolver for the reassignServiceSlotStaff field.
 func (r *mutationResolver) ReassignServiceSlotStaff(ctx context.Context, serviceSlotID string, staffID *string) (*model.ServiceSlot, error) {
 	currentUser, err := contexts.CurrentUser(ctx)
@@ -79,9 +152,13 @@ func (r *mutationResolver) ReassignServiceSlotStaff(ctx context.Context, service
 		return nil, graphErrs.ToGraphQLError(err)
 	}
 
-	businessProfile, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, currentUser.UserID)
+	businessID, staffScope, err := resolveBusinessScope(ctx, r.Resolver, currentUser)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
+	}
+	if staffScope != nil {
+		// Reassigning to someone else on the team is an owner-level decision.
+		return nil, graphErrs.ToGraphQLError(errs.ValidationErrors{{Field: "staffId", Message: "Only the business owner can reassign staff."}})
 	}
 
 	slotID, err := parseID(serviceSlotID)
@@ -98,7 +175,7 @@ func (r *mutationResolver) ReassignServiceSlotStaff(ctx context.Context, service
 		newStaffID = &sid
 	}
 
-	result, err := r.App.ServiceSlotService.ReassignServiceSlotStaff(ctx, slotID, businessProfile.BusinessID, newStaffID)
+	result, err := r.App.ServiceSlotService.ReassignServiceSlotStaff(ctx, slotID, businessID, newStaffID)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
 	}
@@ -112,7 +189,7 @@ func (r *mutationResolver) DeleteServiceSlot(ctx context.Context, serviceSlotID 
 		return false, graphErrs.ToGraphQLError(err)
 	}
 
-	businessProfile, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, currentUser.UserID)
+	businessID, staffScope, err := resolveBusinessScope(ctx, r.Resolver, currentUser)
 	if err != nil {
 		return false, graphErrs.ToGraphQLError(err)
 	}
@@ -122,7 +199,7 @@ func (r *mutationResolver) DeleteServiceSlot(ctx context.Context, serviceSlotID 
 		return false, fmt.Errorf("invalid service slot ID")
 	}
 
-	if err := r.App.ServiceSlotService.DeleteServiceSlot(ctx, slotID, businessProfile.BusinessID, deleteFutureRecurring); err != nil {
+	if err := r.App.ServiceSlotService.DeleteServiceSlot(ctx, slotID, businessID, deleteFutureRecurring, staffScope); err != nil {
 		return false, graphErrs.ToGraphQLError(err)
 	}
 	return true, nil
@@ -135,7 +212,7 @@ func (r *queryResolver) DisplayServiceSlots(ctx context.Context, date string, st
 		return nil, graphErrs.ToGraphQLError(err)
 	}
 
-	businessProfile, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, currentUser.UserID)
+	businessID, staffScope, err := resolveBusinessScope(ctx, r.Resolver, currentUser)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
 	}
@@ -157,7 +234,15 @@ func (r *queryResolver) DisplayServiceSlots(ctx context.Context, date string, st
 		serviceFilter = &id
 	}
 
-	slots, err := r.App.ServiceSlotService.GetServiceSlots(ctx, businessProfile.BusinessID, date, staffFilter, serviceFilter, unassignedOnly != nil && *unassignedOnly)
+	includeUnassignedOnly := unassignedOnly != nil && *unassignedOnly
+	if staffScope != nil {
+		// A staff member can only ever see their own slots, regardless of
+		// whatever filters the client asked for.
+		staffFilter = staffScope
+		includeUnassignedOnly = false
+	}
+
+	slots, err := r.App.ServiceSlotService.GetServiceSlots(ctx, businessID, date, staffFilter, serviceFilter, includeUnassignedOnly)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
 	}
@@ -176,9 +261,12 @@ func (r *queryResolver) AvailableStaffForSlot(ctx context.Context, serviceSlotID
 		return nil, graphErrs.ToGraphQLError(err)
 	}
 
-	businessProfile, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, currentUser.UserID)
+	businessID, staffScope, err := resolveBusinessScope(ctx, r.Resolver, currentUser)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
+	}
+	if staffScope != nil {
+		return nil, graphErrs.ToGraphQLError(errs.ValidationErrors{{Field: "serviceSlotId", Message: "Only the business owner can view available staff for reassignment."}})
 	}
 
 	slotID, err := parseID(serviceSlotID)
@@ -186,7 +274,7 @@ func (r *queryResolver) AvailableStaffForSlot(ctx context.Context, serviceSlotID
 		return nil, fmt.Errorf("invalid service slot ID")
 	}
 
-	staffList, err := r.App.ServiceSlotService.GetAvailableStaffForSlot(ctx, slotID, businessProfile.BusinessID)
+	staffList, err := r.App.ServiceSlotService.GetAvailableStaffForSlot(ctx, slotID, businessID)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
 	}

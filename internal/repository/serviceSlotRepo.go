@@ -30,6 +30,13 @@ func staffArg(staffID *int64) any {
 	return *staffID
 }
 
+func recurringScheduleArg(recurringScheduleID *int64) any {
+	if recurringScheduleID == nil {
+		return nil
+	}
+	return *recurringScheduleID
+}
+
 // businessScopeSQL returns an EXISTS clause that scopes a service slot (alias ss)
 // to a business via its packages' parent service. Slots have no business_id and
 // may have no staff, so scoping goes through the packages.
@@ -44,13 +51,24 @@ func businessScopeSQL(slotAlias, businessParam string) string {
 	)`, slotAlias, businessParam)
 }
 
+// hasBookingSQL returns an EXISTS clause reporting whether a service slot
+// (alias slotAlias) has any active booking, for use as a computed column.
+func hasBookingSQL(slotAlias string) string {
+	return fmt.Sprintf(`EXISTS (
+		SELECT 1 FROM bookings b
+		JOIN service_slot_packages ssp ON b.slot_package_id = ssp.slot_package_id
+		WHERE ssp.service_slot_id = %s.service_slot_id
+			AND b.deleted_at IS NULL
+	)`, slotAlias)
+}
+
 func (r *serviceSlotRepo) InsertServiceSlot(ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam) (int64, error) {
 	var slotID int64
 	err := tx.QueryRowContext(ctx, `
-		INSERT INTO service_slots (staff_id, date, start_time, end_time, created_by)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO service_slots (staff_id, recurring_schedule_id, date, start_time, end_time, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING service_slot_id
-	`, staffArg(p.StaffID), p.Date, timeStr(p.StartTime), timeStr(p.EndTime), p.CreatedBy).Scan(&slotID)
+	`, staffArg(p.StaffID), recurringScheduleArg(p.RecurringScheduleID), p.Date, timeStr(p.StartTime), timeStr(p.EndTime), p.CreatedBy).Scan(&slotID)
 	return slotID, err
 }
 
@@ -62,16 +80,21 @@ func (r *serviceSlotRepo) InsertServiceSlotPackage(ctx context.Context, tx *sql.
 	return err
 }
 
-func (r *serviceSlotRepo) InsertRecurringSchedule(ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam, servicePackageID int64, day string) error {
+// InsertRecurringSchedule records one (staff, day) series — not per package,
+// since a slot's bookable packages are attached separately via
+// service_slot_packages regardless of how many there are.
+func (r *serviceSlotRepo) InsertRecurringSchedule(ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam, day string) (int64, error) {
 	// recurring_schedules.staff_id is NOT NULL, so only staff-assigned slots are recorded here.
 	if p.StaffID == nil {
-		return nil
+		return 0, nil
 	}
-	_, err := tx.ExecContext(ctx, `
-		INSERT INTO recurring_schedules (staff_id, service_package_id, day, start_time, end_time, created_by)
-		VALUES ($1, $2, $3, $4, $5, $6)
-	`, *p.StaffID, servicePackageID, day, timeStr(p.StartTime), timeStr(p.EndTime), p.CreatedBy)
-	return err
+	var id int64
+	err := tx.QueryRowContext(ctx, `
+		INSERT INTO recurring_schedules (staff_id, day, start_time, end_time, created_by)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING recurring_schedule_id
+	`, *p.StaffID, day, timeStr(p.StartTime), timeStr(p.EndTime), p.CreatedBy).Scan(&id)
+	return id, err
 }
 
 func (r *serviceSlotRepo) GetServiceSlotsByBusinessAndDate(ctx context.Context, businessID int64, date string, staffID *int64, serviceID *int64, unassignedOnly bool) ([]param.ServiceSlotParam, error) {
@@ -80,10 +103,12 @@ func (r *serviceSlotRepo) GetServiceSlotsByBusinessAndDate(ctx context.Context, 
 			ss.service_slot_id,
 			ss.staff_id,
 			st.staff_name,
+			ss.recurring_schedule_id,
 			to_char(ss.date, 'YYYY-MM-DD'),
 			ss.start_time,
 			ss.end_time,
-			ss.created_by
+			ss.created_by,
+			` + hasBookingSQL("ss") + ` AS has_booking
 		FROM service_slots ss
 		LEFT JOIN staff st ON st.staff_id = ss.staff_id
 		WHERE ss.date = $2
@@ -143,10 +168,12 @@ func (r *serviceSlotRepo) GetServiceSlotByID(ctx context.Context, serviceSlotID 
 			ss.service_slot_id,
 			ss.staff_id,
 			st.staff_name,
+			ss.recurring_schedule_id,
 			to_char(ss.date, 'YYYY-MM-DD'),
 			ss.start_time,
 			ss.end_time,
-			ss.created_by
+			ss.created_by,
+			`+hasBookingSQL("ss")+` AS has_booking
 		FROM service_slots ss
 		LEFT JOIN staff st ON st.staff_id = ss.staff_id
 		WHERE ss.service_slot_id = $1
@@ -206,6 +233,19 @@ func (r *serviceSlotRepo) ReassignStaff(ctx context.Context, tx *sql.Tx, service
 	return err
 }
 
+func (r *serviceSlotRepo) HasBookingForServiceSlot(ctx context.Context, serviceSlotID int64) (bool, error) {
+	var count int
+	err := r.DB.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM bookings b
+		JOIN service_slot_packages ssp ON b.slot_package_id = ssp.slot_package_id
+		WHERE ssp.service_slot_id = $1 AND b.deleted_at IS NULL
+	`, serviceSlotID).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func (r *serviceSlotRepo) SoftDeleteServiceSlot(ctx context.Context, tx *sql.Tx, serviceSlotID int64, businessID int64) error {
 	_, err := tx.ExecContext(ctx, `
 		UPDATE service_slots ss
@@ -229,26 +269,17 @@ func (r *serviceSlotRepo) SoftDeleteServiceSlots(ctx context.Context, tx *sql.Tx
 	return err
 }
 
-func (r *serviceSlotRepo) GetFutureRecurringSlotIDs(ctx context.Context, businessID int64, staffID *int64, startTime, endTime time.Time, fromDate string) ([]int64, error) {
-	staffCond := "ss.staff_id IS NULL"
-	args := []any{businessID, timeStr(startTime), timeStr(endTime), fromDate}
-	if staffID != nil {
-		args = append(args, *staffID)
-		staffCond = fmt.Sprintf("ss.staff_id = $%d", len(args))
-	}
-
-	query := `
+// GetFutureRecurringSlotIDs finds every non-deleted occurrence (from fromDate
+// onward) of an exact recurring series, identified by its recurring_schedule_id
+// — no more guessing by staff/time/weekday coincidence.
+func (r *serviceSlotRepo) GetFutureRecurringSlotIDs(ctx context.Context, businessID int64, recurringScheduleID int64, fromDate string) ([]int64, error) {
+	rows, err := r.DB.QueryContext(ctx, `
 		SELECT ss.service_slot_id
 		FROM service_slots ss
-		WHERE ss.start_time = $2
-			AND ss.end_time = $3
-			AND ss.date >= $4::date
-			AND EXTRACT(DOW FROM ss.date) = EXTRACT(DOW FROM $4::date)
+		WHERE ss.recurring_schedule_id = $2
+			AND ss.date >= $3::date
 			AND ss.deleted_at IS NULL
-			AND ` + staffCond + `
-			AND ` + businessScopeSQL("ss", "$1")
-
-	rows, err := r.DB.QueryContext(ctx, query, args...)
+			AND `+businessScopeSQL("ss", "$1"), businessID, recurringScheduleID, fromDate)
 	if err != nil {
 		return nil, err
 	}
@@ -265,19 +296,16 @@ func (r *serviceSlotRepo) GetFutureRecurringSlotIDs(ctx context.Context, busines
 	return ids, rows.Err()
 }
 
-func (r *serviceSlotRepo) SoftDeleteRecurringSchedules(ctx context.Context, tx *sql.Tx, businessID int64, staffID int64, weekday string, startTime, endTime time.Time) error {
+func (r *serviceSlotRepo) SoftDeleteRecurringSchedule(ctx context.Context, tx *sql.Tx, businessID int64, recurringScheduleID int64) error {
 	_, err := tx.ExecContext(ctx, `
 		UPDATE recurring_schedules rs
 		SET deleted_at = NOW()
 		FROM staff st
 		WHERE rs.staff_id = st.staff_id
 			AND st.business_id = $1
-			AND rs.staff_id = $2
-			AND rs.day = $3
-			AND rs.start_time = $4
-			AND rs.end_time = $5
+			AND rs.recurring_schedule_id = $2
 			AND rs.deleted_at IS NULL
-	`, businessID, staffID, weekday, timeStr(startTime), timeStr(endTime))
+	`, businessID, recurringScheduleID)
 	return err
 }
 
@@ -319,22 +347,6 @@ func (r *serviceSlotRepo) StaffCoversTime(ctx context.Context, staffID int64, we
 				AND deleted_at IS NULL
 		)
 	`, staffID, weekday, timeStr(startTime), timeStr(endTime)).Scan(&exists)
-	return exists, err
-}
-
-func (r *serviceSlotRepo) StaffHasOverlappingSlot(ctx context.Context, staffID int64, date string, startTime, endTime time.Time, excludeSlotID int64) (bool, error) {
-	var exists bool
-	err := r.DB.QueryRowContext(ctx, `
-		SELECT EXISTS(
-			SELECT 1 FROM service_slots
-			WHERE staff_id = $1
-				AND date = $2
-				AND start_time < $4
-				AND end_time > $3
-				AND service_slot_id <> $5
-				AND deleted_at IS NULL
-		)
-	`, staffID, date, timeStr(startTime), timeStr(endTime), excludeSlotID).Scan(&exists)
 	return exists, err
 }
 
@@ -392,15 +404,18 @@ func scanServiceSlot(row rowScannerService) (*param.ServiceSlotParam, error) {
 	var slot param.ServiceSlotParam
 	var staffID sql.NullInt64
 	var staffName sql.NullString
+	var recurringScheduleID sql.NullInt64
 	var createdBy sql.NullInt64
 	if err := row.Scan(
 		&slot.ServiceSlotID,
 		&staffID,
 		&staffName,
+		&recurringScheduleID,
 		&slot.Date,
 		&slot.StartTime,
 		&slot.EndTime,
 		&createdBy,
+		&slot.HasBooking,
 	); err != nil {
 		return nil, err
 	}
@@ -410,6 +425,10 @@ func scanServiceSlot(row rowScannerService) (*param.ServiceSlotParam, error) {
 	}
 	if staffName.Valid {
 		slot.StaffName = staffName.String
+	}
+	if recurringScheduleID.Valid {
+		id := recurringScheduleID.Int64
+		slot.RecurringScheduleID = &id
 	}
 	if createdBy.Valid {
 		slot.CreatedBy = createdBy.Int64

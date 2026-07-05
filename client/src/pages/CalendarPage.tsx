@@ -1,70 +1,43 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { Alert, Button, Container, Form, Modal, Spinner } from "react-bootstrap";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { Alert, Container, Spinner, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { userProfile } from "../services/ProfileService";
 import { getBusinessStaff, type Staff } from "../services/StaffService";
 import { getBusinessServices, type Service } from "../services/ServiceService";
 import {
-    getServiceSlots, createServiceSlot, reassignServiceSlotStaff, deleteServiceSlot,
+    getServiceSlots, createServiceSlot, updateServiceSlot, reassignServiceSlotStaff, deleteServiceSlot,
     getAvailableStaffForSlot, extractTime,
     type ServiceSlot, type ServiceSlotInput,
 } from "../services/ServiceSlotService";
 import { applyGraphQLErrors, parseGraphQLErrors } from "../utils/graphqlErrors";
-import { DAYS_OF_WEEK } from "../utils/time";
+import {
+    DEFAULT_START, DEFAULT_END, NONE_COL, addDays, displayDate, emptyForm, timeLines, toISO,
+    type WorkingHour,
+} from "../utils/serviceSlotHelpers";
+import AddServiceSlotModal from "../modals/AddServiceSlotModal";
+import ManageServiceSlotModal from "../modals/ManageServiceSlotModal";
+import CalendarToolbar from "../components/CalendarToolbar";
+import CalendarGrid from "../components/CalendarGrid";
+import "../styles/CalendarPage.css";
 
-const ROW_HEIGHT = 48; // px per 30-min interval
-const DEFAULT_START = "09:00";
-const DEFAULT_END = "18:00";
-const NONE_COL = "__none__"; // calendar column for owner-managed (unassigned) slots
+type CalendarRole = "owner" | "staff" | null;
 
-// ── date / time helpers ──────────────────────────────────────────────────────
-const toISO = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-
-const displayDate = (d: Date) =>
-    d.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" });
-
-const addDays = (d: Date, n: number) => {
-    const next = new Date(d);
-    next.setDate(next.getDate() + n);
-    return next;
-};
-
-// 30-min time lines between start and end, inclusive of end.
-const timeLines = (start: string, end: string): string[] => {
-    const [sh, sm] = start.split(":").map(Number);
-    const [eh, em] = end.split(":").map(Number);
-    const startMin = sh * 60 + sm;
-    const endMin = eh * 60 + em;
-    const lines: string[] = [];
-    for (let m = startMin; m <= endMin; m += 30) {
-        lines.push(`${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`);
-    }
-    return lines;
-};
-
-interface WorkingHour { day: string; startTime: string; endTime: string }
-
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
-// weekday name (lowercase) of a YYYY-MM-DD date, timezone-safe.
-const weekdayName = (date: string): string => {
-    const d = new Date(`${date}T00:00:00`);
-    return DAYS_OF_WEEK[(d.getDay() + 6) % 7]; // getDay: 0=Sun → our array is Mon-first
-};
-
-const emptyForm = (date: string): ServiceSlotInput => ({
-    staffId: "", date, daysOfWeek: [], startTime: DEFAULT_START, endTime: DEFAULT_END,
-    servicePackageIds: [],
-});
-
+// Shared by both the owner (all-staff calendar, /service-slots) and a staff
+// member (their own calendar, /my-calendar) — the backend already scopes
+// every service-slot query/mutation onto a staff caller's own slots, so this
+// component just needs to stop offering choices a staff member wouldn't be
+// allowed anyway (staff filter, reassigning to someone else, seeing others'
+// columns), and to bound the calendar to their own working hours.
 export default function CalendarPage() {
     const navigate = useNavigate();
-    const { token } = useAuth();
+    const { token, user } = useAuth();
     const activeToken = token ?? localStorage.getItem("token");
 
-    const [hasBusiness, setHasBusiness] = useState<boolean | null>(null);
+    const [role, setRole] = useState<CalendarRole>(null);
+    const isStaff = role === "staff";
+    const ownStaffId = isStaff ? String(user?.staffProfile?.staffId ?? "") : "";
+
     const [workingHours, setWorkingHours] = useState<WorkingHour[]>([]);
     const [staff, setStaff] = useState<Staff[]>([]);
     const [services, setServices] = useState<Service[]>([]);
@@ -75,6 +48,7 @@ export default function CalendarPage() {
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [staffFilter, setStaffFilter] = useState("");
     const [serviceFilter, setServiceFilter] = useState("");
+    const dateInputRef = useRef<HTMLInputElement>(null);
 
     // Add modal
     const [showAdd, setShowAdd] = useState(false);
@@ -91,6 +65,15 @@ export default function CalendarPage() {
     const [deleteFuture, setDeleteFuture] = useState(false);
     const [manageError, setManageError] = useState("");
     const [manageBusy, setManageBusy] = useState(false);
+
+    // Manage modal — full edit (date/time/staff/packages), only available
+    // while the slot has no booking yet; once booked, only reassign/delete above apply.
+    const [editForm, setEditForm] = useState<ServiceSlotInput>(emptyForm(toISO(new Date())));
+    const [editFormServiceId, setEditFormServiceId] = useState("");
+    const [editApplyFuture, setEditApplyFuture] = useState(false);
+    const [editFormError, setEditFormError] = useState("");
+    const [editFieldErrors, setEditFieldErrors] = useState<Record<string, string>>({});
+    const [isEditSaving, setIsEditSaving] = useState(false);
 
     const isoDate = toISO(selectedDate);
 
@@ -113,9 +96,12 @@ export default function CalendarPage() {
         const init = async () => {
             try {
                 const profileResult = await userProfile(activeToken);
-                const business = profileResult.data?.userProfile?.businessProfile;
-                setHasBusiness(!!business);
+                const profile = profileResult.data?.userProfile;
+                const business = profile?.businessProfile;
+                const staffProfile = profile?.staffProfile;
+
                 if (business) {
+                    setRole("owner");
                     setWorkingHours(business.workingHours ?? []);
                     const [staffRes, svcRes] = await Promise.all([
                         getBusinessStaff(activeToken),
@@ -123,6 +109,21 @@ export default function CalendarPage() {
                     ]);
                     setStaff(staffRes.data?.displayStaff ?? []);
                     setServices(svcRes.data?.displayServices ?? []);
+                } else if (staffProfile) {
+                    setRole("staff");
+                    // A staff member's own working hours bound the calendar's
+                    // time range — no separate "business hours" fetch needed.
+                    const hours = staffProfile.workingHours ?? [];
+                    setWorkingHours(hours);
+                    setStaff([{
+                        staffId: String(staffProfile.staffId), name: user?.username ?? "Me",
+                        email: user?.email ?? "", mustResetPassword: false,
+                        contactNumber: user?.contactNumber ?? "", workingHours: hours,
+                    }]);
+                    const svcRes = await getBusinessServices(activeToken);
+                    setServices(svcRes.data?.displayServices ?? []);
+                } else {
+                    setRole(null);
                 }
             } catch {
                 setPageError("Failed to load calendar.");
@@ -131,13 +132,15 @@ export default function CalendarPage() {
             }
         };
         init();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeToken]);
 
     useEffect(() => {
-        if (hasBusiness) fetchSlots();
-    }, [hasBusiness, fetchSlots]);
+        if (role) fetchSlots();
+    }, [role, fetchSlots]);
 
-    // Business-hours envelope across all days → calendar time range + picker bounds.
+    // Business-hours (or, for a staff member, their own) envelope across all
+    // days → calendar time range + picker bounds.
     const [rangeStart, rangeEnd] = useMemo(() => {
         if (workingHours.length === 0) return [DEFAULT_START, DEFAULT_END];
         let min = "23:59", max = "00:00";
@@ -152,57 +155,29 @@ export default function CalendarPage() {
     const lines = useMemo(() => timeLines(rangeStart, rangeEnd), [rangeStart, rangeEnd]);
     const intervals = Math.max(lines.length - 1, 1);
 
-    // Calendar columns: filtered staff, only the Unassigned column, or all staff +
-    // an Unassigned column (owner-managed slots) when viewing everyone.
-    const staffColumns: { staffId: string; name: string }[] =
-        staffFilter === NONE_COL
-            ? [{ staffId: NONE_COL, name: "Unassigned" }]
+    // Calendar columns: a staff member always sees just their own single
+    // column (no filter, no Unassigned column). The owner sees filtered
+    // staff, only the Unassigned column, or all staff + an Unassigned column
+    // (owner-managed slots) when viewing everyone.
+    const staffColumns: { staffId: string; name: string }[] = isStaff
+        ? staff.map(s => ({ staffId: s.staffId, name: s.name }))
+        : staffFilter === NONE_COL
+            ? [{ staffId: NONE_COL, name: "Owner-managed" }]
             : staffFilter
                 ? staff.filter(s => s.staffId === staffFilter).map(s => ({ staffId: s.staffId, name: s.name }))
-                : [...staff.map(s => ({ staffId: s.staffId, name: s.name })), { staffId: NONE_COL, name: "Unassigned" }];
+                : [...staff.map(s => ({ staffId: s.staffId, name: s.name })), { staffId: NONE_COL, name: "Owner-managed" }];
 
     // ── Add helpers ───────────────────────────────────────────────────────────
     const openAdd = (prefill?: Partial<ServiceSlotInput>) => {
-        setForm({ ...emptyForm(isoDate), startTime: rangeStart, endTime: lines[1] ?? rangeEnd, ...prefill });
+        setForm({
+            ...emptyForm(isoDate), startTime: rangeStart, endTime: lines[1] ?? rangeEnd, ...prefill,
+            ...(isStaff ? { staffId: ownStaffId } : {}),
+        });
         setFormServiceId("");
         setFormError("");
         setFieldErrors({});
         setShowAdd(true);
     };
-
-    const selectedService = services.find(s => s.serviceId === formServiceId);
-
-    // Allowed slot times = working-hours envelope of the chosen staff (or the
-    // business, for owner-managed) across the selected weekday(s) / date.
-    const timeOptions = useMemo(() => {
-        const days = form.daysOfWeek.length > 0
-            ? form.daysOfWeek
-            : (form.date ? [weekdayName(form.date)] : []);
-        const source: WorkingHour[] = form.staffId
-            ? (staff.find(s => s.staffId === form.staffId)?.workingHours ?? [])
-            : workingHours;
-        const relevant = source.filter(wh => days.length === 0 || days.includes(wh.day));
-        if (relevant.length === 0) return days.length === 0 ? lines : [];
-        let min = "23:59", max = "00:00";
-        for (const wh of relevant) {
-            const s = extractTime(wh.startTime), e = extractTime(wh.endTime);
-            if (s < min) min = s;
-            if (e > max) max = e;
-        }
-        return timeLines(min, max);
-    }, [form.staffId, form.daysOfWeek, form.date, staff, workingHours, lines]);
-
-    // Keep the chosen start/end within the currently allowed range.
-    useEffect(() => {
-        if (!showAdd || timeOptions.length === 0) return;
-        setForm(f => {
-            let start = timeOptions.includes(f.startTime) ? f.startTime : timeOptions[0];
-            const endOpts = timeOptions.filter(t => t > start);
-            let end = endOpts.includes(f.endTime) ? f.endTime : (endOpts[0] ?? timeOptions[timeOptions.length - 1]);
-            if (start === f.startTime && end === f.endTime) return f;
-            return { ...f, startTime: start, endTime: end };
-        });
-    }, [timeOptions, showAdd]);
 
     const handleCreate = async () => {
         if (!activeToken) return;
@@ -227,9 +202,45 @@ export default function CalendarPage() {
         setReassignTo("");
         setDeleteFuture(false);
         setManageError("");
-        if (activeToken) {
+
+        const firstPkg = slot.serviceSlotPackages[0];
+        setEditFormServiceId(firstPkg?.servicePackage.service.serviceId ?? "");
+        setEditForm({
+            staffId: isStaff ? ownStaffId : (slot.staff?.staffId ?? ""),
+            date: slot.date,
+            daysOfWeek: [],
+            startTime: extractTime(slot.startTime),
+            endTime: extractTime(slot.endTime),
+            servicePackageIds: slot.serviceSlotPackages.map(p => p.servicePackage.servicePackageId),
+        });
+        setEditApplyFuture(false);
+        setEditFormError("");
+        setEditFieldErrors({});
+
+        // Reassigning to someone else is an owner-only action — no need to
+        // fetch candidates (the backend would reject the query for staff anyway).
+        if (activeToken && !isStaff) {
             const res = await getAvailableStaffForSlot(activeToken, slot.serviceSlotId);
             setAvailableStaff(res.data?.availableStaffForSlot ?? []);
+        }
+    };
+
+    const handleUpdate = async () => {
+        if (!activeToken || !managing) return;
+        setIsEditSaving(true);
+        setEditFormError("");
+        setEditFieldErrors({});
+        try {
+            const result = await updateServiceSlot(activeToken, managing.serviceSlotId, editForm, editApplyFuture);
+            if (applyGraphQLErrors(result, {
+                setFieldErrors: setEditFieldErrors, setFormError: setEditFormError, fallbackMessage: "Failed to update slot",
+            })) return;
+            setManaging(null);
+            fetchSlots();
+        } catch {
+            setEditFormError("Something went wrong. Please try again.");
+        } finally {
+            setIsEditSaving(false);
         }
     };
 
@@ -276,17 +287,17 @@ export default function CalendarPage() {
     // ── render ────────────────────────────────────────────────────────────────
     if (isLoading) {
         return (
-            <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: "50vh" }}>
+            <Container className="d-flex justify-content-center align-items-center calendar-loading">
                 <Spinner animation="border" variant="primary" />
             </Container>
         );
     }
 
-    if (!hasBusiness) {
+    if (!role) {
         return (
             <Container className="py-5">
                 <h1 className="mb-3 fs-1">Calendar</h1>
-                <Alert variant="warning" style={{ maxWidth: 1200 }}>
+                <Alert variant="warning" className="calendar-page-alert">
                     You need to register a business profile before managing service slots.
                 </Alert>
                 <Button variant="primary" onClick={() => navigate("/register-business")}>Register Business Profile</Button>
@@ -296,307 +307,83 @@ export default function CalendarPage() {
 
     return (
         <Container fluid className="py-4 px-4">
-            <Button variant="link" className="px-0 mb-2 text-decoration-none" onClick={() => navigate("/services")}>
-                &larr; Back to Services
-            </Button>
-
-            <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-                <h1 className="fs-2 fw-bold mb-0">Calendar View</h1>
-                <Button variant="primary" onClick={() => openAdd()}>Add Service Slots</Button>
-            </div>
-
-            <div className="d-flex flex-wrap align-items-end gap-4 mb-4">
-                <div className="d-flex align-items-center gap-2">
-                    <Button variant="outline-secondary" size="sm" onClick={() => setSelectedDate(addDays(selectedDate, -1))}>&lt;</Button>
-                    <div className="fw-semibold" style={{ minWidth: 150, textAlign: "center" }}>{displayDate(selectedDate)}</div>
-                    <Button variant="outline-secondary" size="sm" onClick={() => setSelectedDate(addDays(selectedDate, 1))}>&gt;</Button>
-                </div>
-                <div>
-                    <Form.Label className="fw-semibold mb-1 small">Select Staff</Form.Label>
-                    <Form.Select value={staffFilter} onChange={e => setStaffFilter(e.target.value)} style={{ minWidth: 200 }}>
-                        <option value="">All Staffs</option>
-                        <option value={NONE_COL}>Unassigned (owner-managed)</option>
-                        {staff.map(s => <option key={s.staffId} value={s.staffId}>{s.name}</option>)}
-                    </Form.Select>
-                </div>
-                <div>
-                    <Form.Label className="fw-semibold mb-1 small">Select Service</Form.Label>
-                    <Form.Select value={serviceFilter} onChange={e => setServiceFilter(e.target.value)} style={{ minWidth: 200 }}>
-                        <option value="">All Services</option>
-                        {services.map(s => <option key={s.serviceId} value={s.serviceId}>{s.serviceName}</option>)}
-                    </Form.Select>
-                </div>
-            </div>
+            <CalendarToolbar
+                onBack={() => navigate(isStaff ? "/profile" : "/services")}
+                onAddClick={() => openAdd()}
+                dateLabel={displayDate(selectedDate)}
+                isoDate={isoDate}
+                dateInputRef={dateInputRef}
+                onPrevDate={() => setSelectedDate(addDays(selectedDate, -1))}
+                onNextDate={() => setSelectedDate(addDays(selectedDate, 1))}
+                onDateChange={value => setSelectedDate(new Date(`${value}T00:00:00`))}
+                {...(isStaff ? {} : { staffFilter, setStaffFilter, staff })}
+                serviceFilter={serviceFilter}
+                setServiceFilter={setServiceFilter}
+                services={services}
+            />
 
             {pageError && <Alert variant="danger">{pageError}</Alert>}
 
-            {staffColumns.length === 0 ? (
-                <Alert variant="info">No staff to display. Add staff to start scheduling slots.</Alert>
-            ) : (
-                <div style={{
-                    overflow: "auto",
-                    maxHeight: "calc(100vh - 260px)",
-                    minHeight: 320,
-                    border: "1px solid #dee2e6",
-                    borderRadius: 8,
-                }}>
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: `70px repeat(${staffColumns.length}, minmax(150px, 1fr))`,
-                            gridTemplateRows: `42px repeat(${intervals}, ${ROW_HEIGHT}px)`,
-                            minWidth: 70 + staffColumns.length * 150,
-                        }}
-                    >
-                        {/* top-left corner (sticky on both axes) */}
-                        <div style={{
-                            gridColumn: 1, gridRow: 1, position: "sticky", top: 0, left: 0, zIndex: 4,
-                            background: "#fff", borderBottom: "1px solid #dee2e6", borderRight: "1px solid #eee",
-                        }} />
+            <CalendarGrid
+                staffColumns={staffColumns}
+                lines={lines}
+                intervals={intervals}
+                rangeEnd={rangeEnd}
+                slots={slots}
+                onAddSlot={openAdd}
+                onManageSlot={openManage}
+            />
 
-                        {/* staff header row (sticky to top while scrolling) */}
-                        {staffColumns.map((s, c) => (
-                            <div key={s.staffId} style={{
-                                gridColumn: c + 2, gridRow: 1, position: "sticky", top: 0, zIndex: 3,
-                                background: "#fff", borderBottom: "1px solid #dee2e6", borderLeft: "1px solid #eee",
-                                display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600,
-                            }}>
-                                {s.name}
-                            </div>
-                        ))}
+            <AddServiceSlotModal
+                show={showAdd}
+                onHide={() => setShowAdd(false)}
+                formError={formError}
+                fieldErrors={fieldErrors}
+                setFieldErrors={setFieldErrors}
+                form={form}
+                setForm={setForm}
+                formServiceId={formServiceId}
+                setFormServiceId={setFormServiceId}
+                services={services}
+                staff={staff}
+                workingHours={workingHours}
+                lines={lines}
+                onSubmit={handleCreate}
+                isSaving={isSaving}
+                lockedStaffId={isStaff ? ownStaffId : undefined}
+            />
 
-                        {/* time labels (sticky to left while scrolling) */}
-                        {lines.slice(0, intervals).map((t, i) => (
-                            <div key={t} style={{
-                                gridColumn: 1, gridRow: i + 2, position: "sticky", left: 0, zIndex: 2,
-                                background: "#fff", borderRight: "1px solid #eee", paddingTop: 2, paddingRight: 6,
-                                textAlign: "right", fontSize: 12, color: "#6c757d",
-                            }}>
-                                {t}
-                            </div>
-                        ))}
-
-                        {/* background cells (clickable to add) */}
-                        {staffColumns.map((s, c) =>
-                            lines.slice(0, intervals).map((t, i) => (
-                                <div
-                                    key={`${s.staffId}-${t}`}
-                                    onClick={() => openAdd({ staffId: s.staffId === NONE_COL ? "" : s.staffId, startTime: t, endTime: lines[i + 1] ?? rangeEnd })}
-                                    style={{
-                                        gridColumn: c + 2, gridRow: i + 2,
-                                        borderTop: "1px solid #f0f0f0", borderLeft: "1px solid #eee", cursor: "pointer",
-                                    }}
-                                />
-                            ))
-                        )}
-
-                        {/* slot blocks */}
-                        {slots.map(slot => {
-                            const colId = slot.staff ? slot.staff.staffId : NONE_COL;
-                            const colIdx = staffColumns.findIndex(s => s.staffId === colId);
-                            if (colIdx < 0) return null;
-                            const start = extractTime(slot.startTime);
-                            const end = extractTime(slot.endTime);
-                            let startLine = lines.indexOf(start);
-                            let endLine = lines.indexOf(end);
-                            if (startLine < 0) startLine = 0;
-                            if (endLine < 0) endLine = lines.length - 1;
-                            const pkg = slot.serviceSlotPackages[0];
-                            const label = pkg
-                                ? `${pkg.servicePackage.service.serviceName} — ${pkg.servicePackage.servicePackageName}`
-                                : "Slot";
-                            return (
-                                <div
-                                    key={slot.serviceSlotId}
-                                    onClick={() => openManage(slot)}
-                                    style={{
-                                        gridColumn: colIdx + 2,
-                                        gridRow: `${startLine + 2} / ${endLine + 2}`,
-                                        margin: 2, padding: "4px 6px", borderRadius: 6, cursor: "pointer",
-                                        background: "linear-gradient(135deg,#4f9ad6,#2f7cc0)", color: "#fff",
-                                        fontSize: 12, overflow: "hidden", zIndex: 1,
-                                    }}
-                                >
-                                    <div style={{ fontWeight: 600 }}>{start}–{end}</div>
-                                    <div>{label}</div>
-                                    {slot.serviceSlotPackages.length > 1 && (
-                                        <div style={{ opacity: 0.85 }}>+{slot.serviceSlotPackages.length - 1} more</div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
-            {/* ── Add Service Slots modal ─────────────────────────────────────── */}
-            <Modal show={showAdd} onHide={() => setShowAdd(false)} backdrop="static">
-                <Modal.Header closeButton><Modal.Title>Add Service Slot</Modal.Title></Modal.Header>
-                <Modal.Body>
-                    {formError && <Alert variant="danger">{formError}</Alert>}
-
-                    <Form.Group className="mb-3">
-                        <Form.Label>Service <span className="text-danger">*</span></Form.Label>
-                        <Form.Select
-                            value={formServiceId}
-                            onChange={e => { setFormServiceId(e.target.value); setForm(f => ({ ...f, servicePackageIds: [] })); }}
-                        >
-                            <option value="">Select a service</option>
-                            {services.map(s => <option key={s.serviceId} value={s.serviceId}>{s.serviceName}</option>)}
-                        </Form.Select>
-                    </Form.Group>
-
-                    {selectedService && (
-                        <Form.Group className="mb-3">
-                            <Form.Label>Packages <span className="text-danger">*</span></Form.Label>
-                            {selectedService.servicePackages.length === 0 && (
-                                <div className="text-muted small">This service has no packages.</div>
-                            )}
-                            {selectedService.servicePackages.map(pkg => (
-                                <Form.Check
-                                    key={pkg.servicePackageId}
-                                    type="checkbox"
-                                    label={pkg.servicePackageName}
-                                    checked={form.servicePackageIds.includes(pkg.servicePackageId)}
-                                    onChange={e => setForm(f => ({
-                                        ...f,
-                                        servicePackageIds: e.target.checked
-                                            ? [...f.servicePackageIds, pkg.servicePackageId]
-                                            : f.servicePackageIds.filter(id => id !== pkg.servicePackageId),
-                                    }))}
-                                />
-                            ))}
-                            {fieldErrors.servicePackageIds && <div className="text-danger small">{fieldErrors.servicePackageIds}</div>}
-                        </Form.Group>
-                    )}
-
-                    <Form.Group className="mb-3">
-                        <Form.Label>Staff</Form.Label>
-                        <Form.Select
-                            value={form.staffId}
-                            onChange={e => setForm(f => ({ ...f, staffId: e.target.value }))}
-                            isInvalid={!!fieldErrors.staffId}
-                        >
-                            <option value="">Unassigned (owner-managed)</option>
-                            {staff.map(s => <option key={s.staffId} value={s.staffId}>{s.name}</option>)}
-                        </Form.Select>
-                        <Form.Control.Feedback type="invalid">{fieldErrors.staffId}</Form.Control.Feedback>
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Select Days of the Week or Date <span className="text-danger">*</span></Form.Label>
-                        <div className="d-flex flex-wrap">
-                            {DAYS_OF_WEEK.map(day => (
-                                <div key={day} style={{ width: "50%" }} className="mb-1">
-                                    <Form.Check
-                                        type="checkbox"
-                                        label={`Every ${cap(day)}`}
-                                        checked={form.daysOfWeek.includes(day)}
-                                        onChange={e => setForm(f => ({
-                                            ...f,
-                                            date: "", // choosing weekdays clears the single date
-                                            daysOfWeek: e.target.checked
-                                                ? [...f.daysOfWeek, day]
-                                                : f.daysOfWeek.filter(d => d !== day),
-                                        }))}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                        <div className="text-center fw-bold my-2">OR</div>
-                        <Form.Control
-                            type="date"
-                            value={form.date ?? ""}
-                            disabled={form.daysOfWeek.length > 0}
-                            onChange={e => setForm(f => ({ ...f, date: e.target.value, daysOfWeek: [] }))}
-                        />
-                        {fieldErrors.schedule && <div className="text-danger small mt-1">{fieldErrors.schedule}</div>}
-                    </Form.Group>
-
-                    {timeOptions.length === 0 ? (
-                        <Alert variant="warning" className="py-2 small mb-0">
-                            {form.staffId
-                                ? "This staff has no working hours on the selected day(s)."
-                                : "The business has no working hours on the selected day(s)."}
-                        </Alert>
-                    ) : (
-                        <div className="d-flex gap-3 mb-3">
-                            <Form.Group className="flex-fill">
-                                <Form.Label>Start <span className="text-danger">*</span></Form.Label>
-                                <Form.Select
-                                    value={form.startTime}
-                                    onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))}
-                                    isInvalid={!!fieldErrors.startTime}
-                                >
-                                    {timeOptions.slice(0, -1).map(t => <option key={t} value={t}>{t}</option>)}
-                                </Form.Select>
-                                <Form.Control.Feedback type="invalid">{fieldErrors.startTime}</Form.Control.Feedback>
-                            </Form.Group>
-                            <Form.Group className="flex-fill">
-                                <Form.Label>End <span className="text-danger">*</span></Form.Label>
-                                <Form.Select
-                                    value={form.endTime}
-                                    onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))}
-                                >
-                                    {timeOptions.filter(t => t > form.startTime).map(t => <option key={t} value={t}>{t}</option>)}
-                                </Form.Select>
-                            </Form.Group>
-                        </div>
-                    )}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="outline-secondary" onClick={() => setShowAdd(false)}>Cancel</Button>
-                    <Button variant="primary" onClick={handleCreate} disabled={isSaving || timeOptions.length === 0}>
-                        {isSaving ? "Saving..." : "Save"}
-                    </Button>
-                </Modal.Footer>
-            </Modal>
-
-            {/* ── Manage slot modal ──────────────────────────────────────────── */}
-            <Modal show={!!managing} onHide={() => setManaging(null)}>
-                <Modal.Header closeButton><Modal.Title>Manage Service Slot</Modal.Title></Modal.Header>
-                <Modal.Body>
-                    {manageError && <Alert variant="danger">{manageError}</Alert>}
-                    {managing && (
-                        <>
-                            <p className="mb-1"><strong>Date:</strong> {managing.date}</p>
-                            <p className="mb-1"><strong>Time:</strong> {extractTime(managing.startTime)}–{extractTime(managing.endTime)}</p>
-                            <p className="mb-1"><strong>Staff:</strong> {managing.staff?.name ?? "—"}</p>
-                            <p className="mb-3"><strong>Packages:</strong>{" "}
-                                {managing.serviceSlotPackages.map(p => p.servicePackage.servicePackageName).join(", ") || "—"}
-                            </p>
-
-                            <hr />
-                            <Form.Group className="mb-2">
-                                <Form.Label className="fw-semibold">Reassign staff</Form.Label>
-                                <Form.Select value={reassignTo} onChange={e => setReassignTo(e.target.value)}>
-                                    <option value="">Select…</option>
-                                    <option value="__unassign__">Unassigned (owner-managed)</option>
-                                    {availableStaff.map(s => <option key={s.staffId} value={s.staffId}>{s.name}</option>)}
-                                </Form.Select>
-                                {availableStaff.length === 0 && (
-                                    <div className="text-muted small mt-1">No available staff for this time — you can still set it to owner-managed.</div>
-                                )}
-                            </Form.Group>
-                            <Button variant="primary" size="sm" className="mb-4" onClick={handleReassign} disabled={!reassignTo || manageBusy}>
-                                Save reassignment
-                            </Button>
-
-                            <hr />
-                            <Form.Check
-                                type="checkbox"
-                                className="mb-2"
-                                label="Also delete all future slots on this weekday"
-                                checked={deleteFuture}
-                                onChange={e => setDeleteFuture(e.target.checked)}
-                            />
-                            <Button variant="danger" size="sm" onClick={handleDelete} disabled={manageBusy}>
-                                {manageBusy ? "Working..." : "Delete slot"}
-                            </Button>
-                        </>
-                    )}
-                </Modal.Body>
-            </Modal>
+            <ManageServiceSlotModal
+                show={!!managing}
+                onHide={() => setManaging(null)}
+                managing={managing}
+                manageError={manageError}
+                services={services}
+                staff={staff}
+                workingHours={workingHours}
+                lines={lines}
+                reassignTo={reassignTo}
+                setReassignTo={setReassignTo}
+                availableStaff={availableStaff}
+                onReassign={handleReassign}
+                manageBusy={manageBusy}
+                editForm={editForm}
+                setEditForm={setEditForm}
+                editFormServiceId={editFormServiceId}
+                setEditFormServiceId={setEditFormServiceId}
+                editFormError={editFormError}
+                editFieldErrors={editFieldErrors}
+                setEditFieldErrors={setEditFieldErrors}
+                editApplyFuture={editApplyFuture}
+                setEditApplyFuture={setEditApplyFuture}
+                onUpdate={handleUpdate}
+                isEditSaving={isEditSaving}
+                deleteFuture={deleteFuture}
+                setDeleteFuture={setDeleteFuture}
+                onDelete={handleDelete}
+                lockedStaffId={isStaff ? ownStaffId : undefined}
+                allowReassign={!isStaff}
+            />
         </Container>
     );
 }

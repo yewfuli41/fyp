@@ -46,6 +46,7 @@ type ServiceSlot {
   startTime: Time!
   endTime: Time!
   serviceSlotPackages: [ServiceSlotPackage!]!
+  hasBooking: Boolean!
   deletedAt: DateTime
   createdAt: DateTime!
   createdBy: ID

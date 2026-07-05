@@ -160,6 +160,7 @@ type ServiceSlot struct {
 	StartTime           time.Time             `json:"startTime"`
 	EndTime             time.Time             `json:"endTime"`
 	ServiceSlotPackages []*ServiceSlotPackage `json:"serviceSlotPackages"`
+	HasBooking          bool                  `json:"hasBooking"`
 	DeletedAt           *string               `json:"deletedAt,omitempty"`
 	CreatedAt           string                `json:"createdAt"`
 	CreatedBy           *string               `json:"createdBy,omitempty"`

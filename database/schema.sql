@@ -94,9 +94,23 @@ CREATE TABLE IF NOT EXISTS leave_applications (
     CHECK (status IN ('pending', 'approved', 'rejected'))
 );
 
+CREATE TABLE IF NOT EXISTS recurring_schedules (
+    recurring_schedule_id BIGSERIAL PRIMARY KEY,
+    staff_id BIGINT NOT NULL REFERENCES staff(staff_id) ON DELETE CASCADE,
+    day VARCHAR(30) NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    deleted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by BIGINT REFERENCES users(user_id) ON DELETE SET NULL,
+    CHECK (day IN ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')),
+    CHECK (start_time < end_time)
+);
+
 CREATE TABLE IF NOT EXISTS service_slots (
     service_slot_id BIGSERIAL PRIMARY KEY,
     staff_id BIGINT REFERENCES staff(staff_id) ON DELETE CASCADE,
+    recurring_schedule_id BIGINT REFERENCES recurring_schedules(recurring_schedule_id) ON DELETE CASCADE,
     date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
@@ -112,20 +126,6 @@ CREATE TABLE IF NOT EXISTS service_slot_packages (
     service_slot_id BIGINT NOT NULL REFERENCES service_slots(service_slot_id) ON DELETE CASCADE,
     deleted_at TIMESTAMPTZ,
     UNIQUE (service_package_id, service_slot_id)
-);
-
-CREATE TABLE IF NOT EXISTS recurring_schedules (
-    recurring_schedule_id BIGSERIAL PRIMARY KEY,
-    staff_id BIGINT NOT NULL REFERENCES staff(staff_id) ON DELETE CASCADE,
-    service_package_id BIGINT NOT NULL REFERENCES service_packages(service_package_id) ON DELETE CASCADE,
-    day VARCHAR(30) NOT NULL,
-    start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
-    deleted_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by BIGINT REFERENCES users(user_id) ON DELETE SET NULL,
-    CHECK (day IN ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')),
-    CHECK (start_time < end_time)
 );
 
 CREATE SEQUENCE IF NOT EXISTS booking_group_seq START 1;
@@ -154,10 +154,10 @@ CREATE INDEX IF NOT EXISTS idx_staff_business_id ON staff(business_id);
 CREATE INDEX IF NOT EXISTS idx_staff_working_hours_staff_id ON staff_working_hours(staff_id);
 CREATE INDEX IF NOT EXISTS idx_leave_applications_staff_id ON leave_applications(staff_id);
 CREATE INDEX IF NOT EXISTS idx_service_slots_staff_id ON service_slots(staff_id);
+CREATE INDEX IF NOT EXISTS idx_service_slots_recurring_schedule_id ON service_slots(recurring_schedule_id);
 CREATE INDEX IF NOT EXISTS idx_service_slot_packages_service_package_id ON service_slot_packages(service_package_id);
 CREATE INDEX IF NOT EXISTS idx_service_slot_packages_service_slot_id ON service_slot_packages(service_slot_id);
 CREATE INDEX IF NOT EXISTS idx_recurring_schedules_staff_id ON recurring_schedules(staff_id);
-CREATE INDEX IF NOT EXISTS idx_recurring_schedules_service_package_id ON recurring_schedules(service_package_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings(user_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_slot_package_id ON bookings(slot_package_id);
 CREATE UNIQUE INDEX services_unique_name

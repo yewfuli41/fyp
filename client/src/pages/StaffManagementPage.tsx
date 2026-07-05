@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-    Alert, Button, Container, Form, Modal, OverlayTrigger, Spinner, Table, Tooltip
+    Alert, Button, Container, Form, OverlayTrigger, Spinner, Table, Tooltip
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
@@ -12,6 +12,7 @@ import { userProfile } from "../services/ProfileService";
 import { parseGraphQLErrors } from "../utils/graphqlErrors";
 import { FIELD_LIMITS, shouldClearEmailError } from "../utils/fieldLimits";
 import lockIcon from "../assets/lock.png";
+import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
 
 // Backend validation fields → table columns being edited.
 type RowErrors = Partial<Record<"staffName" | "staffEmail" | "staffContactNumber" | "position", string>>;
@@ -391,32 +392,15 @@ export default function StaffManagementPage() {
                 </Table>
             )}
 
-            {/* ── Delete Confirm Modal ─────────────────────────────────────────── */}
-            <Modal show={showDeleteConfirm} onHide={() => setShowDeleteConfirm(false)}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Delete Staff</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    {deleteError ? (
-                        <Alert variant="danger" className="mb-0">{deleteError}</Alert>
-                    ) : (
-                        <p className="mb-0">
-                            Are you sure you want to delete <strong>{deletingStaff?.name}</strong>?
-                            This action cannot be undone.
-                        </p>
-                    )}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="outline-secondary" onClick={() => setShowDeleteConfirm(false)}>
-                        {deleteError ? "Close" : "Cancel"}
-                    </Button>
-                    {!deleteError && (
-                        <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
-                            {isDeleting ? "Deleting..." : "Delete"}
-                        </Button>
-                    )}
-                </Modal.Footer>
-            </Modal>
+            <ConfirmDeleteModal
+                show={showDeleteConfirm}
+                title="Delete Staff"
+                itemName={deletingStaff?.name}
+                error={deleteError}
+                isDeleting={isDeleting}
+                onCancel={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+            />
         </Container>
     );
 }

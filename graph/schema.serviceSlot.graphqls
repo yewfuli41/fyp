@@ -14,6 +14,12 @@ extend type Query {
 
 extend type Mutation {
   createServiceSlot(input: ServiceSlotInput!): ServiceSlot!
+  # applyToFutureRecurring mirrors deleteServiceSlot's flag: false edits just this
+  # occurrence; true edits it plus every future occurrence sharing its staff/time/
+  # weekday, replacing them with the (possibly newly recurring) schedule in input.
+  # Blocked entirely once any affected occurrence already has a booking — only
+  # reassignServiceSlotStaff remains available for those.
+  updateServiceSlot(serviceSlotId: ID!, input: ServiceSlotInput!, applyToFutureRecurring: Boolean!): ServiceSlot!
   reassignServiceSlotStaff(serviceSlotId: ID!, staffId: ID): ServiceSlot!
   deleteServiceSlot(serviceSlotId: ID!, deleteFutureRecurring: Boolean!): Boolean!
 }

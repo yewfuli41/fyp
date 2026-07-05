@@ -16,6 +16,7 @@ export interface ServiceSlot {
     endTime: string;
     staff?: { staffId: string; name: string } | null;
     serviceSlotPackages: SlotPackage[];
+    hasBooking: boolean;
 }
 
 export interface ServiceSlotInput {
@@ -53,7 +54,24 @@ const SLOT_FIELDS = `
             service { serviceId serviceName }
         }
     }
+    hasBooking
 `;
+
+// Builds the ServiceSlotInput body shared by createServiceSlot/updateServiceSlot.
+const buildInputBody = (input: ServiceSlotInput): string => {
+    const staffLine = input.staffId ? `staffId: "${input.staffId}",` : "";
+    // Either recurring weekdays (GraphQL enum literals, unquoted) or a single date.
+    const scheduleLine = input.daysOfWeek.length > 0
+        ? `daysOfWeek: [${input.daysOfWeek.join(", ")}],`
+        : `date: "${input.date}",`;
+    return `
+        ${staffLine}
+        ${scheduleLine}
+        startTime: "${toTimeScalar(input.startTime)}",
+        endTime: "${toTimeScalar(input.endTime)}",
+        servicePackageIds: [${input.servicePackageIds.map(id => `"${id}"`).join(", ")}]
+    `;
+};
 
 export const getServiceSlots = async (
     token: string, date: string, staffId?: string, serviceId?: string, unassignedOnly?: boolean,
@@ -73,26 +91,33 @@ export const getServiceSlots = async (
 };
 
 export const createServiceSlot = async (token: string, input: ServiceSlotInput) => {
-    // staffId is optional — omit it entirely when unassigned (owner-managed).
-    const staffLine = input.staffId ? `staffId: "${input.staffId}",` : "";
-    // Either recurring weekdays (GraphQL enum literals, unquoted) or a single date.
-    const scheduleLine = input.daysOfWeek.length > 0
-        ? `daysOfWeek: [${input.daysOfWeek.join(", ")}],`
-        : `date: "${input.date}",`;
     const query = `
         mutation {
-            createServiceSlot(input: {
-                ${staffLine}
-                ${scheduleLine}
-                startTime: "${toTimeScalar(input.startTime)}",
-                endTime: "${toTimeScalar(input.endTime)}",
-                servicePackageIds: [${input.servicePackageIds.map(id => `"${id}"`).join(", ")}]
-            }) {
+            createServiceSlot(input: { ${buildInputBody(input)} }) {
                 ${SLOT_FIELDS}
             }
         }
     `;
     return await doGraphQL<{ createServiceSlot: ServiceSlot }>(query, token);
+};
+
+// applyToFutureRecurring: false edits just this occurrence; true edits it plus
+// every future occurrence sharing its staff/time/weekday (mirrors deleteServiceSlot's flag).
+export const updateServiceSlot = async (
+    token: string, serviceSlotId: string, input: ServiceSlotInput, applyToFutureRecurring: boolean,
+) => {
+    const query = `
+        mutation {
+            updateServiceSlot(
+                serviceSlotId: "${serviceSlotId}",
+                input: { ${buildInputBody(input)} },
+                applyToFutureRecurring: ${applyToFutureRecurring}
+            ) {
+                ${SLOT_FIELDS}
+            }
+        }
+    `;
+    return await doGraphQL<{ updateServiceSlot: ServiceSlot }>(query, token);
 };
 
 // staffId null => unassign the slot (owner-managed).

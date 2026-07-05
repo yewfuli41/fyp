@@ -113,6 +113,7 @@ type ComplexityRoot struct {
 		UpdateBusinessProfile    func(childComplexity int, business model.BusinessProfileInput) int
 		UpdateProfile            func(childComplexity int, user model.UpdateProfileInput) int
 		UpdateService            func(childComplexity int, serviceID string, service model.ServiceInput) int
+		UpdateServiceSlot        func(childComplexity int, serviceSlotID string, input model.ServiceSlotInput, applyToFutureRecurring bool) int
 		UpdateStaff              func(childComplexity int, staffID string, staff model.UpdateStaffInput) int
 	}
 
@@ -176,6 +177,7 @@ type ComplexityRoot struct {
 		Date                func(childComplexity int) int
 		DeletedAt           func(childComplexity int) int
 		EndTime             func(childComplexity int) int
+		HasBooking          func(childComplexity int) int
 		ServiceSlotID       func(childComplexity int) int
 		ServiceSlotPackages func(childComplexity int) int
 		Staff               func(childComplexity int) int
@@ -242,6 +244,7 @@ type MutationResolver interface {
 	UpdateService(ctx context.Context, serviceID string, service model.ServiceInput) (*model.Service, error)
 	DeleteService(ctx context.Context, serviceID string) (bool, error)
 	CreateServiceSlot(ctx context.Context, input model.ServiceSlotInput) (*model.ServiceSlot, error)
+	UpdateServiceSlot(ctx context.Context, serviceSlotID string, input model.ServiceSlotInput, applyToFutureRecurring bool) (*model.ServiceSlot, error)
 	ReassignServiceSlotStaff(ctx context.Context, serviceSlotID string, staffID *string) (*model.ServiceSlot, error)
 	DeleteServiceSlot(ctx context.Context, serviceSlotID string, deleteFutureRecurring bool) (bool, error)
 	RegisterStaff(ctx context.Context, staff *model.StaffInput) (bool, error)
@@ -703,6 +706,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateService(childComplexity, args["serviceId"].(string), args["service"].(model.ServiceInput)), true
+	case "Mutation.updateServiceSlot":
+		if e.ComplexityRoot.Mutation.UpdateServiceSlot == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateServiceSlot_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateServiceSlot(childComplexity, args["serviceSlotId"].(string), args["input"].(model.ServiceSlotInput), args["applyToFutureRecurring"].(bool)), true
 	case "Mutation.updateStaff":
 		if e.ComplexityRoot.Mutation.UpdateStaff == nil {
 			break
@@ -995,6 +1009,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.ServiceSlot.EndTime(childComplexity), true
+	case "ServiceSlot.hasBooking":
+		if e.ComplexityRoot.ServiceSlot.HasBooking == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceSlot.HasBooking(childComplexity), true
 	case "ServiceSlot.serviceSlotId":
 		if e.ComplexityRoot.ServiceSlot.ServiceSlotID == nil {
 			break
@@ -1608,6 +1628,8 @@ func (ec *executionContext) childFields_ServiceSlot(ctx context.Context, field g
 		return ec.fieldContext_ServiceSlot_endTime(ctx, field)
 	case "serviceSlotPackages":
 		return ec.fieldContext_ServiceSlot_serviceSlotPackages(ctx, field)
+	case "hasBooking":
+		return ec.fieldContext_ServiceSlot_hasBooking(ctx, field)
 	case "deletedAt":
 		return ec.fieldContext_ServiceSlot_deletedAt(ctx, field)
 	case "createdAt":
@@ -2033,6 +2055,36 @@ func (ec *executionContext) field_Mutation_updateProfile_args(ctx context.Contex
 		return nil, err
 	}
 	args["user"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateServiceSlot_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "serviceSlotId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["serviceSlotId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.ServiceSlotInput, error) {
+			return ec.unmarshalNServiceSlotInput2fypᚋgraphᚋmodelᚐServiceSlotInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "applyToFutureRecurring",
+		func(ctx context.Context, v any) (bool, error) {
+			return ec.unmarshalNBoolean2bool(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["applyToFutureRecurring"] = arg2
 	return args, nil
 }
 
@@ -3593,6 +3645,50 @@ func (ec *executionContext) fieldContext_Mutation_createServiceSlot(ctx context.
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createServiceSlot_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateServiceSlot(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateServiceSlot(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateServiceSlot(ctx, fc.Args["serviceSlotId"].(string), fc.Args["input"].(model.ServiceSlotInput), fc.Args["applyToFutureRecurring"].(bool))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.ServiceSlot) graphql.Marshaler {
+			return ec.marshalNServiceSlot2ᚖfypᚋgraphᚋmodelᚐServiceSlot(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateServiceSlot(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ServiceSlot(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateServiceSlot_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -5281,6 +5377,29 @@ func (ec *executionContext) fieldContext_ServiceSlot_serviceSlotPackages(_ conte
 		},
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _ServiceSlot_hasBooking(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceSlot_hasBooking(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.HasBooking, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceSlot_hasBooking(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceSlot", field, false, false, errors.New("field of type Boolean does not have child fields"))
 }
 
 func (ec *executionContext) _ServiceSlot_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlot) (ret graphql.Marshaler) {
@@ -8422,6 +8541,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "updateServiceSlot":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateServiceSlot(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "reassignServiceSlotStaff":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_reassignServiceSlotStaff(ctx, field)
@@ -8979,6 +9105,11 @@ func (ec *executionContext) _ServiceSlot(ctx context.Context, sel ast.SelectionS
 			}
 		case "serviceSlotPackages":
 			out.Values[i] = ec._ServiceSlot_serviceSlotPackages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "hasBooking":
+			out.Values[i] = ec._ServiceSlot_hasBooking(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

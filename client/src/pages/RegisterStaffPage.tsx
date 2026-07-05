@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { userProfile } from "../services/ProfileService";
 import { registerStaff, type StaffInput, type WorkingHour } from "../services/StaffService";
+import { extractTime } from "../services/ServiceSlotService";
 import { applyGraphQLErrors } from "../utils/graphqlErrors";
 import { FIELD_LIMITS, shouldClearEmailError, shouldClearContactNumberError } from "../utils/fieldLimits";
 import { DAYS_OF_WEEK, startTimeSlice, endTimeSlice, toTimeInputValue} from "../utils/time";
@@ -44,8 +45,23 @@ export default function RegisterStaffPage() {
         checkExistingBusiness();
     }, [activeToken, navigate]);
 
+    // Days the business doesn't work at all can't be picked for a staff
+    // working hour — only offer the days it actually operates on.
+    const availableDays = DAYS_OF_WEEK.filter(day => businessWorkingHours.some(wh => wh.day === day));
+
+    // businessWorkingHours loads asynchronously after mount, so the "monday"
+    // default above may not actually be a day the business operates on —
+    // once real data arrives, snap any mismatched rows to the first valid day.
+    useEffect(() => {
+        if (availableDays.length === 0) return;
+        setStaffWorkingHours(prev => prev.map(wh =>
+            availableDays.includes(wh.day) ? wh : { ...wh, day: availableDays[0] }
+        ));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [businessWorkingHours]);
+
     const handleAddWorkingHour = () => {
-        setStaffWorkingHours([...staffWorkingHours, { day: "monday", startTime: "09:00:00", endTime: "18:00:00" }]);
+        setStaffWorkingHours([...staffWorkingHours, { day: availableDays[0] ?? "monday", startTime: "09:00:00", endTime: "18:00:00" }]);
     };
 
     const handleRemoveWorkingHour = (index: number) => {
@@ -58,6 +74,11 @@ export default function RegisterStaffPage() {
         setStaffWorkingHours(newWorkingHours);
         setFieldErrors(prev => ({ ...prev, [`workingHours[${index}]`]: "" }));
     };
+
+    // Staff can only work within the hours the business itself is open on
+    // that day — startTimeSlice/endTimeSlice already accept a business-hours
+    // window, it just wasn't being passed in before.
+    const businessHoursForDay = (day: string) => businessWorkingHours.find(wh => wh.day === day);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -177,8 +198,30 @@ export default function RegisterStaffPage() {
                     <Form.Control.Feedback type="invalid">{fieldErrors.position}</Form.Control.Feedback>
                 </Form.Group>
 
+                <h3 className="mt-4">Business Working Hours</h3>
+                {businessWorkingHours.length === 0 ? (
+                    <p className="text-muted">No business working hours set.</p>
+                ) : (
+                    <div className="mb-3">
+                        {DAYS_OF_WEEK.filter(day => businessWorkingHours.some(wh => wh.day === day)).map(day => (
+                            <div key={day}>
+                                {day.charAt(0).toUpperCase() + day.slice(1)}: {businessWorkingHours
+                                    .filter(wh => wh.day === day)
+                                    .map(wh => `${extractTime(wh.startTime)} – ${extractTime(wh.endTime)}`)
+                                    .join(", ")}
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 <h3 className="mt-4">Working Hours</h3>
-                {staffWorkingHours.map((wh, index) => (
+                {staffWorkingHours.map((wh, index) => {
+                    const dayBusinessHours = businessHoursForDay(wh.day);
+                    const timeOptions = dayBusinessHours && {
+                        businessStartTime: extractTime(dayBusinessHours.startTime),
+                        businessEndTime: extractTime(dayBusinessHours.endTime),
+                    };
+                    return (
                     <React.Fragment key={index}>
                         <Row key={index} className="mb-2 align-items-end">
                             <Col md={4}>
@@ -188,7 +231,7 @@ export default function RegisterStaffPage() {
                                         value={wh.day}
                                         onChange={(e) => handleWorkingHourChange(index, "day", e.target.value)}
                                     >
-                                        {DAYS_OF_WEEK.map(day => (
+                                        {availableDays.map(day => (
                                             <option key={day} value={day}>{day}</option>
                                         ))}
                                     </Form.Select>
@@ -200,8 +243,9 @@ export default function RegisterStaffPage() {
                                     <Form.Select
                                         value={toTimeInputValue(wh.startTime)}
                                         onChange={(e) => handleWorkingHourChange(index, "startTime", e.target.value + ":00")}
+                                        disabled={!dayBusinessHours}
                                     >
-                                        {startTimeSlice(toTimeInputValue(wh.endTime)).map(time => (
+                                        {dayBusinessHours && startTimeSlice(toTimeInputValue(wh.endTime), timeOptions).map(time => (
                                             <option key={time} value={time}>{time}</option>
                                         ))}
                                     </Form.Select>
@@ -213,8 +257,9 @@ export default function RegisterStaffPage() {
                                     <Form.Select
                                         value={toTimeInputValue(wh.endTime)}
                                         onChange={(e) => handleWorkingHourChange(index, "endTime", e.target.value + ":00")}
+                                        disabled={!dayBusinessHours}
                                     >
-                                        {endTimeSlice(toTimeInputValue(wh.startTime)).map(time => (
+                                        {dayBusinessHours && endTimeSlice(toTimeInputValue(wh.startTime), timeOptions).map(time => (
                                             <option key={time} value={time}>{time}</option>
                                         ))}
                                     </Form.Select>
@@ -224,13 +269,19 @@ export default function RegisterStaffPage() {
                                 <Button variant="danger" onClick={() => handleRemoveWorkingHour(index)}>Remove</Button>
                             </Col>
                         </Row>
+                        {!dayBusinessHours && (
+                            <div className="text-danger small mb-3">
+                                The business is closed on {wh.day.charAt(0).toUpperCase() + wh.day.slice(1)} — choose a different day.
+                            </div>
+                        )}
                         {fieldErrors[`workingHours[${index}]`] && (
                             <div className="text-danger small mb-3">
                                 {fieldErrors[`workingHours[${index}]`]}
                             </div>
                         )}
                     </React.Fragment>
-                ))}
+                    );
+                })}
                 {fieldErrors.workingHours && <div className="text-danger mb-2">{fieldErrors.workingHours}</div>}
 
                 <Button variant="link" onClick={handleAddWorkingHour} className="mb-4">

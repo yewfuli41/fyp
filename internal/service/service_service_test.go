@@ -40,11 +40,16 @@ var _ = Describe("ServiceService", func() {
 
 	Describe("CreateService", func() {
 		var (
-			serviceParam param.ServiceParam
-			createdSvc   *param.ServiceParam
+			serviceParam         param.ServiceParam
+			expectedServiceParam param.ServiceParam
+			createdSvc           *param.ServiceParam
 		)
 
 		BeforeEach(func() {
+			// A service is always saved with an extra default package (named
+			// after the service) and every package always gets a default item
+			// (also named after the service) — see ensureDefaultPackage /
+			// ensureDefaultPackageItems in serviceService.go.
 			serviceParam = param.ServiceParam{
 				BusinessID:  1,
 				ServiceName: "Massage",
@@ -52,6 +57,25 @@ var _ = Describe("ServiceService", func() {
 					{
 						ServicePackageName: "Deep Tissue",
 						PackageItems: []param.PackageItemParam{
+							{PackageItemName: "Oil"},
+						},
+					},
+				},
+			}
+			expectedServiceParam = param.ServiceParam{
+				BusinessID:  1,
+				ServiceName: "Massage",
+				ServicePackages: []param.ServicePackageParam{
+					{
+						ServicePackageName: "Massage",
+						PackageItems: []param.PackageItemParam{
+							{PackageItemName: "Massage"},
+						},
+					},
+					{
+						ServicePackageName: "Deep Tissue",
+						PackageItems: []param.PackageItemParam{
+							{PackageItemName: "Massage"},
 							{PackageItemName: "Oil"},
 						},
 					},
@@ -68,21 +92,40 @@ var _ = Describe("ServiceService", func() {
 			dbMock.ExpectBegin()
 
 			serviceRepo.EXPECT().
-				InsertService(ctx, mock.AnythingOfType("*sql.Tx"), serviceParam).
+				InsertService(ctx, mock.AnythingOfType("*sql.Tx"), expectedServiceParam).
 				Return(createdSvc, nil).
 				Once()
 
-			createdPkg := &param.ServicePackageParam{ServicePackageID: 20, ServiceID: 10, ServicePackageName: "Deep Tissue"}
+			createdDefaultPkg := &param.ServicePackageParam{ServicePackageID: 20, ServiceID: 10, ServicePackageName: "Massage"}
+			serviceRepo.EXPECT().
+				InsertServicePackage(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServicePackageParam) bool {
+					return p.ServiceID == 10 && p.ServicePackageName == "Massage"
+				})).
+				Return(createdDefaultPkg, nil).
+				Once()
+			serviceRepo.EXPECT().
+				InsertPackageItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.PackageItemParam) bool {
+					return p.ServicePackageID == 20 && p.PackageItemName == "Massage"
+				})).
+				Return(nil).
+				Once()
+
+			createdPkg := &param.ServicePackageParam{ServicePackageID: 21, ServiceID: 10, ServicePackageName: "Deep Tissue"}
 			serviceRepo.EXPECT().
 				InsertServicePackage(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServicePackageParam) bool {
 					return p.ServiceID == 10 && p.ServicePackageName == "Deep Tissue"
 				})).
 				Return(createdPkg, nil).
 				Once()
-
 			serviceRepo.EXPECT().
 				InsertPackageItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.PackageItemParam) bool {
-					return p.ServicePackageID == 20 && p.PackageItemName == "Oil"
+					return p.ServicePackageID == 21 && p.PackageItemName == "Massage"
+				})).
+				Return(nil).
+				Once()
+			serviceRepo.EXPECT().
+				InsertPackageItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.PackageItemParam) bool {
+					return p.ServicePackageID == 21 && p.PackageItemName == "Oil"
 				})).
 				Return(nil).
 				Once()
@@ -93,8 +136,9 @@ var _ = Describe("ServiceService", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.ServiceID).To(Equal(int64(10)))
-			Expect(result.ServicePackages).To(HaveLen(1))
+			Expect(result.ServicePackages).To(HaveLen(2))
 			Expect(result.ServicePackages[0].ServicePackageID).To(Equal(int64(20)))
+			Expect(result.ServicePackages[1].ServicePackageID).To(Equal(int64(21)))
 		})
 
 		It("returns validation error", func() {
@@ -108,7 +152,7 @@ var _ = Describe("ServiceService", func() {
 		It("rolls back when InsertService fails", func() {
 			dbMock.ExpectBegin()
 			serviceRepo.EXPECT().
-				InsertService(ctx, mock.AnythingOfType("*sql.Tx"), serviceParam).
+				InsertService(ctx, mock.AnythingOfType("*sql.Tx"), expectedServiceParam).
 				Return(nil, fmt.Errorf("insert error")).
 				Once()
 			dbMock.ExpectRollback()
@@ -121,7 +165,7 @@ var _ = Describe("ServiceService", func() {
 		It("rolls back when InsertServicePackage fails", func() {
 			dbMock.ExpectBegin()
 			serviceRepo.EXPECT().
-				InsertService(ctx, mock.AnythingOfType("*sql.Tx"), serviceParam).
+				InsertService(ctx, mock.AnythingOfType("*sql.Tx"), expectedServiceParam).
 				Return(createdSvc, nil).
 				Once()
 			serviceRepo.EXPECT().
@@ -139,8 +183,9 @@ var _ = Describe("ServiceService", func() {
 	Describe("UpdateService", func() {
 
 		var (
-			serviceParam param.ServiceParam
-			updatedSvc   *param.ServiceParam
+			serviceParam         param.ServiceParam
+			expectedServiceParam param.ServiceParam
+			updatedSvc           *param.ServiceParam
 		)
 
 		BeforeEach(func() {
@@ -156,6 +201,25 @@ var _ = Describe("ServiceService", func() {
 					},
 				},
 			}
+			expectedServiceParam = param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServicePackages: []param.ServicePackageParam{
+					{
+						ServicePackageName: "Updated Massage",
+						PackageItems: []param.PackageItemParam{
+							{PackageItemName: "Updated Massage"},
+						},
+					},
+					{
+						ServicePackageName: "Swedish",
+						PackageItems: []param.PackageItemParam{
+							{PackageItemName: "Updated Massage"},
+							{PackageItemName: "Lotion"},
+						},
+					},
+				},
+			}
 			updatedSvc = &param.ServiceParam{
 				ServiceID:   10,
 				ServiceName: "Updated Massage",
@@ -166,7 +230,7 @@ var _ = Describe("ServiceService", func() {
 			dbMock.ExpectBegin()
 
 			serviceRepo.EXPECT().
-				UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), serviceParam).
+				UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), expectedServiceParam).
 				Return(updatedSvc, nil).
 				Once()
 
@@ -175,17 +239,36 @@ var _ = Describe("ServiceService", func() {
 				Return(nil).
 				Once()
 
-			createdPkg := &param.ServicePackageParam{ServicePackageID: 30, ServiceID: 10, ServicePackageName: "Swedish"}
+			createdDefaultPkg := &param.ServicePackageParam{ServicePackageID: 30, ServiceID: 10, ServicePackageName: "Updated Massage"}
+			serviceRepo.EXPECT().
+				InsertServicePackage(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServicePackageParam) bool {
+					return p.ServiceID == 10 && p.ServicePackageName == "Updated Massage"
+				})).
+				Return(createdDefaultPkg, nil).
+				Once()
+			serviceRepo.EXPECT().
+				InsertPackageItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.PackageItemParam) bool {
+					return p.ServicePackageID == 30 && p.PackageItemName == "Updated Massage"
+				})).
+				Return(nil).
+				Once()
+
+			createdPkg := &param.ServicePackageParam{ServicePackageID: 31, ServiceID: 10, ServicePackageName: "Swedish"}
 			serviceRepo.EXPECT().
 				InsertServicePackage(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServicePackageParam) bool {
 					return p.ServiceID == 10 && p.ServicePackageName == "Swedish"
 				})).
 				Return(createdPkg, nil).
 				Once()
-
 			serviceRepo.EXPECT().
 				InsertPackageItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.PackageItemParam) bool {
-					return p.ServicePackageID == 30 && p.PackageItemName == "Lotion"
+					return p.ServicePackageID == 31 && p.PackageItemName == "Updated Massage"
+				})).
+				Return(nil).
+				Once()
+			serviceRepo.EXPECT().
+				InsertPackageItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.PackageItemParam) bool {
+					return p.ServicePackageID == 31 && p.PackageItemName == "Lotion"
 				})).
 				Return(nil).
 				Once()
@@ -196,12 +279,13 @@ var _ = Describe("ServiceService", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.ServiceName).To(Equal("Updated Massage"))
+			Expect(result.ServicePackages).To(HaveLen(2))
 		})
 
 		It("rolls back when DeleteServicePackagesByServiceID fails", func() {
 			dbMock.ExpectBegin()
 			serviceRepo.EXPECT().
-				UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), serviceParam).
+				UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), expectedServiceParam).
 				Return(updatedSvc, nil).Once()
 			serviceRepo.EXPECT().
 				DeleteServicePackagesByServiceID(ctx, mock.AnythingOfType("*sql.Tx"), int64(10)).

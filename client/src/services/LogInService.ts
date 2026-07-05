@@ -24,6 +24,11 @@ export const logIn = async(
 
                     staffProfile {
                         staffId
+                        workingHours {
+                            day
+                            startTime
+                            endTime
+                        }
                     }
                 }
             }

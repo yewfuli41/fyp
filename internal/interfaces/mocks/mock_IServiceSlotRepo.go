@@ -139,8 +139,8 @@ func (_c *MockIServiceSlotRepo_GetAvailableStaff_Call) RunAndReturn(run func(ctx
 }
 
 // GetFutureRecurringSlotIDs provides a mock function for the type MockIServiceSlotRepo
-func (_mock *MockIServiceSlotRepo) GetFutureRecurringSlotIDs(ctx context.Context, businessID int64, staffID *int64, startTime time.Time, endTime time.Time, fromDate string) ([]int64, error) {
-	ret := _mock.Called(ctx, businessID, staffID, startTime, endTime, fromDate)
+func (_mock *MockIServiceSlotRepo) GetFutureRecurringSlotIDs(ctx context.Context, businessID int64, recurringScheduleID int64, fromDate string) ([]int64, error) {
+	ret := _mock.Called(ctx, businessID, recurringScheduleID, fromDate)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetFutureRecurringSlotIDs")
@@ -148,18 +148,18 @@ func (_mock *MockIServiceSlotRepo) GetFutureRecurringSlotIDs(ctx context.Context
 
 	var r0 []int64
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *int64, time.Time, time.Time, string) ([]int64, error)); ok {
-		return returnFunc(ctx, businessID, staffID, startTime, endTime, fromDate)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, string) ([]int64, error)); ok {
+		return returnFunc(ctx, businessID, recurringScheduleID, fromDate)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *int64, time.Time, time.Time, string) []int64); ok {
-		r0 = returnFunc(ctx, businessID, staffID, startTime, endTime, fromDate)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, string) []int64); ok {
+		r0 = returnFunc(ctx, businessID, recurringScheduleID, fromDate)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]int64)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *int64, time.Time, time.Time, string) error); ok {
-		r1 = returnFunc(ctx, businessID, staffID, startTime, endTime, fromDate)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, int64, string) error); ok {
+		r1 = returnFunc(ctx, businessID, recurringScheduleID, fromDate)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -174,15 +174,13 @@ type MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call struct {
 // GetFutureRecurringSlotIDs is a helper method to define mock.On call
 //   - ctx context.Context
 //   - businessID int64
-//   - staffID *int64
-//   - startTime time.Time
-//   - endTime time.Time
+//   - recurringScheduleID int64
 //   - fromDate string
-func (_e *MockIServiceSlotRepo_Expecter) GetFutureRecurringSlotIDs(ctx interface{}, businessID interface{}, staffID interface{}, startTime interface{}, endTime interface{}, fromDate interface{}) *MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call {
-	return &MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call{Call: _e.mock.On("GetFutureRecurringSlotIDs", ctx, businessID, staffID, startTime, endTime, fromDate)}
+func (_e *MockIServiceSlotRepo_Expecter) GetFutureRecurringSlotIDs(ctx interface{}, businessID interface{}, recurringScheduleID interface{}, fromDate interface{}) *MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call {
+	return &MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call{Call: _e.mock.On("GetFutureRecurringSlotIDs", ctx, businessID, recurringScheduleID, fromDate)}
 }
 
-func (_c *MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call) Run(run func(ctx context.Context, businessID int64, staffID *int64, startTime time.Time, endTime time.Time, fromDate string)) *MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call {
+func (_c *MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call) Run(run func(ctx context.Context, businessID int64, recurringScheduleID int64, fromDate string)) *MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -192,29 +190,19 @@ func (_c *MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call) Run(run func(ctx 
 		if args[1] != nil {
 			arg1 = args[1].(int64)
 		}
-		var arg2 *int64
+		var arg2 int64
 		if args[2] != nil {
-			arg2 = args[2].(*int64)
+			arg2 = args[2].(int64)
 		}
-		var arg3 time.Time
+		var arg3 string
 		if args[3] != nil {
-			arg3 = args[3].(time.Time)
-		}
-		var arg4 time.Time
-		if args[4] != nil {
-			arg4 = args[4].(time.Time)
-		}
-		var arg5 string
-		if args[5] != nil {
-			arg5 = args[5].(string)
+			arg3 = args[3].(string)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
 			arg3,
-			arg4,
-			arg5,
 		)
 	})
 	return _c
@@ -225,7 +213,7 @@ func (_c *MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call) Return(int64s []i
 	return _c
 }
 
-func (_c *MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call) RunAndReturn(run func(ctx context.Context, businessID int64, staffID *int64, startTime time.Time, endTime time.Time, fromDate string) ([]int64, error)) *MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call {
+func (_c *MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call) RunAndReturn(run func(ctx context.Context, businessID int64, recurringScheduleID int64, fromDate string) ([]int64, error)) *MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -396,21 +384,96 @@ func (_c *MockIServiceSlotRepo_GetServiceSlotsByBusinessAndDate_Call) RunAndRetu
 	return _c
 }
 
+// HasBookingForServiceSlot provides a mock function for the type MockIServiceSlotRepo
+func (_mock *MockIServiceSlotRepo) HasBookingForServiceSlot(ctx context.Context, serviceSlotID int64) (bool, error) {
+	ret := _mock.Called(ctx, serviceSlotID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasBookingForServiceSlot")
+	}
+
+	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (bool, error)); ok {
+		return returnFunc(ctx, serviceSlotID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) bool); ok {
+		r0 = returnFunc(ctx, serviceSlotID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, serviceSlotID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIServiceSlotRepo_HasBookingForServiceSlot_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasBookingForServiceSlot'
+type MockIServiceSlotRepo_HasBookingForServiceSlot_Call struct {
+	*mock.Call
+}
+
+// HasBookingForServiceSlot is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceSlotID int64
+func (_e *MockIServiceSlotRepo_Expecter) HasBookingForServiceSlot(ctx interface{}, serviceSlotID interface{}) *MockIServiceSlotRepo_HasBookingForServiceSlot_Call {
+	return &MockIServiceSlotRepo_HasBookingForServiceSlot_Call{Call: _e.mock.On("HasBookingForServiceSlot", ctx, serviceSlotID)}
+}
+
+func (_c *MockIServiceSlotRepo_HasBookingForServiceSlot_Call) Run(run func(ctx context.Context, serviceSlotID int64)) *MockIServiceSlotRepo_HasBookingForServiceSlot_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_HasBookingForServiceSlot_Call) Return(b bool, err error) *MockIServiceSlotRepo_HasBookingForServiceSlot_Call {
+	_c.Call.Return(b, err)
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_HasBookingForServiceSlot_Call) RunAndReturn(run func(ctx context.Context, serviceSlotID int64) (bool, error)) *MockIServiceSlotRepo_HasBookingForServiceSlot_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // InsertRecurringSchedule provides a mock function for the type MockIServiceSlotRepo
-func (_mock *MockIServiceSlotRepo) InsertRecurringSchedule(ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam, servicePackageID int64, day string) error {
-	ret := _mock.Called(ctx, tx, p, servicePackageID, day)
+func (_mock *MockIServiceSlotRepo) InsertRecurringSchedule(ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam, day string) (int64, error) {
+	ret := _mock.Called(ctx, tx, p, day)
 
 	if len(ret) == 0 {
 		panic("no return value specified for InsertRecurringSchedule")
 	}
 
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, param.ServiceSlotParam, int64, string) error); ok {
-		r0 = returnFunc(ctx, tx, p, servicePackageID, day)
-	} else {
-		r0 = ret.Error(0)
+	var r0 int64
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, param.ServiceSlotParam, string) (int64, error)); ok {
+		return returnFunc(ctx, tx, p, day)
 	}
-	return r0
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, param.ServiceSlotParam, string) int64); ok {
+		r0 = returnFunc(ctx, tx, p, day)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *sql.Tx, param.ServiceSlotParam, string) error); ok {
+		r1 = returnFunc(ctx, tx, p, day)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
 }
 
 // MockIServiceSlotRepo_InsertRecurringSchedule_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertRecurringSchedule'
@@ -422,13 +485,12 @@ type MockIServiceSlotRepo_InsertRecurringSchedule_Call struct {
 //   - ctx context.Context
 //   - tx *sql.Tx
 //   - p param.ServiceSlotParam
-//   - servicePackageID int64
 //   - day string
-func (_e *MockIServiceSlotRepo_Expecter) InsertRecurringSchedule(ctx interface{}, tx interface{}, p interface{}, servicePackageID interface{}, day interface{}) *MockIServiceSlotRepo_InsertRecurringSchedule_Call {
-	return &MockIServiceSlotRepo_InsertRecurringSchedule_Call{Call: _e.mock.On("InsertRecurringSchedule", ctx, tx, p, servicePackageID, day)}
+func (_e *MockIServiceSlotRepo_Expecter) InsertRecurringSchedule(ctx interface{}, tx interface{}, p interface{}, day interface{}) *MockIServiceSlotRepo_InsertRecurringSchedule_Call {
+	return &MockIServiceSlotRepo_InsertRecurringSchedule_Call{Call: _e.mock.On("InsertRecurringSchedule", ctx, tx, p, day)}
 }
 
-func (_c *MockIServiceSlotRepo_InsertRecurringSchedule_Call) Run(run func(ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam, servicePackageID int64, day string)) *MockIServiceSlotRepo_InsertRecurringSchedule_Call {
+func (_c *MockIServiceSlotRepo_InsertRecurringSchedule_Call) Run(run func(ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam, day string)) *MockIServiceSlotRepo_InsertRecurringSchedule_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -442,31 +504,26 @@ func (_c *MockIServiceSlotRepo_InsertRecurringSchedule_Call) Run(run func(ctx co
 		if args[2] != nil {
 			arg2 = args[2].(param.ServiceSlotParam)
 		}
-		var arg3 int64
+		var arg3 string
 		if args[3] != nil {
-			arg3 = args[3].(int64)
-		}
-		var arg4 string
-		if args[4] != nil {
-			arg4 = args[4].(string)
+			arg3 = args[3].(string)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
 			arg3,
-			arg4,
 		)
 	})
 	return _c
 }
 
-func (_c *MockIServiceSlotRepo_InsertRecurringSchedule_Call) Return(err error) *MockIServiceSlotRepo_InsertRecurringSchedule_Call {
-	_c.Call.Return(err)
+func (_c *MockIServiceSlotRepo_InsertRecurringSchedule_Call) Return(n int64, err error) *MockIServiceSlotRepo_InsertRecurringSchedule_Call {
+	_c.Call.Return(n, err)
 	return _c
 }
 
-func (_c *MockIServiceSlotRepo_InsertRecurringSchedule_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam, servicePackageID int64, day string) error) *MockIServiceSlotRepo_InsertRecurringSchedule_Call {
+func (_c *MockIServiceSlotRepo_InsertRecurringSchedule_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam, day string) (int64, error)) *MockIServiceSlotRepo_InsertRecurringSchedule_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -759,41 +816,38 @@ func (_c *MockIServiceSlotRepo_ReassignStaff_Call) RunAndReturn(run func(ctx con
 	return _c
 }
 
-// SoftDeleteRecurringSchedules provides a mock function for the type MockIServiceSlotRepo
-func (_mock *MockIServiceSlotRepo) SoftDeleteRecurringSchedules(ctx context.Context, tx *sql.Tx, businessID int64, staffID int64, weekday string, startTime time.Time, endTime time.Time) error {
-	ret := _mock.Called(ctx, tx, businessID, staffID, weekday, startTime, endTime)
+// SoftDeleteRecurringSchedule provides a mock function for the type MockIServiceSlotRepo
+func (_mock *MockIServiceSlotRepo) SoftDeleteRecurringSchedule(ctx context.Context, tx *sql.Tx, businessID int64, recurringScheduleID int64) error {
+	ret := _mock.Called(ctx, tx, businessID, recurringScheduleID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for SoftDeleteRecurringSchedules")
+		panic("no return value specified for SoftDeleteRecurringSchedule")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, int64, int64, string, time.Time, time.Time) error); ok {
-		r0 = returnFunc(ctx, tx, businessID, staffID, weekday, startTime, endTime)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, int64, int64) error); ok {
+		r0 = returnFunc(ctx, tx, businessID, recurringScheduleID)
 	} else {
 		r0 = ret.Error(0)
 	}
 	return r0
 }
 
-// MockIServiceSlotRepo_SoftDeleteRecurringSchedules_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SoftDeleteRecurringSchedules'
-type MockIServiceSlotRepo_SoftDeleteRecurringSchedules_Call struct {
+// MockIServiceSlotRepo_SoftDeleteRecurringSchedule_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SoftDeleteRecurringSchedule'
+type MockIServiceSlotRepo_SoftDeleteRecurringSchedule_Call struct {
 	*mock.Call
 }
 
-// SoftDeleteRecurringSchedules is a helper method to define mock.On call
+// SoftDeleteRecurringSchedule is a helper method to define mock.On call
 //   - ctx context.Context
 //   - tx *sql.Tx
 //   - businessID int64
-//   - staffID int64
-//   - weekday string
-//   - startTime time.Time
-//   - endTime time.Time
-func (_e *MockIServiceSlotRepo_Expecter) SoftDeleteRecurringSchedules(ctx interface{}, tx interface{}, businessID interface{}, staffID interface{}, weekday interface{}, startTime interface{}, endTime interface{}) *MockIServiceSlotRepo_SoftDeleteRecurringSchedules_Call {
-	return &MockIServiceSlotRepo_SoftDeleteRecurringSchedules_Call{Call: _e.mock.On("SoftDeleteRecurringSchedules", ctx, tx, businessID, staffID, weekday, startTime, endTime)}
+//   - recurringScheduleID int64
+func (_e *MockIServiceSlotRepo_Expecter) SoftDeleteRecurringSchedule(ctx interface{}, tx interface{}, businessID interface{}, recurringScheduleID interface{}) *MockIServiceSlotRepo_SoftDeleteRecurringSchedule_Call {
+	return &MockIServiceSlotRepo_SoftDeleteRecurringSchedule_Call{Call: _e.mock.On("SoftDeleteRecurringSchedule", ctx, tx, businessID, recurringScheduleID)}
 }
 
-func (_c *MockIServiceSlotRepo_SoftDeleteRecurringSchedules_Call) Run(run func(ctx context.Context, tx *sql.Tx, businessID int64, staffID int64, weekday string, startTime time.Time, endTime time.Time)) *MockIServiceSlotRepo_SoftDeleteRecurringSchedules_Call {
+func (_c *MockIServiceSlotRepo_SoftDeleteRecurringSchedule_Call) Run(run func(ctx context.Context, tx *sql.Tx, businessID int64, recurringScheduleID int64)) *MockIServiceSlotRepo_SoftDeleteRecurringSchedule_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -811,37 +865,22 @@ func (_c *MockIServiceSlotRepo_SoftDeleteRecurringSchedules_Call) Run(run func(c
 		if args[3] != nil {
 			arg3 = args[3].(int64)
 		}
-		var arg4 string
-		if args[4] != nil {
-			arg4 = args[4].(string)
-		}
-		var arg5 time.Time
-		if args[5] != nil {
-			arg5 = args[5].(time.Time)
-		}
-		var arg6 time.Time
-		if args[6] != nil {
-			arg6 = args[6].(time.Time)
-		}
 		run(
 			arg0,
 			arg1,
 			arg2,
 			arg3,
-			arg4,
-			arg5,
-			arg6,
 		)
 	})
 	return _c
 }
 
-func (_c *MockIServiceSlotRepo_SoftDeleteRecurringSchedules_Call) Return(err error) *MockIServiceSlotRepo_SoftDeleteRecurringSchedules_Call {
+func (_c *MockIServiceSlotRepo_SoftDeleteRecurringSchedule_Call) Return(err error) *MockIServiceSlotRepo_SoftDeleteRecurringSchedule_Call {
 	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockIServiceSlotRepo_SoftDeleteRecurringSchedules_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, businessID int64, staffID int64, weekday string, startTime time.Time, endTime time.Time) error) *MockIServiceSlotRepo_SoftDeleteRecurringSchedules_Call {
+func (_c *MockIServiceSlotRepo_SoftDeleteRecurringSchedule_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, businessID int64, recurringScheduleID int64) error) *MockIServiceSlotRepo_SoftDeleteRecurringSchedule_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1136,96 +1175,6 @@ func (_c *MockIServiceSlotRepo_StaffCoversTime_Call) Return(b bool, err error) *
 }
 
 func (_c *MockIServiceSlotRepo_StaffCoversTime_Call) RunAndReturn(run func(ctx context.Context, staffID int64, weekday string, startTime time.Time, endTime time.Time) (bool, error)) *MockIServiceSlotRepo_StaffCoversTime_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// StaffHasOverlappingSlot provides a mock function for the type MockIServiceSlotRepo
-func (_mock *MockIServiceSlotRepo) StaffHasOverlappingSlot(ctx context.Context, staffID int64, date string, startTime time.Time, endTime time.Time, excludeSlotID int64) (bool, error) {
-	ret := _mock.Called(ctx, staffID, date, startTime, endTime, excludeSlotID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for StaffHasOverlappingSlot")
-	}
-
-	var r0 bool
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, time.Time, time.Time, int64) (bool, error)); ok {
-		return returnFunc(ctx, staffID, date, startTime, endTime, excludeSlotID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, time.Time, time.Time, int64) bool); ok {
-		r0 = returnFunc(ctx, staffID, date, startTime, endTime, excludeSlotID)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, string, time.Time, time.Time, int64) error); ok {
-		r1 = returnFunc(ctx, staffID, date, startTime, endTime, excludeSlotID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// MockIServiceSlotRepo_StaffHasOverlappingSlot_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StaffHasOverlappingSlot'
-type MockIServiceSlotRepo_StaffHasOverlappingSlot_Call struct {
-	*mock.Call
-}
-
-// StaffHasOverlappingSlot is a helper method to define mock.On call
-//   - ctx context.Context
-//   - staffID int64
-//   - date string
-//   - startTime time.Time
-//   - endTime time.Time
-//   - excludeSlotID int64
-func (_e *MockIServiceSlotRepo_Expecter) StaffHasOverlappingSlot(ctx interface{}, staffID interface{}, date interface{}, startTime interface{}, endTime interface{}, excludeSlotID interface{}) *MockIServiceSlotRepo_StaffHasOverlappingSlot_Call {
-	return &MockIServiceSlotRepo_StaffHasOverlappingSlot_Call{Call: _e.mock.On("StaffHasOverlappingSlot", ctx, staffID, date, startTime, endTime, excludeSlotID)}
-}
-
-func (_c *MockIServiceSlotRepo_StaffHasOverlappingSlot_Call) Run(run func(ctx context.Context, staffID int64, date string, startTime time.Time, endTime time.Time, excludeSlotID int64)) *MockIServiceSlotRepo_StaffHasOverlappingSlot_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 int64
-		if args[1] != nil {
-			arg1 = args[1].(int64)
-		}
-		var arg2 string
-		if args[2] != nil {
-			arg2 = args[2].(string)
-		}
-		var arg3 time.Time
-		if args[3] != nil {
-			arg3 = args[3].(time.Time)
-		}
-		var arg4 time.Time
-		if args[4] != nil {
-			arg4 = args[4].(time.Time)
-		}
-		var arg5 int64
-		if args[5] != nil {
-			arg5 = args[5].(int64)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-			arg3,
-			arg4,
-			arg5,
-		)
-	})
-	return _c
-}
-
-func (_c *MockIServiceSlotRepo_StaffHasOverlappingSlot_Call) Return(b bool, err error) *MockIServiceSlotRepo_StaffHasOverlappingSlot_Call {
-	_c.Call.Return(b, err)
-	return _c
-}
-
-func (_c *MockIServiceSlotRepo_StaffHasOverlappingSlot_Call) RunAndReturn(run func(ctx context.Context, staffID int64, date string, startTime time.Time, endTime time.Time, excludeSlotID int64) (bool, error)) *MockIServiceSlotRepo_StaffHasOverlappingSlot_Call {
 	_c.Call.Return(run)
 	return _c
 }

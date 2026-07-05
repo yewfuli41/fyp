@@ -53,6 +53,7 @@ function App() {
       </Route>
       <Route element={<ProtectedRoute roles={["STAFF"]} />}>
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/my-calendar" element={<CalendarPage />} />
       </Route>
       <Route element={<ProtectedRoute roles={["OWNER"]} />}>
         <Route path="/edit-business" element={<EditBusinessPage />} />

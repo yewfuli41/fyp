@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	Auth  AuthConfig  `yaml:"auth"`
-	Email EmailConfig `yaml:"-"`
+	Auth        AuthConfig        `yaml:"auth"`
+	Email       EmailConfig       `yaml:"-"`
+	ServiceSlot ServiceSlotConfig `yaml:"service_slot"`
 }
 
 type EmailConfig struct {
@@ -23,6 +24,10 @@ type AuthConfig struct {
 	LockDurationMinutes    int     `yaml:"lock_duration_minutes"`
 	JWTExpirationHours     float64 `yaml:"jwt_expiration_hours"`
 	JWTSecret              string  `yaml:"-"`
+}
+
+type ServiceSlotConfig struct {
+	RecurringHorizonWeeks int `yaml:"recurring_horizon_weeks"`
 }
 
 func Load(path string) (*Config, error) {

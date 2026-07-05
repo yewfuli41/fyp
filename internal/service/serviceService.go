@@ -8,6 +8,7 @@ import (
 	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
+	"sort"
 	"strings"
 )
 
@@ -23,9 +24,51 @@ func NewServiceService(db *sql.DB, serviceRepo interfaces.IServiceRepo) interfac
 	}
 }
 
+// ensureDefaultPackage guarantees every service has a package named exactly
+// after the service itself (representing "book this service, no specific
+// package"), without duplicating one the user already named that way.
+func ensureDefaultPackage(p *param.ServiceParam) {
+	for _, pkg := range p.ServicePackages {
+		if strings.EqualFold(pkg.ServicePackageName, p.ServiceName) {
+			return
+		}
+	}
+	p.ServicePackages = append([]param.ServicePackageParam{{ServicePackageName: p.ServiceName}}, p.ServicePackages...)
+}
+
+// ensureDefaultPackageItems guarantees every package always has an item named
+// after the service itself, without duplicating one the user already named
+// that way.
+func ensureDefaultPackageItems(packages []param.ServicePackageParam, serviceName string) {
+	for i := range packages {
+		hasDefault := false
+		for _, item := range packages[i].PackageItems {
+			if strings.EqualFold(item.PackageItemName, serviceName) {
+				hasDefault = true
+				break
+			}
+		}
+		if !hasDefault {
+			packages[i].PackageItems = append([]param.PackageItemParam{{PackageItemName: serviceName}}, packages[i].PackageItems...)
+		}
+	}
+}
+
+// itemSetSignature returns a canonical, order-independent representation of a
+// package's item names, used to detect packages with identical item lists.
+func itemSetSignature(items []param.PackageItemParam) string {
+	names := make([]string, len(items))
+	for i, item := range items {
+		names[i] = strings.ToLower(item.PackageItemName)
+	}
+	sort.Strings(names)
+	return strings.Join(names, "\x00")
+}
+
 func validatePackageDuplicates(packages []param.ServicePackageParam) errs.ValidationErrors {
 	var validationErrs errs.ValidationErrors
 	seenPkgNames := make(map[string]bool)
+	seenItemSets := make(map[string]int)
 	for i, pkg := range packages {
 		lower := strings.ToLower(pkg.ServicePackageName)
 		if seenPkgNames[lower] {
@@ -45,6 +88,16 @@ func validatePackageDuplicates(packages []param.ServicePackageParam) errs.Valida
 			}
 			seenItemNames[lowerItem] = true
 		}
+
+		signature := itemSetSignature(pkg.PackageItems)
+		if firstIdx, exists := seenItemSets[signature]; exists {
+			validationErrs = append(validationErrs, errs.ValidationError{
+				Field:   fmt.Sprintf("servicePackages[%d]", i),
+				Message: fmt.Sprintf("Package items are identical to package %d", firstIdx+1),
+			})
+		} else {
+			seenItemSets[signature] = i
+		}
 	}
 	return validationErrs
 }
@@ -54,9 +107,8 @@ func (s *serviceService) CreateService(ctx context.Context, p param.ServiceParam
 		return nil, err
 	}
 
-	if len(p.ServicePackages) == 0 {
-		p.ServicePackages = []param.ServicePackageParam{{ServicePackageName: p.ServiceName}}
-	}
+	ensureDefaultPackage(&p)
+	ensureDefaultPackageItems(p.ServicePackages, p.ServiceName)
 
 	if validationErrs := validatePackageDuplicates(p.ServicePackages); len(validationErrs) > 0 {
 		return nil, validationErrs
@@ -107,9 +159,8 @@ func (s *serviceService) UpdateService(ctx context.Context, p param.ServiceParam
 		return nil, err
 	}
 
-	if len(p.ServicePackages) == 0 {
-		p.ServicePackages = []param.ServicePackageParam{{ServicePackageName: p.ServiceName}}
-	}
+	ensureDefaultPackage(&p)
+	ensureDefaultPackageItems(p.ServicePackages, p.ServiceName)
 
 	if validationErrs := validatePackageDuplicates(p.ServicePackages); len(validationErrs) > 0 {
 		return nil, validationErrs

@@ -158,7 +158,17 @@ func (s *staffService) RegisterStaff(ctx context.Context, ownerParam *param.Busi
 }
 
 func (s *staffService) GetStaffProfileByUserID(ctx context.Context, userID int64) (*param.StaffParam, error) {
-	return s.staffRepo.GetStaffByUserID(ctx, userID)
+	staffProfile, err := s.staffRepo.GetStaffByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	hours, err := s.staffRepo.GetStaffWorkingHours(ctx, staffProfile.StaffID)
+	if err != nil {
+		return nil, err
+	}
+	staffProfile.WorkingHours = hours
+	return staffProfile, nil
 }
 
 func (s *staffService) GetStaffByBusinessID(ctx context.Context, businessID int64) ([]param.StaffParam, error) {

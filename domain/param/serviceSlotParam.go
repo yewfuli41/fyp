@@ -17,22 +17,20 @@ type SlotPackageParam struct {
 }
 
 type ServiceSlotParam struct {
-	ServiceSlotID int64
-	BusinessID    int64
-	StaffID       *int64 // nil => owner-managed (no assigned staff)
-	StaffName     string
-	Date          string   // "YYYY-MM-DD" — single specific date (mutually exclusive with DaysOfWeek)
-	DaysOfWeek    []string // recurring weekdays, e.g. ["monday","wednesday"]
-	StartTime     time.Time
-	EndTime       time.Time
-	CreatedBy     int64
+	ServiceSlotID       int64
+	BusinessID          int64
+	StaffID             *int64 // nil => owner-managed (no assigned staff)
+	StaffName           string
+	RecurringScheduleID *int64   // nil => a one-off slot, not part of any weekday series
+	Date                string   // "YYYY-MM-DD" — single specific date (mutually exclusive with DaysOfWeek)
+	DaysOfWeek          []string // recurring weekdays, e.g. ["monday","wednesday"]
+	StartTime           time.Time
+	EndTime             time.Time
+	CreatedBy           int64
+	HasBooking          bool // loaded for display — true once a customer has booked this slot
 
 	ServicePackageIDs []int64            // input: packages to make bookable
 	Packages          []SlotPackageParam // loaded for display
-}
-
-func (p ServiceSlotParam) IsRecurring() bool {
-	return len(p.DaysOfWeek) > 0
 }
 
 func (p ServiceSlotParam) Validate() error {
@@ -51,6 +49,19 @@ func (p ServiceSlotParam) Validate() error {
 		validationErrs = append(validationErrs, errs.ValidationError{Field: "schedule", Message: "Please select days of the week or a date"})
 	} else if hasDate && hasDays {
 		validationErrs = append(validationErrs, errs.ValidationError{Field: "schedule", Message: "Choose either weekdays or a single date, not both"})
+	} else if hasDate {
+		if parsed, err := time.Parse("2006-01-02", p.Date); err != nil {
+			validationErrs = append(validationErrs, errs.ValidationError{Field: "date", Message: "Invalid date"})
+		} else {
+			slotStart := time.Date(
+				parsed.Year(), parsed.Month(), parsed.Day(),
+				p.StartTime.Hour(), p.StartTime.Minute(), p.StartTime.Second(), 0,
+				time.UTC,
+			)
+			if slotStart.Before(time.Now()) {
+				validationErrs = append(validationErrs, errs.ValidationError{Field: "date", Message: "Date and time cannot be in the past"})
+			}
+		}
 	}
 
 	if len(validationErrs) > 0 {

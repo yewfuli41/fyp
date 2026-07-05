@@ -23,6 +23,14 @@ export const userProfile= async(token: string) => {
                         endTime
                     }
                 }
+                staffProfile {
+                    staffId
+                    workingHours {
+                        day
+                        startTime
+                        endTime
+                    }
+                }
             }
         }
     `

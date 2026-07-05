@@ -141,6 +141,7 @@ func MapServiceSlot(s *param.ServiceSlotParam) *model.ServiceSlot {
 		StartTime:           s.StartTime,
 		EndTime:             s.EndTime,
 		ServiceSlotPackages: packages,
+		HasBooking:          s.HasBooking,
 	}
 }
 

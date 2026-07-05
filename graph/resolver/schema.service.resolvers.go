@@ -126,12 +126,14 @@ func (r *queryResolver) DisplayServices(ctx context.Context) ([]*model.Service, 
 		return nil, graphErrs.ToGraphQLError(err)
 	}
 
-	businessProfile, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, currentUser.UserID)
+	// A staff member (no business profile of their own) can still list their
+	// business's services — they need this to create/edit their own slots.
+	businessID, _, err := resolveBusinessScope(ctx, r.Resolver, currentUser)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
 	}
 
-	services, err := r.App.ServiceService.GetServicesByBusinessID(ctx, businessProfile.BusinessID)
+	services, err := r.App.ServiceService.GetServicesByBusinessID(ctx, businessID)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
 	}

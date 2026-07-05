@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fyp/config"
 	"fyp/database"
 	"fyp/domain/errs"
 	"fyp/domain/param"
@@ -12,17 +13,17 @@ import (
 	"time"
 )
 
-const recurringHorizonWeeks = 12
-
 type serviceSlotService struct {
-	serviceSlotRepo interfaces.IServiceSlotRepo
-	tx              *database.Transaction
+	serviceSlotRepo   interfaces.IServiceSlotRepo
+	tx                *database.Transaction
+	serviceSlotConfig config.ServiceSlotConfig
 }
 
-func NewServiceSlotService(db *sql.DB, serviceSlotRepo interfaces.IServiceSlotRepo) interfaces.IServiceSlotService {
+func NewServiceSlotService(db *sql.DB, serviceSlotRepo interfaces.IServiceSlotRepo, serviceSlotConfig config.ServiceSlotConfig) interfaces.IServiceSlotService {
 	return &serviceSlotService{
-		serviceSlotRepo: serviceSlotRepo,
-		tx:              database.NewTransaction(db),
+		serviceSlotRepo:   serviceSlotRepo,
+		tx:                database.NewTransaction(db),
+		serviceSlotConfig: serviceSlotConfig,
 	}
 }
 
@@ -62,6 +63,109 @@ func slotNotFound() error {
 	return errs.ValidationErrors{{Field: "serviceSlotId", Message: "Service slot not found."}}
 }
 
+// scheduledDate pairs a concrete date with the weekday it falls on, so a
+// slot inserted for that date can be attached to the right weekday's
+// recurring_schedule_id.
+type scheduledDate struct {
+	Date    string
+	Weekday string
+}
+
+// resolveSchedule expands a slot param into the concrete dates to create and
+// the weekdays they cover — a single date, or every occurrence of each
+// selected weekday over the next recurringHorizonWeeks.
+func (s *serviceSlotService) resolveSchedule(p param.ServiceSlotParam) ([]scheduledDate, []string, error) {
+	if len(p.DaysOfWeek) > 0 {
+		var scheduled []scheduledDate
+		for _, wd := range p.DaysOfWeek {
+			for _, date := range weekdayOccurrences(wd, s.serviceSlotConfig.RecurringHorizonWeeks) {
+				scheduled = append(scheduled, scheduledDate{Date: date, Weekday: wd})
+			}
+		}
+		return scheduled, p.DaysOfWeek, nil
+	}
+	wd, err := weekdayOf(p.Date)
+	if err != nil {
+		return nil, nil, errs.ValidationErrors{{Field: "date", Message: "Invalid date"}}
+	}
+	return []scheduledDate{{Date: p.Date, Weekday: wd}}, []string{wd}, nil
+}
+
+// validateStaffCoverage checks that an (optional) staff belongs to the
+// business and works every given weekday during the requested time. No staff
+// means owner-managed, which always passes.
+func (s *serviceSlotService) validateStaffCoverage(ctx context.Context, staffID *int64, businessID int64, weekdays []string, startTime, endTime time.Time) error {
+	if staffID == nil {
+		return nil
+	}
+	staffOK, err := s.serviceSlotRepo.StaffBelongsToBusiness(ctx, *staffID, businessID)
+	if err != nil {
+		return err
+	}
+	if !staffOK {
+		return errs.ValidationErrors{{Field: "staffId", Message: "Selected staff was not found."}}
+	}
+	for _, wd := range weekdays {
+		covers, err := s.serviceSlotRepo.StaffCoversTime(ctx, *staffID, wd, startTime, endTime)
+		if err != nil {
+			return err
+		}
+		if !covers {
+			return errs.ValidationErrors{{Field: "startTime", Message: "Staff is not working on " + wd + " during the selected time."}}
+		}
+	}
+	return nil
+}
+
+// insertSlotsForSchedule inserts one service_slots row (plus its packages)
+// per scheduled date and returns the first inserted ID. recurringScheduleIDs
+// maps weekday -> recurring_schedule_id (nil map for a non-recurring slot);
+// each inserted slot is attached to its weekday's series, if any.
+func (s *serviceSlotService) insertSlotsForSchedule(
+	ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam, scheduled []scheduledDate, recurringScheduleIDs map[string]int64,
+) (int64, error) {
+	var createdID int64
+	for _, sd := range scheduled {
+		slot := p
+		slot.Date = sd.Date
+		slot.RecurringScheduleID = nil
+		if id, ok := recurringScheduleIDs[sd.Weekday]; ok {
+			slot.RecurringScheduleID = &id
+		}
+
+		id, err := s.serviceSlotRepo.InsertServiceSlot(ctx, tx, slot)
+		if err != nil {
+			return 0, err
+		}
+		if err := s.insertSlotPackages(ctx, tx, id, slot.ServicePackageIDs); err != nil {
+			return 0, err
+		}
+		if createdID == 0 {
+			createdID = id
+		}
+	}
+	return createdID, nil
+}
+
+// insertRecurringSchedules records one (staff, day) series per selected
+// weekday (recurring_schedules.staff_id is NOT NULL, so owner-managed slots
+// never get rows here) and returns a weekday -> recurring_schedule_id lookup
+// for insertSlotsForSchedule to attach to each generated slot.
+func (s *serviceSlotService) insertRecurringSchedules(ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam, weekdays []string) (map[string]int64, error) {
+	if p.StaffID == nil {
+		return nil, nil
+	}
+	ids := make(map[string]int64, len(weekdays))
+	for _, wd := range weekdays {
+		id, err := s.serviceSlotRepo.InsertRecurringSchedule(ctx, tx, p, wd)
+		if err != nil {
+			return nil, err
+		}
+		ids[wd] = id
+	}
+	return ids, nil
+}
+
 func (s *serviceSlotService) CreateServiceSlot(ctx context.Context, p param.ServiceSlotParam) (*param.ServiceSlotParam, error) {
 	if err := p.Validate(); err != nil {
 		return nil, err
@@ -75,83 +179,30 @@ func (s *serviceSlotService) CreateServiceSlot(ctx context.Context, p param.Serv
 		return nil, errs.ValidationErrors{{Field: "servicePackageIds", Message: "One or more selected packages are invalid."}}
 	}
 
-	// Resolve the set of concrete dates to create and the weekdays they cover.
-	var dates []string
-	var weekdays []string
-	if p.IsRecurring() {
-		weekdays = p.DaysOfWeek
-		for _, wd := range p.DaysOfWeek {
-			dates = append(dates, weekdayOccurrences(wd, recurringHorizonWeeks)...)
-		}
-	} else {
-		wd, err := weekdayOf(p.Date)
-		if err != nil {
-			return nil, errs.ValidationErrors{{Field: "date", Message: "Invalid date"}}
-		}
-		dates = []string{p.Date}
-		weekdays = []string{wd}
+	scheduled, weekdays, err := s.resolveSchedule(p)
+	if err != nil {
+		return nil, err
 	}
 
-	// Staff is optional; when assigned, validate it belongs to the business and
-	// works every selected weekday during the time. No staff => owner-managed.
-	if p.StaffID != nil {
-		staffOK, err := s.serviceSlotRepo.StaffBelongsToBusiness(ctx, *p.StaffID, p.BusinessID)
-		if err != nil {
-			return nil, err
-		}
-		if !staffOK {
-			return nil, errs.ValidationErrors{{Field: "staffId", Message: "Selected staff was not found."}}
-		}
-		for _, wd := range weekdays {
-			covers, err := s.serviceSlotRepo.StaffCoversTime(ctx, *p.StaffID, wd, p.StartTime, p.EndTime)
-			if err != nil {
-				return nil, err
-			}
-			if !covers {
-				return nil, errs.ValidationErrors{{Field: "startTime", Message: "Staff is not working on " + wd + " during the selected time."}}
-			}
-		}
+	if err := s.validateStaffCoverage(ctx, p.StaffID, p.BusinessID, weekdays, p.StartTime, p.EndTime); err != nil {
+		return nil, err
 	}
 
 	var createdID int64
 	err = s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
-		for _, date := range dates {
-			slot := p
-			slot.Date = date
-
-			// Skip dates where an assigned staff already has an overlapping slot.
-			if slot.StaffID != nil {
-				overlap, err := s.serviceSlotRepo.StaffHasOverlappingSlot(ctx, *slot.StaffID, date, slot.StartTime, slot.EndTime, 0)
-				if err != nil {
-					return err
-				}
-				if overlap {
-					continue
-				}
-			}
-
-			id, err := s.serviceSlotRepo.InsertServiceSlot(ctx, tx, slot)
+		var recurringIDs map[string]int64
+		if len(p.DaysOfWeek) > 0 {
+			recurringIDs, err = s.insertRecurringSchedules(ctx, tx, p, weekdays)
 			if err != nil {
 				return err
 			}
-			if err := s.insertSlotPackages(ctx, tx, id, slot.ServicePackageIDs); err != nil {
-				return err
-			}
-			if createdID == 0 {
-				createdID = id
-			}
 		}
 
-		// Record the recurrence for staff-assigned weekday series.
-		if p.IsRecurring() && p.StaffID != nil {
-			for _, wd := range weekdays {
-				for _, pkgID := range p.ServicePackageIDs {
-					if err := s.serviceSlotRepo.InsertRecurringSchedule(ctx, tx, p, pkgID, wd); err != nil {
-						return err
-					}
-				}
-			}
+		id, err := s.insertSlotsForSchedule(ctx, tx, p, scheduled, recurringIDs)
+		if err != nil {
+			return err
 		}
+		createdID = id
 		return nil
 	})
 	if err != nil {
@@ -159,7 +210,7 @@ func (s *serviceSlotService) CreateServiceSlot(ctx context.Context, p param.Serv
 	}
 
 	if createdID == 0 {
-		return nil, errs.ValidationErrors{{Field: "startTime", Message: "The selected times overlap existing slots."}}
+		return nil, errs.ValidationErrors{{Field: "schedule", Message: "No valid dates were resolved for the selected schedule."}}
 	}
 
 	return s.serviceSlotRepo.GetServiceSlotByID(ctx, createdID, p.BusinessID)
@@ -172,6 +223,117 @@ func (s *serviceSlotService) insertSlotPackages(ctx context.Context, tx *sql.Tx,
 		}
 	}
 	return nil
+}
+
+// UpdateServiceSlot edits a slot's date/days-of-week, time, staff and
+// packages. Once any affected occurrence has a booking, nothing here can
+// change anymore — only staff reassignment (ReassignServiceSlotStaff) remains
+// available for it.
+//
+// applyToFutureRecurring mirrors DeleteServiceSlot's flag: false edits just
+// the opened occurrence; true edits it plus every future occurrence sharing
+// its staff/time/weekday (the same series DeleteServiceSlot's "delete future
+// recurring" targets) — those occurrences are replaced with the new schedule
+// (which may itself be recurring across different weekdays, a single date, a
+// different staff, etc).
+//
+// staffScope, when set (a staff member rather than the owner is acting),
+// requires the slot to currently belong to that staff ID and forces the
+// edited slot to stay assigned to them — a staff member can edit their own
+// slots but can't reassign them away or touch anyone else's.
+func (s *serviceSlotService) UpdateServiceSlot(ctx context.Context, p param.ServiceSlotParam, applyToFutureRecurring bool, staffScope *int64) (*param.ServiceSlotParam, error) {
+	existing, err := s.serviceSlotRepo.GetServiceSlotByID(ctx, p.ServiceSlotID, p.BusinessID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, slotNotFound()
+		}
+		return nil, err
+	}
+
+	if staffScope != nil {
+		if existing.StaffID == nil || *existing.StaffID != *staffScope {
+			return nil, slotNotFound()
+		}
+		p.StaffID = staffScope
+	}
+
+	if err := p.Validate(); err != nil {
+		return nil, err
+	}
+
+	affectedIDs := []int64{p.ServiceSlotID}
+	if applyToFutureRecurring && existing.RecurringScheduleID != nil {
+		ids, err := s.serviceSlotRepo.GetFutureRecurringSlotIDs(ctx, p.BusinessID, *existing.RecurringScheduleID, existing.Date)
+		if err != nil {
+			return nil, err
+		}
+		if len(ids) > 0 {
+			affectedIDs = ids
+		}
+	}
+
+	for _, id := range affectedIDs {
+		hasBooking, err := s.serviceSlotRepo.HasBookingForServiceSlot(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if hasBooking {
+			return nil, errs.ValidationErrors{{Field: "serviceSlotId", Message: "One or more occurrences already have a booking — only staff reassignment is allowed for those."}}
+		}
+	}
+
+	packagesOK, err := s.serviceSlotRepo.PackagesBelongToBusiness(ctx, p.BusinessID, p.ServicePackageIDs)
+	if err != nil {
+		return nil, err
+	}
+	if !packagesOK {
+		return nil, errs.ValidationErrors{{Field: "servicePackageIds", Message: "One or more selected packages are invalid."}}
+	}
+
+	scheduled, weekdays, err := s.resolveSchedule(p)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.validateStaffCoverage(ctx, p.StaffID, p.BusinessID, weekdays, p.StartTime, p.EndTime); err != nil {
+		return nil, err
+	}
+
+	var newID int64
+	err = s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
+		if err := s.serviceSlotRepo.SoftDeleteServiceSlots(ctx, tx, affectedIDs, p.BusinessID); err != nil {
+			return err
+		}
+		if applyToFutureRecurring && existing.RecurringScheduleID != nil {
+			if err := s.serviceSlotRepo.SoftDeleteRecurringSchedule(ctx, tx, p.BusinessID, *existing.RecurringScheduleID); err != nil {
+				return err
+			}
+		}
+
+		var recurringIDs map[string]int64
+		if len(p.DaysOfWeek) > 0 {
+			recurringIDs, err = s.insertRecurringSchedules(ctx, tx, p, weekdays)
+			if err != nil {
+				return err
+			}
+		}
+
+		id, err := s.insertSlotsForSchedule(ctx, tx, p, scheduled, recurringIDs)
+		if err != nil {
+			return err
+		}
+		newID = id
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if newID == 0 {
+		return nil, errs.ValidationErrors{{Field: "schedule", Message: "No valid dates were resolved for the selected schedule."}}
+	}
+
+	return s.serviceSlotRepo.GetServiceSlotByID(ctx, newID, p.BusinessID)
 }
 
 func (s *serviceSlotService) ReassignServiceSlotStaff(ctx context.Context, serviceSlotID int64, businessID int64, staffID *int64) (*param.ServiceSlotParam, error) {
@@ -205,14 +367,6 @@ func (s *serviceSlotService) ReassignServiceSlotStaff(ctx context.Context, servi
 		if !covers {
 			return nil, errs.ValidationErrors{{Field: "staffId", Message: "Staff is not working during the selected time."}}
 		}
-
-		overlap, err := s.serviceSlotRepo.StaffHasOverlappingSlot(ctx, *staffID, slot.Date, slot.StartTime, slot.EndTime, slot.ServiceSlotID)
-		if err != nil {
-			return nil, err
-		}
-		if overlap {
-			return nil, errs.ValidationErrors{{Field: "staffId", Message: "Staff already has a slot during this time."}}
-		}
 	}
 
 	err = s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
@@ -225,7 +379,10 @@ func (s *serviceSlotService) ReassignServiceSlotStaff(ctx context.Context, servi
 	return s.serviceSlotRepo.GetServiceSlotByID(ctx, serviceSlotID, businessID)
 }
 
-func (s *serviceSlotService) DeleteServiceSlot(ctx context.Context, serviceSlotID int64, businessID int64, deleteFutureRecurring bool) error {
+// staffScope, when set (a staff member rather than the owner is acting),
+// requires the slot to currently belong to that staff ID — anything else is
+// treated as not found rather than leaking its existence.
+func (s *serviceSlotService) DeleteServiceSlot(ctx context.Context, serviceSlotID int64, businessID int64, deleteFutureRecurring bool, staffScope *int64) error {
 	slot, err := s.serviceSlotRepo.GetServiceSlotByID(ctx, serviceSlotID, businessID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -234,9 +391,30 @@ func (s *serviceSlotService) DeleteServiceSlot(ctx context.Context, serviceSlotI
 		return err
 	}
 
-	weekday, err := weekdayOf(slot.Date)
-	if err != nil {
-		return err
+	if staffScope != nil {
+		if slot.StaffID == nil || *slot.StaffID != *staffScope {
+			return slotNotFound()
+		}
+	}
+
+	affectedIDs := []int64{serviceSlotID}
+	if deleteFutureRecurring && slot.RecurringScheduleID != nil {
+		ids, err := s.serviceSlotRepo.GetFutureRecurringSlotIDs(ctx, businessID, *slot.RecurringScheduleID, slot.Date)
+		if err != nil {
+			return err
+		}
+		if len(ids) > 0 {
+			affectedIDs = ids
+		}
+	}
+	for _, id := range affectedIDs {
+		hasBooking, err := s.serviceSlotRepo.HasBookingForServiceSlot(ctx, id)
+		if err != nil {
+			return err
+		}
+		if hasBooking {
+			return errs.ValidationErrors{{Field: "serviceSlotId", Message: "One or more occurrences already have a booking — only staff reassignment is allowed for those."}}
+		}
 	}
 
 	return s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
@@ -244,16 +422,11 @@ func (s *serviceSlotService) DeleteServiceSlot(ctx context.Context, serviceSlotI
 			return s.serviceSlotRepo.SoftDeleteServiceSlot(ctx, tx, serviceSlotID, businessID)
 		}
 
-		ids, err := s.serviceSlotRepo.GetFutureRecurringSlotIDs(ctx, businessID, slot.StaffID, slot.StartTime, slot.EndTime, slot.Date)
-		if err != nil {
+		if err := s.serviceSlotRepo.SoftDeleteServiceSlots(ctx, tx, affectedIDs, businessID); err != nil {
 			return err
 		}
-		if err := s.serviceSlotRepo.SoftDeleteServiceSlots(ctx, tx, ids, businessID); err != nil {
-			return err
-		}
-		// Only staff-assigned series have recurring_schedules rows.
-		if slot.StaffID != nil {
-			return s.serviceSlotRepo.SoftDeleteRecurringSchedules(ctx, tx, businessID, *slot.StaffID, weekday, slot.StartTime, slot.EndTime)
+		if slot.RecurringScheduleID != nil {
+			return s.serviceSlotRepo.SoftDeleteRecurringSchedule(ctx, tx, businessID, *slot.RecurringScheduleID)
 		}
 		return nil
 	})

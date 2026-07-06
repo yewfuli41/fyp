@@ -51,8 +51,8 @@ type ComplexityRoot struct {
 		DecidedBy     func(childComplexity int) int
 		DecidedByUser func(childComplexity int) int
 		DeletedAt     func(childComplexity int) int
-		SlotPackage   func(childComplexity int) int
-		SlotPackageID func(childComplexity int) int
+		SlotTier      func(childComplexity int) int
+		SlotOptionID    func(childComplexity int) int
 		Status        func(childComplexity int) int
 		User          func(childComplexity int) int
 		UserID        func(childComplexity int) int
@@ -117,14 +117,6 @@ type ComplexityRoot struct {
 		UpdateStaff              func(childComplexity int, staffID string, staff model.UpdateStaffInput) int
 	}
 
-	PackageItem struct {
-		DeletedAt        func(childComplexity int) int
-		PackageItemID    func(childComplexity int) int
-		PackageItemName  func(childComplexity int) int
-		ServicePackage   func(childComplexity int) int
-		ServicePackageID func(childComplexity int) int
-	}
-
 	Query struct {
 		AvailableStaffForSlot func(childComplexity int, serviceSlotID string) int
 		DisplayServiceSlots   func(childComplexity int, date string, staffID *string, serviceID *string, unassignedOnly *bool) int
@@ -141,58 +133,66 @@ type ComplexityRoot struct {
 		DeletedAt           func(childComplexity int) int
 		EndTime             func(childComplexity int) int
 		RecurringScheduleID func(childComplexity int) int
-		ServicePackage      func(childComplexity int) int
-		ServicePackageID    func(childComplexity int) int
+		ServiceOption         func(childComplexity int) int
+		ServiceOptionID       func(childComplexity int) int
 		Staff               func(childComplexity int) int
 		StaffID             func(childComplexity int) int
 		StartTime           func(childComplexity int) int
 	}
 
 	Service struct {
-		Business        func(childComplexity int) int
-		BusinessID      func(childComplexity int) int
-		DeletedAt       func(childComplexity int) int
-		Description     func(childComplexity int) int
-		ServiceID       func(childComplexity int) int
-		ServiceName     func(childComplexity int) int
-		ServicePackages func(childComplexity int) int
+		Business     func(childComplexity int) int
+		BusinessID   func(childComplexity int) int
+		DeletedAt    func(childComplexity int) int
+		Description  func(childComplexity int) int
+		ServiceID    func(childComplexity int) int
+		ServiceName  func(childComplexity int) int
+		ServiceOptions func(childComplexity int) int
 	}
 
-	ServicePackage struct {
-		DeletedAt           func(childComplexity int) int
-		Description         func(childComplexity int) int
-		PackageItems        func(childComplexity int) int
-		RecurringSchedules  func(childComplexity int) int
-		Service             func(childComplexity int) int
-		ServiceID           func(childComplexity int) int
-		ServicePackageID    func(childComplexity int) int
-		ServicePackageName  func(childComplexity int) int
-		ServiceSlotPackages func(childComplexity int) int
+	ServiceOptionItem struct {
+		DeletedAt       func(childComplexity int) int
+		ServiceOptionItemID   func(childComplexity int) int
+		ServiceOptionItemName func(childComplexity int) int
+		ServicePackage  func(childComplexity int) int
+		ServiceOptionID   func(childComplexity int) int
 	}
 
 	ServiceSlot struct {
-		CreatedAt           func(childComplexity int) int
-		CreatedBy           func(childComplexity int) int
-		Creator             func(childComplexity int) int
-		Date                func(childComplexity int) int
-		DeletedAt           func(childComplexity int) int
-		EndTime             func(childComplexity int) int
-		HasBooking          func(childComplexity int) int
-		ServiceSlotID       func(childComplexity int) int
-		ServiceSlotPackages func(childComplexity int) int
-		Staff               func(childComplexity int) int
-		StaffID             func(childComplexity int) int
-		StartTime           func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
+		CreatedBy        func(childComplexity int) int
+		Creator          func(childComplexity int) int
+		Date             func(childComplexity int) int
+		DeletedAt        func(childComplexity int) int
+		EndTime          func(childComplexity int) int
+		HasBooking       func(childComplexity int) int
+		ServiceSlotID    func(childComplexity int) int
+		ServiceSlotOptions func(childComplexity int) int
+		Staff            func(childComplexity int) int
+		StaffID          func(childComplexity int) int
+		StartTime        func(childComplexity int) int
 	}
 
-	ServiceSlotPackage struct {
-		Bookings         func(childComplexity int) int
-		DeletedAt        func(childComplexity int) int
-		ServicePackage   func(childComplexity int) int
-		ServicePackageID func(childComplexity int) int
-		ServiceSlot      func(childComplexity int) int
-		ServiceSlotID    func(childComplexity int) int
-		SlotPackageID    func(childComplexity int) int
+	ServiceSlotOption struct {
+		Bookings      func(childComplexity int) int
+		DeletedAt     func(childComplexity int) int
+		ServiceSlot   func(childComplexity int) int
+		ServiceSlotID func(childComplexity int) int
+		ServiceOption   func(childComplexity int) int
+		ServiceOptionID func(childComplexity int) int
+		SlotOptionID    func(childComplexity int) int
+	}
+
+	ServiceOption struct {
+		DeletedAt          func(childComplexity int) int
+		Description        func(childComplexity int) int
+		RecurringSchedules func(childComplexity int) int
+		Service            func(childComplexity int) int
+		ServiceID          func(childComplexity int) int
+		ServiceOptionItems       func(childComplexity int) int
+		ServiceSlotOptions   func(childComplexity int) int
+		ServiceOptionID      func(childComplexity int) int
+		ServiceOptionName    func(childComplexity int) int
 	}
 
 	Staff struct {
@@ -332,18 +332,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Booking.DeletedAt(childComplexity), true
-	case "Booking.slotPackage":
-		if e.ComplexityRoot.Booking.SlotPackage == nil {
+	case "Booking.slotOption":
+		if e.ComplexityRoot.Booking.SlotTier == nil {
 			break
 		}
 
-		return e.ComplexityRoot.Booking.SlotPackage(childComplexity), true
-	case "Booking.slotPackageId":
-		if e.ComplexityRoot.Booking.SlotPackageID == nil {
+		return e.ComplexityRoot.Booking.SlotTier(childComplexity), true
+	case "Booking.slotOptionId":
+		if e.ComplexityRoot.Booking.SlotOptionID == nil {
 			break
 		}
 
-		return e.ComplexityRoot.Booking.SlotPackageID(childComplexity), true
+		return e.ComplexityRoot.Booking.SlotOptionID(childComplexity), true
 	case "Booking.status":
 		if e.ComplexityRoot.Booking.Status == nil {
 			break
@@ -729,37 +729,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.UpdateStaff(childComplexity, args["staffId"].(string), args["staff"].(model.UpdateStaffInput)), true
 
-	case "PackageItem.deletedAt":
-		if e.ComplexityRoot.PackageItem.DeletedAt == nil {
-			break
-		}
-
-		return e.ComplexityRoot.PackageItem.DeletedAt(childComplexity), true
-	case "PackageItem.packageItemId":
-		if e.ComplexityRoot.PackageItem.PackageItemID == nil {
-			break
-		}
-
-		return e.ComplexityRoot.PackageItem.PackageItemID(childComplexity), true
-	case "PackageItem.packageItemName":
-		if e.ComplexityRoot.PackageItem.PackageItemName == nil {
-			break
-		}
-
-		return e.ComplexityRoot.PackageItem.PackageItemName(childComplexity), true
-	case "PackageItem.servicePackage":
-		if e.ComplexityRoot.PackageItem.ServicePackage == nil {
-			break
-		}
-
-		return e.ComplexityRoot.PackageItem.ServicePackage(childComplexity), true
-	case "PackageItem.servicePackageId":
-		if e.ComplexityRoot.PackageItem.ServicePackageID == nil {
-			break
-		}
-
-		return e.ComplexityRoot.PackageItem.ServicePackageID(childComplexity), true
-
 	case "Query.availableStaffForSlot":
 		if e.ComplexityRoot.Query.AvailableStaffForSlot == nil {
 			break
@@ -844,18 +813,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.RecurringSchedule.RecurringScheduleID(childComplexity), true
-	case "RecurringSchedule.servicePackage":
-		if e.ComplexityRoot.RecurringSchedule.ServicePackage == nil {
+	case "RecurringSchedule.serviceOption":
+		if e.ComplexityRoot.RecurringSchedule.ServiceOption == nil {
 			break
 		}
 
-		return e.ComplexityRoot.RecurringSchedule.ServicePackage(childComplexity), true
-	case "RecurringSchedule.servicePackageId":
-		if e.ComplexityRoot.RecurringSchedule.ServicePackageID == nil {
+		return e.ComplexityRoot.RecurringSchedule.ServiceOption(childComplexity), true
+	case "RecurringSchedule.serviceOptionId":
+		if e.ComplexityRoot.RecurringSchedule.ServiceOptionID == nil {
 			break
 		}
 
-		return e.ComplexityRoot.RecurringSchedule.ServicePackageID(childComplexity), true
+		return e.ComplexityRoot.RecurringSchedule.ServiceOptionID(childComplexity), true
 	case "RecurringSchedule.staff":
 		if e.ComplexityRoot.RecurringSchedule.Staff == nil {
 			break
@@ -911,67 +880,43 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Service.ServiceName(childComplexity), true
-	case "Service.servicePackages":
-		if e.ComplexityRoot.Service.ServicePackages == nil {
+	case "Service.serviceOptions":
+		if e.ComplexityRoot.Service.ServiceOptions == nil {
 			break
 		}
 
-		return e.ComplexityRoot.Service.ServicePackages(childComplexity), true
+		return e.ComplexityRoot.Service.ServiceOptions(childComplexity), true
 
-	case "ServicePackage.deletedAt":
-		if e.ComplexityRoot.ServicePackage.DeletedAt == nil {
+	case "ServiceOptionItem.deletedAt":
+		if e.ComplexityRoot.ServiceOptionItem.DeletedAt == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ServicePackage.DeletedAt(childComplexity), true
-	case "ServicePackage.description":
-		if e.ComplexityRoot.ServicePackage.Description == nil {
+		return e.ComplexityRoot.ServiceOptionItem.DeletedAt(childComplexity), true
+	case "ServiceOptionItem.serviceOptionItemId":
+		if e.ComplexityRoot.ServiceOptionItem.ServiceOptionItemID == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ServicePackage.Description(childComplexity), true
-	case "ServicePackage.packageItems":
-		if e.ComplexityRoot.ServicePackage.PackageItems == nil {
+		return e.ComplexityRoot.ServiceOptionItem.ServiceOptionItemID(childComplexity), true
+	case "ServiceOptionItem.serviceOptionItemName":
+		if e.ComplexityRoot.ServiceOptionItem.ServiceOptionItemName == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ServicePackage.PackageItems(childComplexity), true
-	case "ServicePackage.recurringSchedules":
-		if e.ComplexityRoot.ServicePackage.RecurringSchedules == nil {
+		return e.ComplexityRoot.ServiceOptionItem.ServiceOptionItemName(childComplexity), true
+	case "ServiceOptionItem.servicePackage":
+		if e.ComplexityRoot.ServiceOptionItem.ServicePackage == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ServicePackage.RecurringSchedules(childComplexity), true
-	case "ServicePackage.service":
-		if e.ComplexityRoot.ServicePackage.Service == nil {
+		return e.ComplexityRoot.ServiceOptionItem.ServicePackage(childComplexity), true
+	case "ServiceOptionItem.serviceOptionId":
+		if e.ComplexityRoot.ServiceOptionItem.ServiceOptionID == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ServicePackage.Service(childComplexity), true
-	case "ServicePackage.serviceId":
-		if e.ComplexityRoot.ServicePackage.ServiceID == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServicePackage.ServiceID(childComplexity), true
-	case "ServicePackage.servicePackageId":
-		if e.ComplexityRoot.ServicePackage.ServicePackageID == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServicePackage.ServicePackageID(childComplexity), true
-	case "ServicePackage.servicePackageName":
-		if e.ComplexityRoot.ServicePackage.ServicePackageName == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServicePackage.ServicePackageName(childComplexity), true
-	case "ServicePackage.serviceSlotPackages":
-		if e.ComplexityRoot.ServicePackage.ServiceSlotPackages == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServicePackage.ServiceSlotPackages(childComplexity), true
+		return e.ComplexityRoot.ServiceOptionItem.ServiceOptionID(childComplexity), true
 
 	case "ServiceSlot.createdAt":
 		if e.ComplexityRoot.ServiceSlot.CreatedAt == nil {
@@ -1021,12 +966,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.ServiceSlot.ServiceSlotID(childComplexity), true
-	case "ServiceSlot.serviceSlotPackages":
-		if e.ComplexityRoot.ServiceSlot.ServiceSlotPackages == nil {
+	case "ServiceSlot.serviceSlotOptions":
+		if e.ComplexityRoot.ServiceSlot.ServiceSlotOptions == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ServiceSlot.ServiceSlotPackages(childComplexity), true
+		return e.ComplexityRoot.ServiceSlot.ServiceSlotOptions(childComplexity), true
 	case "ServiceSlot.staff":
 		if e.ComplexityRoot.ServiceSlot.Staff == nil {
 			break
@@ -1046,48 +991,103 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.ServiceSlot.StartTime(childComplexity), true
 
-	case "ServiceSlotPackage.bookings":
-		if e.ComplexityRoot.ServiceSlotPackage.Bookings == nil {
+	case "ServiceSlotOption.bookings":
+		if e.ComplexityRoot.ServiceSlotOption.Bookings == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ServiceSlotPackage.Bookings(childComplexity), true
-	case "ServiceSlotPackage.deletedAt":
-		if e.ComplexityRoot.ServiceSlotPackage.DeletedAt == nil {
+		return e.ComplexityRoot.ServiceSlotOption.Bookings(childComplexity), true
+	case "ServiceSlotOption.deletedAt":
+		if e.ComplexityRoot.ServiceSlotOption.DeletedAt == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ServiceSlotPackage.DeletedAt(childComplexity), true
-	case "ServiceSlotPackage.servicePackage":
-		if e.ComplexityRoot.ServiceSlotPackage.ServicePackage == nil {
+		return e.ComplexityRoot.ServiceSlotOption.DeletedAt(childComplexity), true
+	case "ServiceSlotOption.serviceSlot":
+		if e.ComplexityRoot.ServiceSlotOption.ServiceSlot == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ServiceSlotPackage.ServicePackage(childComplexity), true
-	case "ServiceSlotPackage.servicePackageId":
-		if e.ComplexityRoot.ServiceSlotPackage.ServicePackageID == nil {
+		return e.ComplexityRoot.ServiceSlotOption.ServiceSlot(childComplexity), true
+	case "ServiceSlotOption.serviceSlotId":
+		if e.ComplexityRoot.ServiceSlotOption.ServiceSlotID == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ServiceSlotPackage.ServicePackageID(childComplexity), true
-	case "ServiceSlotPackage.serviceSlot":
-		if e.ComplexityRoot.ServiceSlotPackage.ServiceSlot == nil {
+		return e.ComplexityRoot.ServiceSlotOption.ServiceSlotID(childComplexity), true
+	case "ServiceSlotOption.serviceOption":
+		if e.ComplexityRoot.ServiceSlotOption.ServiceOption == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ServiceSlotPackage.ServiceSlot(childComplexity), true
-	case "ServiceSlotPackage.serviceSlotId":
-		if e.ComplexityRoot.ServiceSlotPackage.ServiceSlotID == nil {
+		return e.ComplexityRoot.ServiceSlotOption.ServiceOption(childComplexity), true
+	case "ServiceSlotOption.serviceOptionId":
+		if e.ComplexityRoot.ServiceSlotOption.ServiceOptionID == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ServiceSlotPackage.ServiceSlotID(childComplexity), true
-	case "ServiceSlotPackage.slotPackageId":
-		if e.ComplexityRoot.ServiceSlotPackage.SlotPackageID == nil {
+		return e.ComplexityRoot.ServiceSlotOption.ServiceOptionID(childComplexity), true
+	case "ServiceSlotOption.slotOptionId":
+		if e.ComplexityRoot.ServiceSlotOption.SlotOptionID == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ServiceSlotPackage.SlotPackageID(childComplexity), true
+		return e.ComplexityRoot.ServiceSlotOption.SlotOptionID(childComplexity), true
+
+	case "ServiceOption.deletedAt":
+		if e.ComplexityRoot.ServiceOption.DeletedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.DeletedAt(childComplexity), true
+	case "ServiceOption.description":
+		if e.ComplexityRoot.ServiceOption.Description == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.Description(childComplexity), true
+	case "ServiceOption.recurringSchedules":
+		if e.ComplexityRoot.ServiceOption.RecurringSchedules == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.RecurringSchedules(childComplexity), true
+	case "ServiceOption.service":
+		if e.ComplexityRoot.ServiceOption.Service == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.Service(childComplexity), true
+	case "ServiceOption.serviceId":
+		if e.ComplexityRoot.ServiceOption.ServiceID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.ServiceID(childComplexity), true
+	case "ServiceOption.serviceOptionItems":
+		if e.ComplexityRoot.ServiceOption.ServiceOptionItems == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.ServiceOptionItems(childComplexity), true
+	case "ServiceOption.serviceSlotOptions":
+		if e.ComplexityRoot.ServiceOption.ServiceSlotOptions == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.ServiceSlotOptions(childComplexity), true
+	case "ServiceOption.serviceOptionId":
+		if e.ComplexityRoot.ServiceOption.ServiceOptionID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.ServiceOptionID(childComplexity), true
+	case "ServiceOption.serviceOptionName":
+		if e.ComplexityRoot.ServiceOption.ServiceOptionName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.ServiceOptionName(childComplexity), true
 
 	case "Staff.business":
 		if e.ComplexityRoot.Staff.Business == nil {
@@ -1294,10 +1294,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputBusinessProfileInput,
 		ec.unmarshalInputLogInInput,
-		ec.unmarshalInputPackageItemInput,
 		ec.unmarshalInputServiceInput,
-		ec.unmarshalInputServicePackageInput,
+		ec.unmarshalInputServiceOptionItemInput,
 		ec.unmarshalInputServiceSlotInput,
+		ec.unmarshalInputServiceOptionInput,
 		ec.unmarshalInputSignUpInput,
 		ec.unmarshalInputStaffInput,
 		ec.unmarshalInputUpdateProfileInput,
@@ -1420,10 +1420,10 @@ func (ec *executionContext) childFields_Booking(ctx context.Context, field graph
 		return ec.fieldContext_Booking_userId(ctx, field)
 	case "user":
 		return ec.fieldContext_Booking_user(ctx, field)
-	case "slotPackageId":
-		return ec.fieldContext_Booking_slotPackageId(ctx, field)
-	case "slotPackage":
-		return ec.fieldContext_Booking_slotPackage(ctx, field)
+	case "slotOptionId":
+		return ec.fieldContext_Booking_slotOptionId(ctx, field)
+	case "slotOption":
+		return ec.fieldContext_Booking_slotOption(ctx, field)
 	case "status":
 		return ec.fieldContext_Booking_status(ctx, field)
 	case "bookingType":
@@ -1522,22 +1522,6 @@ func (ec *executionContext) childFields_LeaveApplication(ctx context.Context, fi
 	return nil, fmt.Errorf("no field named %q was found under type LeaveApplication", field.Name)
 }
 
-func (ec *executionContext) childFields_PackageItem(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-	switch field.Name {
-	case "packageItemId":
-		return ec.fieldContext_PackageItem_packageItemId(ctx, field)
-	case "servicePackageId":
-		return ec.fieldContext_PackageItem_servicePackageId(ctx, field)
-	case "servicePackage":
-		return ec.fieldContext_PackageItem_servicePackage(ctx, field)
-	case "packageItemName":
-		return ec.fieldContext_PackageItem_packageItemName(ctx, field)
-	case "deletedAt":
-		return ec.fieldContext_PackageItem_deletedAt(ctx, field)
-	}
-	return nil, fmt.Errorf("no field named %q was found under type PackageItem", field.Name)
-}
-
 func (ec *executionContext) childFields_RecurringSchedule(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "recurringScheduleId":
@@ -1546,10 +1530,10 @@ func (ec *executionContext) childFields_RecurringSchedule(ctx context.Context, f
 		return ec.fieldContext_RecurringSchedule_staffId(ctx, field)
 	case "staff":
 		return ec.fieldContext_RecurringSchedule_staff(ctx, field)
-	case "servicePackageId":
-		return ec.fieldContext_RecurringSchedule_servicePackageId(ctx, field)
-	case "servicePackage":
-		return ec.fieldContext_RecurringSchedule_servicePackage(ctx, field)
+	case "serviceOptionId":
+		return ec.fieldContext_RecurringSchedule_serviceOptionId(ctx, field)
+	case "serviceOption":
+		return ec.fieldContext_RecurringSchedule_serviceOption(ctx, field)
 	case "day":
 		return ec.fieldContext_RecurringSchedule_day(ctx, field)
 	case "startTime":
@@ -1580,36 +1564,28 @@ func (ec *executionContext) childFields_Service(ctx context.Context, field graph
 		return ec.fieldContext_Service_serviceName(ctx, field)
 	case "description":
 		return ec.fieldContext_Service_description(ctx, field)
-	case "servicePackages":
-		return ec.fieldContext_Service_servicePackages(ctx, field)
+	case "serviceOptions":
+		return ec.fieldContext_Service_serviceOptions(ctx, field)
 	case "deletedAt":
 		return ec.fieldContext_Service_deletedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Service", field.Name)
 }
 
-func (ec *executionContext) childFields_ServicePackage(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+func (ec *executionContext) childFields_ServiceOptionItem(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
-	case "servicePackageId":
-		return ec.fieldContext_ServicePackage_servicePackageId(ctx, field)
-	case "serviceId":
-		return ec.fieldContext_ServicePackage_serviceId(ctx, field)
-	case "service":
-		return ec.fieldContext_ServicePackage_service(ctx, field)
-	case "servicePackageName":
-		return ec.fieldContext_ServicePackage_servicePackageName(ctx, field)
-	case "description":
-		return ec.fieldContext_ServicePackage_description(ctx, field)
-	case "packageItems":
-		return ec.fieldContext_ServicePackage_packageItems(ctx, field)
-	case "serviceSlotPackages":
-		return ec.fieldContext_ServicePackage_serviceSlotPackages(ctx, field)
-	case "recurringSchedules":
-		return ec.fieldContext_ServicePackage_recurringSchedules(ctx, field)
+	case "serviceOptionItemId":
+		return ec.fieldContext_ServiceOptionItem_serviceOptionItemId(ctx, field)
+	case "serviceOptionId":
+		return ec.fieldContext_ServiceOptionItem_serviceOptionId(ctx, field)
+	case "servicePackage":
+		return ec.fieldContext_ServiceOptionItem_servicePackage(ctx, field)
+	case "serviceOptionItemName":
+		return ec.fieldContext_ServiceOptionItem_serviceOptionItemName(ctx, field)
 	case "deletedAt":
-		return ec.fieldContext_ServicePackage_deletedAt(ctx, field)
+		return ec.fieldContext_ServiceOptionItem_deletedAt(ctx, field)
 	}
-	return nil, fmt.Errorf("no field named %q was found under type ServicePackage", field.Name)
+	return nil, fmt.Errorf("no field named %q was found under type ServiceOptionItem", field.Name)
 }
 
 func (ec *executionContext) childFields_ServiceSlot(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1626,8 +1602,8 @@ func (ec *executionContext) childFields_ServiceSlot(ctx context.Context, field g
 		return ec.fieldContext_ServiceSlot_startTime(ctx, field)
 	case "endTime":
 		return ec.fieldContext_ServiceSlot_endTime(ctx, field)
-	case "serviceSlotPackages":
-		return ec.fieldContext_ServiceSlot_serviceSlotPackages(ctx, field)
+	case "serviceSlotOptions":
+		return ec.fieldContext_ServiceSlot_serviceSlotOptions(ctx, field)
 	case "hasBooking":
 		return ec.fieldContext_ServiceSlot_hasBooking(ctx, field)
 	case "deletedAt":
@@ -1642,24 +1618,48 @@ func (ec *executionContext) childFields_ServiceSlot(ctx context.Context, field g
 	return nil, fmt.Errorf("no field named %q was found under type ServiceSlot", field.Name)
 }
 
-func (ec *executionContext) childFields_ServiceSlotPackage(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+func (ec *executionContext) childFields_ServiceSlotOption(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
-	case "slotPackageId":
-		return ec.fieldContext_ServiceSlotPackage_slotPackageId(ctx, field)
-	case "servicePackageId":
-		return ec.fieldContext_ServiceSlotPackage_servicePackageId(ctx, field)
-	case "servicePackage":
-		return ec.fieldContext_ServiceSlotPackage_servicePackage(ctx, field)
+	case "slotOptionId":
+		return ec.fieldContext_ServiceSlotOption_slotOptionId(ctx, field)
+	case "serviceOptionId":
+		return ec.fieldContext_ServiceSlotOption_serviceOptionId(ctx, field)
+	case "serviceOption":
+		return ec.fieldContext_ServiceSlotOption_serviceOption(ctx, field)
 	case "serviceSlotId":
-		return ec.fieldContext_ServiceSlotPackage_serviceSlotId(ctx, field)
+		return ec.fieldContext_ServiceSlotOption_serviceSlotId(ctx, field)
 	case "serviceSlot":
-		return ec.fieldContext_ServiceSlotPackage_serviceSlot(ctx, field)
+		return ec.fieldContext_ServiceSlotOption_serviceSlot(ctx, field)
 	case "bookings":
-		return ec.fieldContext_ServiceSlotPackage_bookings(ctx, field)
+		return ec.fieldContext_ServiceSlotOption_bookings(ctx, field)
 	case "deletedAt":
-		return ec.fieldContext_ServiceSlotPackage_deletedAt(ctx, field)
+		return ec.fieldContext_ServiceSlotOption_deletedAt(ctx, field)
 	}
-	return nil, fmt.Errorf("no field named %q was found under type ServiceSlotPackage", field.Name)
+	return nil, fmt.Errorf("no field named %q was found under type ServiceSlotOption", field.Name)
+}
+
+func (ec *executionContext) childFields_ServiceOption(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "serviceOptionId":
+		return ec.fieldContext_ServiceOption_serviceOptionId(ctx, field)
+	case "serviceId":
+		return ec.fieldContext_ServiceOption_serviceId(ctx, field)
+	case "service":
+		return ec.fieldContext_ServiceOption_service(ctx, field)
+	case "serviceOptionName":
+		return ec.fieldContext_ServiceOption_serviceOptionName(ctx, field)
+	case "description":
+		return ec.fieldContext_ServiceOption_description(ctx, field)
+	case "serviceOptionItems":
+		return ec.fieldContext_ServiceOption_serviceOptionItems(ctx, field)
+	case "serviceSlotOptions":
+		return ec.fieldContext_ServiceOption_serviceSlotOptions(ctx, field)
+	case "recurringSchedules":
+		return ec.fieldContext_ServiceOption_recurringSchedules(ctx, field)
+	case "deletedAt":
+		return ec.fieldContext_ServiceOption_deletedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type ServiceOption", field.Name)
 }
 
 func (ec *executionContext) childFields_Staff(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -2395,16 +2395,16 @@ func (ec *executionContext) fieldContext_Booking_user(_ context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Booking_slotPackageId(ctx context.Context, field graphql.CollectedField, obj *model.Booking) (ret graphql.Marshaler) {
+func (ec *executionContext) _Booking_slotOptionId(ctx context.Context, field graphql.CollectedField, obj *model.Booking) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_Booking_slotPackageId(ctx, field)
+			return ec.fieldContext_Booking_slotOptionId(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.SlotPackageID, nil
+			return obj.SlotOptionID, nil
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
@@ -2414,37 +2414,37 @@ func (ec *executionContext) _Booking_slotPackageId(ctx context.Context, field gr
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_Booking_slotPackageId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Booking_slotOptionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Booking", field, false, false, errors.New("field of type ID does not have child fields"))
 }
 
-func (ec *executionContext) _Booking_slotPackage(ctx context.Context, field graphql.CollectedField, obj *model.Booking) (ret graphql.Marshaler) {
+func (ec *executionContext) _Booking_slotOption(ctx context.Context, field graphql.CollectedField, obj *model.Booking) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_Booking_slotPackage(ctx, field)
+			return ec.fieldContext_Booking_slotOption(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.SlotPackage, nil
+			return obj.SlotTier, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *model.ServiceSlotPackage) graphql.Marshaler {
-			return ec.marshalNServiceSlotPackage2ᚖfypᚋgraphᚋmodelᚐServiceSlotPackage(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v *model.ServiceSlotOption) graphql.Marshaler {
+			return ec.marshalNServiceSlotOption2ᚖfypᚋgraphᚋmodelᚐServiceSlotOption(ctx, selections, v)
 		},
 		true,
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_Booking_slotPackage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Booking_slotOption(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Booking",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_ServiceSlotPackage(ctx, field)
+			return ec.childFields_ServiceSlotOption(ctx, field)
 		},
 	}
 	return fc, nil
@@ -4091,130 +4091,6 @@ func (ec *executionContext) fieldContext_Mutation_updateProfile(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _PackageItem_packageItemId(ctx context.Context, field graphql.CollectedField, obj *model.PackageItem) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_PackageItem_packageItemId(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.PackageItemID, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
-			return ec.marshalNID2string(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_PackageItem_packageItemId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("PackageItem", field, false, false, errors.New("field of type ID does not have child fields"))
-}
-
-func (ec *executionContext) _PackageItem_servicePackageId(ctx context.Context, field graphql.CollectedField, obj *model.PackageItem) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_PackageItem_servicePackageId(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.ServicePackageID, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
-			return ec.marshalNID2string(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_PackageItem_servicePackageId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("PackageItem", field, false, false, errors.New("field of type ID does not have child fields"))
-}
-
-func (ec *executionContext) _PackageItem_servicePackage(ctx context.Context, field graphql.CollectedField, obj *model.PackageItem) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_PackageItem_servicePackage(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.ServicePackage, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *model.ServicePackage) graphql.Marshaler {
-			return ec.marshalNServicePackage2ᚖfypᚋgraphᚋmodelᚐServicePackage(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_PackageItem_servicePackage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "PackageItem",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_ServicePackage(ctx, field)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _PackageItem_packageItemName(ctx context.Context, field graphql.CollectedField, obj *model.PackageItem) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_PackageItem_packageItemName(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.PackageItemName, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
-			return ec.marshalNString2string(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_PackageItem_packageItemName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("PackageItem", field, false, false, errors.New("field of type String does not have child fields"))
-}
-
-func (ec *executionContext) _PackageItem_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.PackageItem) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_PackageItem_deletedAt(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.DeletedAt, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
-			return ec.marshalODateTime2ᚖstring(ctx, selections, v)
-		},
-		true,
-		false,
-	)
-}
-func (ec *executionContext) fieldContext_PackageItem_deletedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("PackageItem", field, false, false, errors.New("field of type DateTime does not have child fields"))
-}
-
 func (ec *executionContext) _Query_displayServices(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4553,16 +4429,16 @@ func (ec *executionContext) fieldContext_RecurringSchedule_staff(_ context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _RecurringSchedule_servicePackageId(ctx context.Context, field graphql.CollectedField, obj *model.RecurringSchedule) (ret graphql.Marshaler) {
+func (ec *executionContext) _RecurringSchedule_serviceOptionId(ctx context.Context, field graphql.CollectedField, obj *model.RecurringSchedule) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_RecurringSchedule_servicePackageId(ctx, field)
+			return ec.fieldContext_RecurringSchedule_serviceOptionId(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.ServicePackageID, nil
+			return obj.ServiceOptionID, nil
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
@@ -4572,37 +4448,37 @@ func (ec *executionContext) _RecurringSchedule_servicePackageId(ctx context.Cont
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_RecurringSchedule_servicePackageId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_RecurringSchedule_serviceOptionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("RecurringSchedule", field, false, false, errors.New("field of type ID does not have child fields"))
 }
 
-func (ec *executionContext) _RecurringSchedule_servicePackage(ctx context.Context, field graphql.CollectedField, obj *model.RecurringSchedule) (ret graphql.Marshaler) {
+func (ec *executionContext) _RecurringSchedule_serviceOption(ctx context.Context, field graphql.CollectedField, obj *model.RecurringSchedule) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_RecurringSchedule_servicePackage(ctx, field)
+			return ec.fieldContext_RecurringSchedule_serviceOption(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.ServicePackage, nil
+			return obj.ServiceOption, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *model.ServicePackage) graphql.Marshaler {
-			return ec.marshalNServicePackage2ᚖfypᚋgraphᚋmodelᚐServicePackage(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v *model.ServiceOption) graphql.Marshaler {
+			return ec.marshalNServiceOption2ᚖfypᚋgraphᚋmodelᚐServiceOption(ctx, selections, v)
 		},
 		true,
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_RecurringSchedule_servicePackage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_RecurringSchedule_serviceOption(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "RecurringSchedule",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_ServicePackage(ctx, field)
+			return ec.childFields_ServiceOption(ctx, field)
 		},
 	}
 	return fc, nil
@@ -4902,33 +4778,33 @@ func (ec *executionContext) fieldContext_Service_description(_ context.Context, 
 	return graphql.NewScalarFieldContext("Service", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
-func (ec *executionContext) _Service_servicePackages(ctx context.Context, field graphql.CollectedField, obj *model.Service) (ret graphql.Marshaler) {
+func (ec *executionContext) _Service_serviceOptions(ctx context.Context, field graphql.CollectedField, obj *model.Service) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_Service_servicePackages(ctx, field)
+			return ec.fieldContext_Service_serviceOptions(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.ServicePackages, nil
+			return obj.ServiceOptions, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServicePackage) graphql.Marshaler {
-			return ec.marshalNServicePackage2ᚕᚖfypᚋgraphᚋmodelᚐServicePackageᚄ(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceOption) graphql.Marshaler {
+			return ec.marshalNServiceOption2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionᚄ(ctx, selections, v)
 		},
 		true,
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_Service_servicePackages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Service_serviceOptions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Service",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_ServicePackage(ctx, field)
+			return ec.childFields_ServiceOption(ctx, field)
 		},
 	}
 	return fc, nil
@@ -4957,16 +4833,16 @@ func (ec *executionContext) fieldContext_Service_deletedAt(_ context.Context, fi
 	return graphql.NewScalarFieldContext("Service", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
-func (ec *executionContext) _ServicePackage_servicePackageId(ctx context.Context, field graphql.CollectedField, obj *model.ServicePackage) (ret graphql.Marshaler) {
+func (ec *executionContext) _ServiceOptionItem_serviceOptionItemId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOptionItem) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServicePackage_servicePackageId(ctx, field)
+			return ec.fieldContext_ServiceOptionItem_serviceOptionItemId(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.ServicePackageID, nil
+			return obj.ServiceOptionItemID, nil
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
@@ -4976,20 +4852,20 @@ func (ec *executionContext) _ServicePackage_servicePackageId(ctx context.Context
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_ServicePackage_servicePackageId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ServicePackage", field, false, false, errors.New("field of type ID does not have child fields"))
+func (ec *executionContext) fieldContext_ServiceOptionItem_serviceOptionItemId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOptionItem", field, false, false, errors.New("field of type ID does not have child fields"))
 }
 
-func (ec *executionContext) _ServicePackage_serviceId(ctx context.Context, field graphql.CollectedField, obj *model.ServicePackage) (ret graphql.Marshaler) {
+func (ec *executionContext) _ServiceOptionItem_serviceOptionId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOptionItem) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServicePackage_serviceId(ctx, field)
+			return ec.fieldContext_ServiceOptionItem_serviceOptionId(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.ServiceID, nil
+			return obj.ServiceOptionID, nil
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
@@ -4999,52 +4875,52 @@ func (ec *executionContext) _ServicePackage_serviceId(ctx context.Context, field
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_ServicePackage_serviceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ServicePackage", field, false, false, errors.New("field of type ID does not have child fields"))
+func (ec *executionContext) fieldContext_ServiceOptionItem_serviceOptionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOptionItem", field, false, false, errors.New("field of type ID does not have child fields"))
 }
 
-func (ec *executionContext) _ServicePackage_service(ctx context.Context, field graphql.CollectedField, obj *model.ServicePackage) (ret graphql.Marshaler) {
+func (ec *executionContext) _ServiceOptionItem_servicePackage(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOptionItem) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServicePackage_service(ctx, field)
+			return ec.fieldContext_ServiceOptionItem_servicePackage(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.Service, nil
+			return obj.ServicePackage, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *model.Service) graphql.Marshaler {
-			return ec.marshalNService2ᚖfypᚋgraphᚋmodelᚐService(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v *model.ServiceOption) graphql.Marshaler {
+			return ec.marshalNServiceOption2ᚖfypᚋgraphᚋmodelᚐServiceOption(ctx, selections, v)
 		},
 		true,
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_ServicePackage_service(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ServiceOptionItem_servicePackage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "ServicePackage",
+		Object:     "ServiceOptionItem",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_Service(ctx, field)
+			return ec.childFields_ServiceOption(ctx, field)
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _ServicePackage_servicePackageName(ctx context.Context, field graphql.CollectedField, obj *model.ServicePackage) (ret graphql.Marshaler) {
+func (ec *executionContext) _ServiceOptionItem_serviceOptionItemName(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOptionItem) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServicePackage_servicePackageName(ctx, field)
+			return ec.fieldContext_ServiceOptionItem_serviceOptionItemName(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.ServicePackageName, nil
+			return obj.ServiceOptionItemName, nil
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
@@ -5054,136 +4930,17 @@ func (ec *executionContext) _ServicePackage_servicePackageName(ctx context.Conte
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_ServicePackage_servicePackageName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ServicePackage", field, false, false, errors.New("field of type String does not have child fields"))
+func (ec *executionContext) fieldContext_ServiceOptionItem_serviceOptionItemName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOptionItem", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
-func (ec *executionContext) _ServicePackage_description(ctx context.Context, field graphql.CollectedField, obj *model.ServicePackage) (ret graphql.Marshaler) {
+func (ec *executionContext) _ServiceOptionItem_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOptionItem) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServicePackage_description(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.Description, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
-			return ec.marshalOString2ᚖstring(ctx, selections, v)
-		},
-		true,
-		false,
-	)
-}
-func (ec *executionContext) fieldContext_ServicePackage_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ServicePackage", field, false, false, errors.New("field of type String does not have child fields"))
-}
-
-func (ec *executionContext) _ServicePackage_packageItems(ctx context.Context, field graphql.CollectedField, obj *model.ServicePackage) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServicePackage_packageItems(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.PackageItems, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v []*model.PackageItem) graphql.Marshaler {
-			return ec.marshalNPackageItem2ᚕᚖfypᚋgraphᚋmodelᚐPackageItemᚄ(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_ServicePackage_packageItems(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ServicePackage",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_PackageItem(ctx, field)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ServicePackage_serviceSlotPackages(ctx context.Context, field graphql.CollectedField, obj *model.ServicePackage) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServicePackage_serviceSlotPackages(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.ServiceSlotPackages, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceSlotPackage) graphql.Marshaler {
-			return ec.marshalNServiceSlotPackage2ᚕᚖfypᚋgraphᚋmodelᚐServiceSlotPackageᚄ(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_ServicePackage_serviceSlotPackages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ServicePackage",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_ServiceSlotPackage(ctx, field)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ServicePackage_recurringSchedules(ctx context.Context, field graphql.CollectedField, obj *model.ServicePackage) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServicePackage_recurringSchedules(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.RecurringSchedules, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v []*model.RecurringSchedule) graphql.Marshaler {
-			return ec.marshalNRecurringSchedule2ᚕᚖfypᚋgraphᚋmodelᚐRecurringScheduleᚄ(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_ServicePackage_recurringSchedules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ServicePackage",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_RecurringSchedule(ctx, field)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ServicePackage_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.ServicePackage) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServicePackage_deletedAt(ctx, field)
+			return ec.fieldContext_ServiceOptionItem_deletedAt(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
 			return obj.DeletedAt, nil
@@ -5196,8 +4953,8 @@ func (ec *executionContext) _ServicePackage_deletedAt(ctx context.Context, field
 		false,
 	)
 }
-func (ec *executionContext) fieldContext_ServicePackage_deletedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ServicePackage", field, false, false, errors.New("field of type DateTime does not have child fields"))
+func (ec *executionContext) fieldContext_ServiceOptionItem_deletedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOptionItem", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
 func (ec *executionContext) _ServiceSlot_serviceSlotId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlot) (ret graphql.Marshaler) {
@@ -5347,33 +5104,33 @@ func (ec *executionContext) fieldContext_ServiceSlot_endTime(_ context.Context, 
 	return graphql.NewScalarFieldContext("ServiceSlot", field, false, false, errors.New("field of type Time does not have child fields"))
 }
 
-func (ec *executionContext) _ServiceSlot_serviceSlotPackages(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlot) (ret graphql.Marshaler) {
+func (ec *executionContext) _ServiceSlot_serviceSlotOptions(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlot) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceSlot_serviceSlotPackages(ctx, field)
+			return ec.fieldContext_ServiceSlot_serviceSlotOptions(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.ServiceSlotPackages, nil
+			return obj.ServiceSlotOptions, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceSlotPackage) graphql.Marshaler {
-			return ec.marshalNServiceSlotPackage2ᚕᚖfypᚋgraphᚋmodelᚐServiceSlotPackageᚄ(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceSlotOption) graphql.Marshaler {
+			return ec.marshalNServiceSlotOption2ᚕᚖfypᚋgraphᚋmodelᚐServiceSlotOptionᚄ(ctx, selections, v)
 		},
 		true,
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_ServiceSlot_serviceSlotPackages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ServiceSlot_serviceSlotOptions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ServiceSlot",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_ServiceSlotPackage(ctx, field)
+			return ec.childFields_ServiceSlotOption(ctx, field)
 		},
 	}
 	return fc, nil
@@ -5503,16 +5260,16 @@ func (ec *executionContext) fieldContext_ServiceSlot_creator(_ context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _ServiceSlotPackage_slotPackageId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlotPackage) (ret graphql.Marshaler) {
+func (ec *executionContext) _ServiceSlotOption_slotOptionId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlotOption) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceSlotPackage_slotPackageId(ctx, field)
+			return ec.fieldContext_ServiceSlotOption_slotOptionId(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.SlotPackageID, nil
+			return obj.SlotOptionID, nil
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
@@ -5522,20 +5279,20 @@ func (ec *executionContext) _ServiceSlotPackage_slotPackageId(ctx context.Contex
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_ServiceSlotPackage_slotPackageId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ServiceSlotPackage", field, false, false, errors.New("field of type ID does not have child fields"))
+func (ec *executionContext) fieldContext_ServiceSlotOption_slotOptionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceSlotOption", field, false, false, errors.New("field of type ID does not have child fields"))
 }
 
-func (ec *executionContext) _ServiceSlotPackage_servicePackageId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlotPackage) (ret graphql.Marshaler) {
+func (ec *executionContext) _ServiceSlotOption_serviceOptionId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlotOption) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceSlotPackage_servicePackageId(ctx, field)
+			return ec.fieldContext_ServiceSlotOption_serviceOptionId(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.ServicePackageID, nil
+			return obj.ServiceOptionID, nil
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
@@ -5545,49 +5302,49 @@ func (ec *executionContext) _ServiceSlotPackage_servicePackageId(ctx context.Con
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_ServiceSlotPackage_servicePackageId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ServiceSlotPackage", field, false, false, errors.New("field of type ID does not have child fields"))
+func (ec *executionContext) fieldContext_ServiceSlotOption_serviceOptionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceSlotOption", field, false, false, errors.New("field of type ID does not have child fields"))
 }
 
-func (ec *executionContext) _ServiceSlotPackage_servicePackage(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlotPackage) (ret graphql.Marshaler) {
+func (ec *executionContext) _ServiceSlotOption_serviceOption(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlotOption) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceSlotPackage_servicePackage(ctx, field)
+			return ec.fieldContext_ServiceSlotOption_serviceOption(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.ServicePackage, nil
+			return obj.ServiceOption, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *model.ServicePackage) graphql.Marshaler {
-			return ec.marshalNServicePackage2ᚖfypᚋgraphᚋmodelᚐServicePackage(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v *model.ServiceOption) graphql.Marshaler {
+			return ec.marshalNServiceOption2ᚖfypᚋgraphᚋmodelᚐServiceOption(ctx, selections, v)
 		},
 		true,
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_ServiceSlotPackage_servicePackage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ServiceSlotOption_serviceOption(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "ServiceSlotPackage",
+		Object:     "ServiceSlotOption",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_ServicePackage(ctx, field)
+			return ec.childFields_ServiceOption(ctx, field)
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _ServiceSlotPackage_serviceSlotId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlotPackage) (ret graphql.Marshaler) {
+func (ec *executionContext) _ServiceSlotOption_serviceSlotId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlotOption) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceSlotPackage_serviceSlotId(ctx, field)
+			return ec.fieldContext_ServiceSlotOption_serviceSlotId(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
 			return obj.ServiceSlotID, nil
@@ -5600,17 +5357,17 @@ func (ec *executionContext) _ServiceSlotPackage_serviceSlotId(ctx context.Contex
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_ServiceSlotPackage_serviceSlotId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ServiceSlotPackage", field, false, false, errors.New("field of type ID does not have child fields"))
+func (ec *executionContext) fieldContext_ServiceSlotOption_serviceSlotId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceSlotOption", field, false, false, errors.New("field of type ID does not have child fields"))
 }
 
-func (ec *executionContext) _ServiceSlotPackage_serviceSlot(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlotPackage) (ret graphql.Marshaler) {
+func (ec *executionContext) _ServiceSlotOption_serviceSlot(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlotOption) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceSlotPackage_serviceSlot(ctx, field)
+			return ec.fieldContext_ServiceSlotOption_serviceSlot(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
 			return obj.ServiceSlot, nil
@@ -5623,9 +5380,9 @@ func (ec *executionContext) _ServiceSlotPackage_serviceSlot(ctx context.Context,
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_ServiceSlotPackage_serviceSlot(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ServiceSlotOption_serviceSlot(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "ServiceSlotPackage",
+		Object:     "ServiceSlotOption",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -5636,13 +5393,13 @@ func (ec *executionContext) fieldContext_ServiceSlotPackage_serviceSlot(_ contex
 	return fc, nil
 }
 
-func (ec *executionContext) _ServiceSlotPackage_bookings(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlotPackage) (ret graphql.Marshaler) {
+func (ec *executionContext) _ServiceSlotOption_bookings(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlotOption) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceSlotPackage_bookings(ctx, field)
+			return ec.fieldContext_ServiceSlotOption_bookings(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
 			return obj.Bookings, nil
@@ -5655,9 +5412,9 @@ func (ec *executionContext) _ServiceSlotPackage_bookings(ctx context.Context, fi
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_ServiceSlotPackage_bookings(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ServiceSlotOption_bookings(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "ServiceSlotPackage",
+		Object:     "ServiceSlotOption",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -5668,13 +5425,13 @@ func (ec *executionContext) fieldContext_ServiceSlotPackage_bookings(_ context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _ServiceSlotPackage_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlotPackage) (ret graphql.Marshaler) {
+func (ec *executionContext) _ServiceSlotOption_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlotOption) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceSlotPackage_deletedAt(ctx, field)
+			return ec.fieldContext_ServiceSlotOption_deletedAt(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
 			return obj.DeletedAt, nil
@@ -5687,8 +5444,251 @@ func (ec *executionContext) _ServiceSlotPackage_deletedAt(ctx context.Context, f
 		false,
 	)
 }
-func (ec *executionContext) fieldContext_ServiceSlotPackage_deletedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ServiceSlotPackage", field, false, false, errors.New("field of type DateTime does not have child fields"))
+func (ec *executionContext) fieldContext_ServiceSlotOption_deletedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceSlotOption", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceOption_serviceOptionId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_serviceOptionId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceOptionID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_serviceOptionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceOption_serviceId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_serviceId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_serviceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceOption_service(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_service(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Service, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Service) graphql.Marshaler {
+			return ec.marshalNService2ᚖfypᚋgraphᚋmodelᚐService(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_service(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ServiceOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Service(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ServiceOption_serviceOptionName(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_serviceOptionName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceOptionName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_serviceOptionName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceOption_description(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_description(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Description, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceOption_serviceOptionItems(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_serviceOptionItems(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceOptionItems, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceOptionItem) graphql.Marshaler {
+			return ec.marshalNServiceOptionItem2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionItemᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_serviceOptionItems(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ServiceOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ServiceOptionItem(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ServiceOption_serviceSlotOptions(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_serviceSlotOptions(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceSlotOptions, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceSlotOption) graphql.Marshaler {
+			return ec.marshalNServiceSlotOption2ᚕᚖfypᚋgraphᚋmodelᚐServiceSlotOptionᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_serviceSlotOptions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ServiceOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ServiceSlotOption(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ServiceOption_recurringSchedules(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_recurringSchedules(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RecurringSchedules, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.RecurringSchedule) graphql.Marshaler {
+			return ec.marshalNRecurringSchedule2ᚕᚖfypᚋgraphᚋmodelᚐRecurringScheduleᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_recurringSchedules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ServiceOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_RecurringSchedule(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ServiceOption_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_deletedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DeletedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalODateTime2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_deletedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
 func (ec *executionContext) _Staff_staffId(ctx context.Context, field graphql.CollectedField, obj *model.Staff) (ret graphql.Marshaler) {
@@ -7685,36 +7685,6 @@ func (ec *executionContext) unmarshalInputLogInInput(ctx context.Context, obj an
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputPackageItemInput(ctx context.Context, obj any) (model.PackageItemInput, error) {
-	var it model.PackageItemInput
-	if obj == nil {
-		return it, nil
-	}
-
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"packageItemName"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "packageItemName":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("packageItemName"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.PackageItemName = data
-		}
-	}
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputServiceInput(ctx context.Context, obj any) (model.ServiceInput, error) {
 	var it model.ServiceInput
 	if obj == nil {
@@ -7726,7 +7696,7 @@ func (ec *executionContext) unmarshalInputServiceInput(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"serviceName", "description", "servicePackages"}
+	fieldsInOrder := [...]string{"serviceName", "description", "serviceOptions"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7747,20 +7717,20 @@ func (ec *executionContext) unmarshalInputServiceInput(ctx context.Context, obj 
 				return it, err
 			}
 			it.Description = data
-		case "servicePackages":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("servicePackages"))
-			data, err := ec.unmarshalNServicePackageInput2ᚕᚖfypᚋgraphᚋmodelᚐServicePackageInputᚄ(ctx, v)
+		case "serviceOptions":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceOptions"))
+			data, err := ec.unmarshalNServiceOptionInput2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ServicePackages = data
+			it.ServiceOptions = data
 		}
 	}
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputServicePackageInput(ctx context.Context, obj any) (model.ServicePackageInput, error) {
-	var it model.ServicePackageInput
+func (ec *executionContext) unmarshalInputServiceOptionItemInput(ctx context.Context, obj any) (model.ServiceOptionItemInput, error) {
+	var it model.ServiceOptionItemInput
 	if obj == nil {
 		return it, nil
 	}
@@ -7770,34 +7740,20 @@ func (ec *executionContext) unmarshalInputServicePackageInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"servicePackageName", "description", "packageItems"}
+	fieldsInOrder := [...]string{"serviceOptionItemName"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "servicePackageName":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("servicePackageName"))
+		case "serviceOptionItemName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceOptionItemName"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ServicePackageName = data
-		case "description":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Description = data
-		case "packageItems":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("packageItems"))
-			data, err := ec.unmarshalNPackageItemInput2ᚕᚖfypᚋgraphᚋmodelᚐPackageItemInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.PackageItems = data
+			it.ServiceOptionItemName = data
 		}
 	}
 	return it, nil
@@ -7814,7 +7770,7 @@ func (ec *executionContext) unmarshalInputServiceSlotInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"staffId", "date", "daysOfWeek", "startTime", "endTime", "servicePackageIds"}
+	fieldsInOrder := [...]string{"staffId", "date", "daysOfWeek", "startTime", "endTime", "serviceOptionIds"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7856,13 +7812,57 @@ func (ec *executionContext) unmarshalInputServiceSlotInput(ctx context.Context, 
 				return it, err
 			}
 			it.EndTime = data
-		case "servicePackageIds":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("servicePackageIds"))
+		case "serviceOptionIds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceOptionIds"))
 			data, err := ec.unmarshalNID2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ServicePackageIds = data
+			it.ServiceOptionIds = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputServiceOptionInput(ctx context.Context, obj any) (model.ServiceOptionInput, error) {
+	var it model.ServiceOptionInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"serviceOptionName", "description", "serviceOptionItems"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "serviceOptionName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceOptionName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceOptionName = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "serviceOptionItems":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceOptionItems"))
+			data, err := ec.unmarshalNServiceOptionItemInput2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionItemInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceOptionItems = data
 		}
 	}
 	return it, nil
@@ -8194,13 +8194,13 @@ func (ec *executionContext) _Booking(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "slotPackageId":
-			out.Values[i] = ec._Booking_slotPackageId(ctx, field, obj)
+		case "slotOptionId":
+			out.Values[i] = ec._Booking_slotOptionId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "slotPackage":
-			out.Values[i] = ec._Booking_slotPackage(ctx, field, obj)
+		case "slotOption":
+			out.Values[i] = ec._Booking_slotOption(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8634,62 +8634,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
-var packageItemImplementors = []string{"PackageItem"}
-
-func (ec *executionContext) _PackageItem(ctx context.Context, sel ast.SelectionSet, obj *model.PackageItem) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, packageItemImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PackageItem")
-		case "packageItemId":
-			out.Values[i] = ec._PackageItem_packageItemId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "servicePackageId":
-			out.Values[i] = ec._PackageItem_servicePackageId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "servicePackage":
-			out.Values[i] = ec._PackageItem_servicePackage(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "packageItemName":
-			out.Values[i] = ec._PackageItem_packageItemName(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "deletedAt":
-			out.Values[i] = ec._PackageItem_deletedAt(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
-
-	for label, dfs := range deferred {
-		ec.ProcessDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -8873,13 +8817,13 @@ func (ec *executionContext) _RecurringSchedule(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "servicePackageId":
-			out.Values[i] = ec._RecurringSchedule_servicePackageId(ctx, field, obj)
+		case "serviceOptionId":
+			out.Values[i] = ec._RecurringSchedule_serviceOptionId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "servicePackage":
-			out.Values[i] = ec._RecurringSchedule_servicePackage(ctx, field, obj)
+		case "serviceOption":
+			out.Values[i] = ec._RecurringSchedule_serviceOption(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8965,8 +8909,8 @@ func (ec *executionContext) _Service(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "description":
 			out.Values[i] = ec._Service_description(ctx, field, obj)
-		case "servicePackages":
-			out.Values[i] = ec._Service_servicePackages(ctx, field, obj)
+		case "serviceOptions":
+			out.Values[i] = ec._Service_serviceOptions(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8995,56 +8939,39 @@ func (ec *executionContext) _Service(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
-var servicePackageImplementors = []string{"ServicePackage"}
+var serviceOptionItemImplementors = []string{"ServiceOptionItem"}
 
-func (ec *executionContext) _ServicePackage(ctx context.Context, sel ast.SelectionSet, obj *model.ServicePackage) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, servicePackageImplementors)
+func (ec *executionContext) _ServiceOptionItem(ctx context.Context, sel ast.SelectionSet, obj *model.ServiceOptionItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, serviceOptionItemImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("ServicePackage")
-		case "servicePackageId":
-			out.Values[i] = ec._ServicePackage_servicePackageId(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("ServiceOptionItem")
+		case "serviceOptionItemId":
+			out.Values[i] = ec._ServiceOptionItem_serviceOptionItemId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "serviceId":
-			out.Values[i] = ec._ServicePackage_serviceId(ctx, field, obj)
+		case "serviceOptionId":
+			out.Values[i] = ec._ServiceOptionItem_serviceOptionId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "service":
-			out.Values[i] = ec._ServicePackage_service(ctx, field, obj)
+		case "servicePackage":
+			out.Values[i] = ec._ServiceOptionItem_servicePackage(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "servicePackageName":
-			out.Values[i] = ec._ServicePackage_servicePackageName(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "description":
-			out.Values[i] = ec._ServicePackage_description(ctx, field, obj)
-		case "packageItems":
-			out.Values[i] = ec._ServicePackage_packageItems(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "serviceSlotPackages":
-			out.Values[i] = ec._ServicePackage_serviceSlotPackages(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "recurringSchedules":
-			out.Values[i] = ec._ServicePackage_recurringSchedules(ctx, field, obj)
+		case "serviceOptionItemName":
+			out.Values[i] = ec._ServiceOptionItem_serviceOptionItemName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "deletedAt":
-			out.Values[i] = ec._ServicePackage_deletedAt(ctx, field, obj)
+			out.Values[i] = ec._ServiceOptionItem_deletedAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9103,8 +9030,8 @@ func (ec *executionContext) _ServiceSlot(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "serviceSlotPackages":
-			out.Values[i] = ec._ServiceSlot_serviceSlotPackages(ctx, field, obj)
+		case "serviceSlotOptions":
+			out.Values[i] = ec._ServiceSlot_serviceSlotOptions(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -9147,49 +9074,122 @@ func (ec *executionContext) _ServiceSlot(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var serviceSlotPackageImplementors = []string{"ServiceSlotPackage"}
+var serviceSlotOptionImplementors = []string{"ServiceSlotOption"}
 
-func (ec *executionContext) _ServiceSlotPackage(ctx context.Context, sel ast.SelectionSet, obj *model.ServiceSlotPackage) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, serviceSlotPackageImplementors)
+func (ec *executionContext) _ServiceSlotOption(ctx context.Context, sel ast.SelectionSet, obj *model.ServiceSlotOption) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, serviceSlotOptionImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("ServiceSlotPackage")
-		case "slotPackageId":
-			out.Values[i] = ec._ServiceSlotPackage_slotPackageId(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("ServiceSlotOption")
+		case "slotOptionId":
+			out.Values[i] = ec._ServiceSlotOption_slotOptionId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "servicePackageId":
-			out.Values[i] = ec._ServiceSlotPackage_servicePackageId(ctx, field, obj)
+		case "serviceOptionId":
+			out.Values[i] = ec._ServiceSlotOption_serviceOptionId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "servicePackage":
-			out.Values[i] = ec._ServiceSlotPackage_servicePackage(ctx, field, obj)
+		case "serviceOption":
+			out.Values[i] = ec._ServiceSlotOption_serviceOption(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "serviceSlotId":
-			out.Values[i] = ec._ServiceSlotPackage_serviceSlotId(ctx, field, obj)
+			out.Values[i] = ec._ServiceSlotOption_serviceSlotId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "serviceSlot":
-			out.Values[i] = ec._ServiceSlotPackage_serviceSlot(ctx, field, obj)
+			out.Values[i] = ec._ServiceSlotOption_serviceSlot(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "bookings":
-			out.Values[i] = ec._ServiceSlotPackage_bookings(ctx, field, obj)
+			out.Values[i] = ec._ServiceSlotOption_bookings(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "deletedAt":
-			out.Values[i] = ec._ServiceSlotPackage_deletedAt(ctx, field, obj)
+			out.Values[i] = ec._ServiceSlotOption_deletedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var serviceOptionImplementors = []string{"ServiceOption"}
+
+func (ec *executionContext) _ServiceOption(ctx context.Context, sel ast.SelectionSet, obj *model.ServiceOption) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, serviceOptionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ServiceOption")
+		case "serviceOptionId":
+			out.Values[i] = ec._ServiceOption_serviceOptionId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceId":
+			out.Values[i] = ec._ServiceOption_serviceId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "service":
+			out.Values[i] = ec._ServiceOption_service(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceOptionName":
+			out.Values[i] = ec._ServiceOption_serviceOptionName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._ServiceOption_description(ctx, field, obj)
+		case "serviceOptionItems":
+			out.Values[i] = ec._ServiceOption_serviceOptionItems(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceSlotOptions":
+			out.Values[i] = ec._ServiceOption_serviceSlotOptions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "recurringSchedules":
+			out.Values[i] = ec._ServiceOption_recurringSchedules(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deletedAt":
+			out.Values[i] = ec._ServiceOption_deletedAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10048,52 +10048,6 @@ func (ec *executionContext) unmarshalNLogInInput2fypᚋgraphᚋmodelᚐLogInInpu
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNPackageItem2ᚕᚖfypᚋgraphᚋmodelᚐPackageItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.PackageItem) graphql.Marshaler {
-	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
-		fc := graphql.GetFieldContext(ctx)
-		fc.Result = &v[i]
-		return ec.marshalNPackageItem2ᚖfypᚋgraphᚋmodelᚐPackageItem(ctx, sel, v[i])
-	})
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNPackageItem2ᚖfypᚋgraphᚋmodelᚐPackageItem(ctx context.Context, sel ast.SelectionSet, v *model.PackageItem) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._PackageItem(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNPackageItemInput2ᚕᚖfypᚋgraphᚋmodelᚐPackageItemInputᚄ(ctx context.Context, v any) ([]*model.PackageItemInput, error) {
-	var vSlice []any
-	vSlice = graphql.CoerceList(v)
-	var err error
-	res := make([]*model.PackageItemInput, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNPackageItemInput2ᚖfypᚋgraphᚋmodelᚐPackageItemInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) unmarshalNPackageItemInput2ᚖfypᚋgraphᚋmodelᚐPackageItemInput(ctx context.Context, v any) (*model.PackageItemInput, error) {
-	res, err := ec.unmarshalInputPackageItemInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) marshalNRecurringSchedule2ᚕᚖfypᚋgraphᚋmodelᚐRecurringScheduleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RecurringSchedule) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -10155,11 +10109,11 @@ func (ec *executionContext) unmarshalNServiceInput2fypᚋgraphᚋmodelᚐService
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNServicePackage2ᚕᚖfypᚋgraphᚋmodelᚐServicePackageᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServicePackage) graphql.Marshaler {
+func (ec *executionContext) marshalNServiceOptionItem2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServiceOptionItem) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
 		fc.Result = &v[i]
-		return ec.marshalNServicePackage2ᚖfypᚋgraphᚋmodelᚐServicePackage(ctx, sel, v[i])
+		return ec.marshalNServiceOptionItem2ᚖfypᚋgraphᚋmodelᚐServiceOptionItem(ctx, sel, v[i])
 	})
 
 	for _, e := range ret {
@@ -10171,24 +10125,24 @@ func (ec *executionContext) marshalNServicePackage2ᚕᚖfypᚋgraphᚋmodelᚐS
 	return ret
 }
 
-func (ec *executionContext) marshalNServicePackage2ᚖfypᚋgraphᚋmodelᚐServicePackage(ctx context.Context, sel ast.SelectionSet, v *model.ServicePackage) graphql.Marshaler {
+func (ec *executionContext) marshalNServiceOptionItem2ᚖfypᚋgraphᚋmodelᚐServiceOptionItem(ctx context.Context, sel ast.SelectionSet, v *model.ServiceOptionItem) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._ServicePackage(ctx, sel, v)
+	return ec._ServiceOptionItem(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNServicePackageInput2ᚕᚖfypᚋgraphᚋmodelᚐServicePackageInputᚄ(ctx context.Context, v any) ([]*model.ServicePackageInput, error) {
+func (ec *executionContext) unmarshalNServiceOptionItemInput2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionItemInputᚄ(ctx context.Context, v any) ([]*model.ServiceOptionItemInput, error) {
 	var vSlice []any
 	vSlice = graphql.CoerceList(v)
 	var err error
-	res := make([]*model.ServicePackageInput, len(vSlice))
+	res := make([]*model.ServiceOptionItemInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNServicePackageInput2ᚖfypᚋgraphᚋmodelᚐServicePackageInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNServiceOptionItemInput2ᚖfypᚋgraphᚋmodelᚐServiceOptionItemInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -10196,8 +10150,8 @@ func (ec *executionContext) unmarshalNServicePackageInput2ᚕᚖfypᚋgraphᚋmo
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalNServicePackageInput2ᚖfypᚋgraphᚋmodelᚐServicePackageInput(ctx context.Context, v any) (*model.ServicePackageInput, error) {
-	res, err := ec.unmarshalInputServicePackageInput(ctx, v)
+func (ec *executionContext) unmarshalNServiceOptionItemInput2ᚖfypᚋgraphᚋmodelᚐServiceOptionItemInput(ctx context.Context, v any) (*model.ServiceOptionItemInput, error) {
+	res, err := ec.unmarshalInputServiceOptionItemInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -10236,11 +10190,11 @@ func (ec *executionContext) unmarshalNServiceSlotInput2fypᚋgraphᚋmodelᚐSer
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNServiceSlotPackage2ᚕᚖfypᚋgraphᚋmodelᚐServiceSlotPackageᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServiceSlotPackage) graphql.Marshaler {
+func (ec *executionContext) marshalNServiceSlotOption2ᚕᚖfypᚋgraphᚋmodelᚐServiceSlotOptionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServiceSlotOption) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
 		fc.Result = &v[i]
-		return ec.marshalNServiceSlotPackage2ᚖfypᚋgraphᚋmodelᚐServiceSlotPackage(ctx, sel, v[i])
+		return ec.marshalNServiceSlotOption2ᚖfypᚋgraphᚋmodelᚐServiceSlotOption(ctx, sel, v[i])
 	})
 
 	for _, e := range ret {
@@ -10252,14 +10206,60 @@ func (ec *executionContext) marshalNServiceSlotPackage2ᚕᚖfypᚋgraphᚋmodel
 	return ret
 }
 
-func (ec *executionContext) marshalNServiceSlotPackage2ᚖfypᚋgraphᚋmodelᚐServiceSlotPackage(ctx context.Context, sel ast.SelectionSet, v *model.ServiceSlotPackage) graphql.Marshaler {
+func (ec *executionContext) marshalNServiceSlotOption2ᚖfypᚋgraphᚋmodelᚐServiceSlotOption(ctx context.Context, sel ast.SelectionSet, v *model.ServiceSlotOption) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._ServiceSlotPackage(ctx, sel, v)
+	return ec._ServiceSlotOption(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNServiceOption2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServiceOption) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNServiceOption2ᚖfypᚋgraphᚋmodelᚐServiceOption(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNServiceOption2ᚖfypᚋgraphᚋmodelᚐServiceOption(ctx context.Context, sel ast.SelectionSet, v *model.ServiceOption) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ServiceOption(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNServiceOptionInput2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionInputᚄ(ctx context.Context, v any) ([]*model.ServiceOptionInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.ServiceOptionInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNServiceOptionInput2ᚖfypᚋgraphᚋmodelᚐServiceOptionInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNServiceOptionInput2ᚖfypᚋgraphᚋmodelᚐServiceOptionInput(ctx context.Context, v any) (*model.ServiceOptionInput, error) {
+	res, err := ec.unmarshalInputServiceOptionInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNSignUpInput2fypᚋgraphᚋmodelᚐSignUpInput(ctx context.Context, v any) (model.SignUpInput, error) {

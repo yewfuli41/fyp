@@ -203,15 +203,15 @@ export default function CalendarPage() {
         setDeleteFuture(false);
         setManageError("");
 
-        const firstPkg = slot.serviceSlotPackages[0];
-        setEditFormServiceId(firstPkg?.servicePackage.service.serviceId ?? "");
+        const firstPkg = slot.serviceSlotOptions[0];
+        setEditFormServiceId(firstPkg?.serviceOption.service.serviceId ?? "");
         setEditForm({
             staffId: isStaff ? ownStaffId : (slot.staff?.staffId ?? ""),
             date: slot.date,
             daysOfWeek: [],
             startTime: extractTime(slot.startTime),
             endTime: extractTime(slot.endTime),
-            servicePackageIds: slot.serviceSlotPackages.map(p => p.servicePackage.servicePackageId),
+            serviceOptionIds: slot.serviceSlotOptions.map(p => p.serviceOption.serviceOptionId),
         });
         setEditApplyFuture(false);
         setEditFormError("");

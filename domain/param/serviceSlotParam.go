@@ -6,12 +6,12 @@ import (
 	"time"
 )
 
-// SlotPackageParam is a service package made bookable within a service slot,
+// SlotTierParam is a service package made bookable within a service slot,
 // carrying the parent service name for display.
-type SlotPackageParam struct {
-	SlotPackageID      int64
-	ServicePackageID   int64
-	ServicePackageName string
+type SlotTierParam struct {
+	SlotOptionID      int64
+	ServiceOptionID   int64
+	ServiceOptionName string
 	ServiceID          int64
 	ServiceName        string
 }
@@ -29,15 +29,15 @@ type ServiceSlotParam struct {
 	CreatedBy           int64
 	HasBooking          bool // loaded for display — true once a customer has booked this slot
 
-	ServicePackageIDs []int64            // input: packages to make bookable
-	Packages          []SlotPackageParam // loaded for display
+	ServiceOptionIDs []int64            // input: packages to make bookable
+	Packages          []SlotTierParam // loaded for display
 }
 
 func (p ServiceSlotParam) Validate() error {
 	var validationErrs errs.ValidationErrors
 
-	if len(p.ServicePackageIDs) == 0 {
-		validationErrs = append(validationErrs, errs.ValidationError{Field: "servicePackageIds", Message: "Please complete required fields"})
+	if len(p.ServiceOptionIDs) == 0 {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "serviceOptionIds", Message: "Please complete required fields"})
 	}
 	if !p.StartTime.Before(p.EndTime) {
 		validationErrs = append(validationErrs, errs.ValidationError{Field: "startTime", Message: "Start time must be before end time"})

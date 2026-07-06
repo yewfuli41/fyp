@@ -4,7 +4,7 @@ input ServiceSlotInput {
   daysOfWeek: [DayOfWeek!]   # ... recurring weekdays (mutually exclusive)
   startTime: Time!
   endTime: Time!
-  servicePackageIds: [ID!]!
+  serviceOptionIds: [ID!]!
 }
 
 extend type Query {

@@ -131,9 +131,9 @@ export default function CalendarGrid({
                     let endLine = lines.indexOf(end);
                     if (startLine < 0) startLine = 0;
                     if (endLine < 0) endLine = lines.length - 1;
-                    const pkg = slot.serviceSlotPackages[0];
+                    const pkg = slot.serviceSlotOptions[0];
                     const label = pkg
-                        ? `${pkg.servicePackage.service.serviceName} — ${pkg.servicePackage.servicePackageName}`
+                        ? `${pkg.serviceOption.service.serviceName} — ${pkg.serviceOption.serviceOptionName}`
                         : "Slot";
                     return (
                         <div
@@ -155,8 +155,8 @@ export default function CalendarGrid({
                             </svg>
                             <div className="calendar-slot-time">{start}–{end}</div>
                             <div>{label}</div>
-                            {slot.serviceSlotPackages.length > 1 && (
-                                <div className="calendar-slot-more">+{slot.serviceSlotPackages.length - 1} more</div>
+                            {slot.serviceSlotOptions.length > 1 && (
+                                <div className="calendar-slot-more">+{slot.serviceSlotOptions.length - 1} more</div>
                             )}
                         </div>
                     );

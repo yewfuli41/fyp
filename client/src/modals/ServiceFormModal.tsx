@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { Alert, Button, Form, Modal } from "react-bootstrap";
-import type { ServiceInput, ServicePackageInput } from "../services/ServiceService";
-import { emptyPackage, syncDefaultItems, syncDefaultPackage } from "../utils/serviceFormHelpers";
+import type { ServiceInput, ServiceOptionInput } from "../services/ServiceService";
+import { emptyOption, syncDefaultItems, syncDefaultOption } from "../utils/serviceFormHelpers";
 import { FIELD_LIMITS } from "../utils/fieldLimits";
 
 interface ServiceFormModalProps {
@@ -23,54 +23,54 @@ export default function ServiceFormModal({
 }: ServiceFormModalProps) {
     // ── Package / item helpers ─────────────────────────────────────────────────
 
-    const updatePackage = (pkgIdx: number, field: keyof ServicePackageInput, value: string) => {
+    const updateOption = (optionIdx: number, field: keyof ServiceOptionInput, value: string) => {
         setFormInput(prev => {
-            const pkgs = [...prev.servicePackages];
-            pkgs[pkgIdx] = { ...pkgs[pkgIdx], [field]: value };
-            return { ...prev, servicePackages: pkgs };
+            const pkgs = [...prev.serviceOptions];
+            pkgs[optionIdx] = { ...pkgs[optionIdx], [field]: value };
+            return { ...prev, serviceOptions: pkgs };
         });
     };
 
-    const addPackage = () =>
+    const addOption = () =>
         setFormInput(prev => ({
             ...prev,
-            servicePackages: [...prev.servicePackages, emptyPackage(prev.serviceName)],
+            serviceOptions: [...prev.serviceOptions, emptyOption(prev.serviceName)],
         }));
 
-    const removePackage = (pkgIdx: number) =>
+    const removeOption = (optionIdx: number) =>
         setFormInput(prev => ({
             ...prev,
-            servicePackages: prev.servicePackages.filter((_, i) => i !== pkgIdx),
+            serviceOptions: prev.serviceOptions.filter((_, i) => i !== optionIdx),
         }));
 
-    const updateItem = (pkgIdx: number, itemIdx: number, value: string) => {
+    const updateServiceOptionItem = (optionIdx: number, itemIdx: number, value: string) => {
         setFormInput(prev => {
-            const pkgs = [...prev.servicePackages];
-            const items = [...pkgs[pkgIdx].packageItems];
-            items[itemIdx] = { packageItemName: value };
-            pkgs[pkgIdx] = { ...pkgs[pkgIdx], packageItems: items };
-            return { ...prev, servicePackages: pkgs };
+            const pkgs = [...prev.serviceOptions];
+            const items = [...pkgs[optionIdx].serviceOptionItems];
+            items[itemIdx] = { serviceOptionItemName: value };
+            pkgs[optionIdx] = { ...pkgs[optionIdx], serviceOptionItems: items };
+            return { ...prev, serviceOptions: pkgs };
         });
     };
 
-    const addItem = (pkgIdx: number) =>
+    const addServiceOptionItem = (optionIdx: number) =>
         setFormInput(prev => {
-            const pkgs = [...prev.servicePackages];
-            pkgs[pkgIdx] = {
-                ...pkgs[pkgIdx],
-                packageItems: [...pkgs[pkgIdx].packageItems, { packageItemName: "" }],
+            const pkgs = [...prev.serviceOptions];
+            pkgs[optionIdx] = {
+                ...pkgs[optionIdx],
+                serviceOptionItems: [...pkgs[optionIdx].serviceOptionItems, { serviceOptionItemName: "" }],
             };
-            return { ...prev, servicePackages: pkgs };
+            return { ...prev, serviceOptions: pkgs };
         });
 
-    const removeItem = (pkgIdx: number, itemIdx: number) =>
+    const removeServiceOptionItem = (optionIdx: number, itemIdx: number) =>
         setFormInput(prev => {
-            const pkgs = [...prev.servicePackages];
-            pkgs[pkgIdx] = {
-                ...pkgs[pkgIdx],
-                packageItems: pkgs[pkgIdx].packageItems.filter((_, i) => i !== itemIdx),
+            const pkgs = [...prev.serviceOptions];
+            pkgs[optionIdx] = {
+                ...pkgs[optionIdx],
+                serviceOptionItems: pkgs[optionIdx].serviceOptionItems.filter((_, i) => i !== itemIdx),
             };
-            return { ...prev, servicePackages: pkgs };
+            return { ...prev, serviceOptions: pkgs };
         });
 
     return (
@@ -90,9 +90,9 @@ export default function ServiceFormModal({
                             onChange={e => {
                                 const newName = e.target.value;
                                 setFormInput(prev => {
-                                    const withDefaultPkg = syncDefaultPackage(prev.servicePackages, newName);
+                                    const withDefaultPkg = syncDefaultOption(prev.serviceOptions, newName);
                                     const withDefaultItems = syncDefaultItems(withDefaultPkg, newName);
-                                    return { ...prev, serviceName: newName, servicePackages: withDefaultItems };
+                                    return { ...prev, serviceName: newName, serviceOptions: withDefaultItems };
                                 });
                                 setFieldErrors(prev => ({ ...prev, serviceName: "" }));
                             }}
@@ -113,69 +113,69 @@ export default function ServiceFormModal({
                     </Form.Group>
 
                     <div className="d-flex justify-content-between align-items-center mb-1">
-                        <h6 className="mb-0">Service Packages</h6>
-                        <Button size="sm" variant="outline-secondary" onClick={addPackage}>
-                            + Add Package
+                        <h6 className="mb-0">Service Options</h6>
+                        <Button size="sm" variant="outline-secondary" onClick={addOption}>
+                            + Add Option
                         </Button>
                     </div>
                     <p className="text-muted small mb-2">
-                       A default package with the same name as the service is created automatically, allowing customers to book the service without selecting a specific package.
+                       A default option with the same name as the service is created automatically, allowing customers to book the service without selecting a specific option.
                     </p>
 
-                    {formInput.servicePackages.map((pkg, pkgIdx) => {
-                        const isDefault = pkgIdx === 0;
+                    {formInput.serviceOptions.map((pkg, optionIdx) => {
+                        const isDefault = optionIdx === 0;
                         return (
-                            <div key={pkgIdx} className="border rounded p-3 mb-3 bg-light">
+                            <div key={optionIdx} className="border rounded p-3 mb-3 bg-light">
                                 <div className="d-flex justify-content-between align-items-start mb-2">
-                                    <strong>Package {pkgIdx + 1}</strong>
+                                    <strong>Option {optionIdx + 1}</strong>
                                     {isDefault ? (
-                                        <small className="text-muted fst-italic">Default package</small>
+                                        <small className="text-muted fst-italic">Default option</small>
                                     ) : (
                                         <Button
                                             size="sm"
                                             variant="outline-danger"
-                                            onClick={() => removePackage(pkgIdx)}
+                                            onClick={() => removeOption(optionIdx)}
                                         >
                                             Remove
                                         </Button>
                                     )}
                                 </div>
 
-                                {fieldErrors[`servicePackages[${pkgIdx}]`] && (
+                                {fieldErrors[`serviceOptions[${optionIdx}]`] && (
                                     <div className="text-danger small mb-2">
-                                        {fieldErrors[`servicePackages[${pkgIdx}]`]}
+                                        {fieldErrors[`serviceOptions[${optionIdx}]`]}
                                     </div>
                                 )}
 
                                 <Form.Group className="mb-2">
-                                    <Form.Label>Package Name </Form.Label>
+                                    <Form.Label>Option Name </Form.Label>
                                     <Form.Control
                                         type="text"
-                                        value={pkg.servicePackageName}
-                                        onChange={e => updatePackage(pkgIdx, "servicePackageName", e.target.value)}
-                                        maxLength={FIELD_LIMITS.servicePackageName}
-                                        isInvalid={!!fieldErrors[`servicePackageName[${pkgIdx}]`]}
+                                        value={pkg.serviceOptionName}
+                                        onChange={e => updateOption(optionIdx, "serviceOptionName", e.target.value)}
+                                        maxLength={FIELD_LIMITS.serviceOptionName}
+                                        isInvalid={!!fieldErrors[`serviceOptionName[${optionIdx}]`]}
                                     />
-                                    <Form.Control.Feedback type="invalid">{fieldErrors[`servicePackageName[${pkgIdx}]`]}</Form.Control.Feedback>
+                                    <Form.Control.Feedback type="invalid">{fieldErrors[`serviceOptionName[${optionIdx}]`]}</Form.Control.Feedback>
                                 </Form.Group>
 
                                 <Form.Group className="mb-3">
-                                    <Form.Label>Package Description</Form.Label>
+                                    <Form.Label>Option Description</Form.Label>
                                     <Form.Control
                                         type="text"
                                         value={pkg.description ?? ""}
-                                        onChange={e => updatePackage(pkgIdx, "description", e.target.value)}
+                                        onChange={e => updateOption(optionIdx, "description", e.target.value)}
                                     />
                                 </Form.Group>
 
                                 <div className="d-flex justify-content-between align-items-center mb-2">
-                                    <small className="text-muted fw-semibold">Package Items</small>
-                                    <Button size="sm" variant="link" onClick={() => addItem(pkgIdx)}>
+                                    <small className="text-muted fw-semibold">Service Option Items</small>
+                                    <Button size="sm" variant="link" onClick={() => addServiceOptionItem(optionIdx)}>
                                         + Add Item
                                     </Button>
                                 </div>
 
-                                {pkg.packageItems.map((item, itemIdx) => {
+                                {pkg.serviceOptionItems.map((item, itemIdx) => {
                                     const isDefaultItem = itemIdx === 0;
                                     return (
                                     <div key={itemIdx} className="mb-2">
@@ -183,24 +183,24 @@ export default function ServiceFormModal({
                                             <Form.Control
                                                 type="text"
                                                 placeholder="Item name"
-                                                value={item.packageItemName}
-                                                onChange={e => updateItem(pkgIdx, itemIdx, e.target.value)}
-                                                maxLength={FIELD_LIMITS.packageItemName}
+                                                value={item.serviceOptionItemName}
+                                                onChange={e => updateServiceOptionItem(optionIdx, itemIdx, e.target.value)}
+                                                maxLength={FIELD_LIMITS.serviceOptionItemName}
                                                 disabled={isDefaultItem}
                                             />
-                                            {pkg.packageItems.length > 1 && !isDefaultItem && (
+                                            {pkg.serviceOptionItems.length > 1 && !isDefaultItem && (
                                                 <Button
                                                     size="sm"
                                                     variant="outline-danger"
-                                                    onClick={() => removeItem(pkgIdx, itemIdx)}
+                                                    onClick={() => removeServiceOptionItem(optionIdx, itemIdx)}
                                                 >
                                                     ✕
                                                 </Button>
                                             )}
                                         </div>
-                                        {fieldErrors[`packageItemName[${pkgIdx}][${itemIdx}]`] && (
+                                        {fieldErrors[`serviceOptionItemName[${optionIdx}][${itemIdx}]`] && (
                                             <div className="text-danger small mt-1">
-                                                {fieldErrors[`packageItemName[${pkgIdx}][${itemIdx}]`]}
+                                                {fieldErrors[`serviceOptionItemName[${optionIdx}][${itemIdx}]`]}
                                             </div>
                                         )}
                                     </div>

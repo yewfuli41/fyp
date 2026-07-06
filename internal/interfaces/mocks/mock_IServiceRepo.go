@@ -39,12 +39,12 @@ func (_m *MockIServiceRepo) EXPECT() *MockIServiceRepo_Expecter {
 	return &MockIServiceRepo_Expecter{mock: &_m.Mock}
 }
 
-// DeleteServicePackagesByServiceID provides a mock function for the type MockIServiceRepo
-func (_mock *MockIServiceRepo) DeleteServicePackagesByServiceID(ctx context.Context, tx *sql.Tx, serviceID int64) error {
+// DeleteServiceOptionsByServiceID provides a mock function for the type MockIServiceRepo
+func (_mock *MockIServiceRepo) DeleteServiceOptionsByServiceID(ctx context.Context, tx *sql.Tx, serviceID int64) error {
 	ret := _mock.Called(ctx, tx, serviceID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for DeleteServicePackagesByServiceID")
+		panic("no return value specified for DeleteServiceOptionsByServiceID")
 	}
 
 	var r0 error
@@ -56,20 +56,20 @@ func (_mock *MockIServiceRepo) DeleteServicePackagesByServiceID(ctx context.Cont
 	return r0
 }
 
-// MockIServiceRepo_DeleteServicePackagesByServiceID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteServicePackagesByServiceID'
-type MockIServiceRepo_DeleteServicePackagesByServiceID_Call struct {
+// MockIServiceRepo_DeleteServiceOptionsByServiceID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteServiceOptionsByServiceID'
+type MockIServiceRepo_DeleteServiceOptionsByServiceID_Call struct {
 	*mock.Call
 }
 
-// DeleteServicePackagesByServiceID is a helper method to define mock.On call
+// DeleteServiceOptionsByServiceID is a helper method to define mock.On call
 //   - ctx context.Context
 //   - tx *sql.Tx
 //   - serviceID int64
-func (_e *MockIServiceRepo_Expecter) DeleteServicePackagesByServiceID(ctx interface{}, tx interface{}, serviceID interface{}) *MockIServiceRepo_DeleteServicePackagesByServiceID_Call {
-	return &MockIServiceRepo_DeleteServicePackagesByServiceID_Call{Call: _e.mock.On("DeleteServicePackagesByServiceID", ctx, tx, serviceID)}
+func (_e *MockIServiceRepo_Expecter) DeleteServiceOptionsByServiceID(ctx interface{}, tx interface{}, serviceID interface{}) *MockIServiceRepo_DeleteServiceOptionsByServiceID_Call {
+	return &MockIServiceRepo_DeleteServiceOptionsByServiceID_Call{Call: _e.mock.On("DeleteServiceOptionsByServiceID", ctx, tx, serviceID)}
 }
 
-func (_c *MockIServiceRepo_DeleteServicePackagesByServiceID_Call) Run(run func(ctx context.Context, tx *sql.Tx, serviceID int64)) *MockIServiceRepo_DeleteServicePackagesByServiceID_Call {
+func (_c *MockIServiceRepo_DeleteServiceOptionsByServiceID_Call) Run(run func(ctx context.Context, tx *sql.Tx, serviceID int64)) *MockIServiceRepo_DeleteServiceOptionsByServiceID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -92,57 +92,57 @@ func (_c *MockIServiceRepo_DeleteServicePackagesByServiceID_Call) Run(run func(c
 	return _c
 }
 
-func (_c *MockIServiceRepo_DeleteServicePackagesByServiceID_Call) Return(err error) *MockIServiceRepo_DeleteServicePackagesByServiceID_Call {
+func (_c *MockIServiceRepo_DeleteServiceOptionsByServiceID_Call) Return(err error) *MockIServiceRepo_DeleteServiceOptionsByServiceID_Call {
 	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockIServiceRepo_DeleteServicePackagesByServiceID_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, serviceID int64) error) *MockIServiceRepo_DeleteServicePackagesByServiceID_Call {
+func (_c *MockIServiceRepo_DeleteServiceOptionsByServiceID_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, serviceID int64) error) *MockIServiceRepo_DeleteServiceOptionsByServiceID_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetPackageItemsByPackageID provides a mock function for the type MockIServiceRepo
-func (_mock *MockIServiceRepo) GetPackageItemsByPackageID(ctx context.Context, servicePackageID int64) ([]param.PackageItemParam, error) {
-	ret := _mock.Called(ctx, servicePackageID)
+// GetServiceOptionItemsByOptionID provides a mock function for the type MockIServiceRepo
+func (_mock *MockIServiceRepo) GetServiceOptionItemsByOptionID(ctx context.Context, serviceOptionID int64) ([]param.ServiceOptionItemParam, error) {
+	ret := _mock.Called(ctx, serviceOptionID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetPackageItemsByPackageID")
+		panic("no return value specified for GetServiceOptionItemsByOptionID")
 	}
 
-	var r0 []param.PackageItemParam
+	var r0 []param.ServiceOptionItemParam
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) ([]param.PackageItemParam, error)); ok {
-		return returnFunc(ctx, servicePackageID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) ([]param.ServiceOptionItemParam, error)); ok {
+		return returnFunc(ctx, serviceOptionID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) []param.PackageItemParam); ok {
-		r0 = returnFunc(ctx, servicePackageID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) []param.ServiceOptionItemParam); ok {
+		r0 = returnFunc(ctx, serviceOptionID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]param.PackageItemParam)
+			r0 = ret.Get(0).([]param.ServiceOptionItemParam)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
-		r1 = returnFunc(ctx, servicePackageID)
+		r1 = returnFunc(ctx, serviceOptionID)
 	} else {
 		r1 = ret.Error(1)
 	}
 	return r0, r1
 }
 
-// MockIServiceRepo_GetPackageItemsByPackageID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPackageItemsByPackageID'
-type MockIServiceRepo_GetPackageItemsByPackageID_Call struct {
+// MockIServiceRepo_GetServiceOptionItemsByOptionID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetServiceOptionItemsByOptionID'
+type MockIServiceRepo_GetServiceOptionItemsByOptionID_Call struct {
 	*mock.Call
 }
 
-// GetPackageItemsByPackageID is a helper method to define mock.On call
+// GetServiceOptionItemsByOptionID is a helper method to define mock.On call
 //   - ctx context.Context
-//   - servicePackageID int64
-func (_e *MockIServiceRepo_Expecter) GetPackageItemsByPackageID(ctx interface{}, servicePackageID interface{}) *MockIServiceRepo_GetPackageItemsByPackageID_Call {
-	return &MockIServiceRepo_GetPackageItemsByPackageID_Call{Call: _e.mock.On("GetPackageItemsByPackageID", ctx, servicePackageID)}
+//   - serviceOptionID int64
+func (_e *MockIServiceRepo_Expecter) GetServiceOptionItemsByOptionID(ctx interface{}, serviceOptionID interface{}) *MockIServiceRepo_GetServiceOptionItemsByOptionID_Call {
+	return &MockIServiceRepo_GetServiceOptionItemsByOptionID_Call{Call: _e.mock.On("GetServiceOptionItemsByOptionID", ctx, serviceOptionID)}
 }
 
-func (_c *MockIServiceRepo_GetPackageItemsByPackageID_Call) Run(run func(ctx context.Context, servicePackageID int64)) *MockIServiceRepo_GetPackageItemsByPackageID_Call {
+func (_c *MockIServiceRepo_GetServiceOptionItemsByOptionID_Call) Run(run func(ctx context.Context, serviceOptionID int64)) *MockIServiceRepo_GetServiceOptionItemsByOptionID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -160,57 +160,57 @@ func (_c *MockIServiceRepo_GetPackageItemsByPackageID_Call) Run(run func(ctx con
 	return _c
 }
 
-func (_c *MockIServiceRepo_GetPackageItemsByPackageID_Call) Return(packageItemParams []param.PackageItemParam, err error) *MockIServiceRepo_GetPackageItemsByPackageID_Call {
-	_c.Call.Return(packageItemParams, err)
+func (_c *MockIServiceRepo_GetServiceOptionItemsByOptionID_Call) Return(serviceOptionItemParams []param.ServiceOptionItemParam, err error) *MockIServiceRepo_GetServiceOptionItemsByOptionID_Call {
+	_c.Call.Return(serviceOptionItemParams, err)
 	return _c
 }
 
-func (_c *MockIServiceRepo_GetPackageItemsByPackageID_Call) RunAndReturn(run func(ctx context.Context, servicePackageID int64) ([]param.PackageItemParam, error)) *MockIServiceRepo_GetPackageItemsByPackageID_Call {
+func (_c *MockIServiceRepo_GetServiceOptionItemsByOptionID_Call) RunAndReturn(run func(ctx context.Context, serviceOptionID int64) ([]param.ServiceOptionItemParam, error)) *MockIServiceRepo_GetServiceOptionItemsByOptionID_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetPackageItemsByPackageIDIncludeDeleted provides a mock function for the type MockIServiceRepo
-func (_mock *MockIServiceRepo) GetPackageItemsByPackageIDIncludeDeleted(ctx context.Context, servicePackageID int64) ([]param.PackageItemParam, error) {
-	ret := _mock.Called(ctx, servicePackageID)
+// GetServiceOptionItemsByOptionIDIncludeDeleted provides a mock function for the type MockIServiceRepo
+func (_mock *MockIServiceRepo) GetServiceOptionItemsByOptionIDIncludeDeleted(ctx context.Context, serviceOptionID int64) ([]param.ServiceOptionItemParam, error) {
+	ret := _mock.Called(ctx, serviceOptionID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetPackageItemsByPackageIDIncludeDeleted")
+		panic("no return value specified for GetServiceOptionItemsByOptionIDIncludeDeleted")
 	}
 
-	var r0 []param.PackageItemParam
+	var r0 []param.ServiceOptionItemParam
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) ([]param.PackageItemParam, error)); ok {
-		return returnFunc(ctx, servicePackageID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) ([]param.ServiceOptionItemParam, error)); ok {
+		return returnFunc(ctx, serviceOptionID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) []param.PackageItemParam); ok {
-		r0 = returnFunc(ctx, servicePackageID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) []param.ServiceOptionItemParam); ok {
+		r0 = returnFunc(ctx, serviceOptionID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]param.PackageItemParam)
+			r0 = ret.Get(0).([]param.ServiceOptionItemParam)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
-		r1 = returnFunc(ctx, servicePackageID)
+		r1 = returnFunc(ctx, serviceOptionID)
 	} else {
 		r1 = ret.Error(1)
 	}
 	return r0, r1
 }
 
-// MockIServiceRepo_GetPackageItemsByPackageIDIncludeDeleted_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPackageItemsByPackageIDIncludeDeleted'
-type MockIServiceRepo_GetPackageItemsByPackageIDIncludeDeleted_Call struct {
+// MockIServiceRepo_GetServiceOptionItemsByOptionIDIncludeDeleted_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetServiceOptionItemsByOptionIDIncludeDeleted'
+type MockIServiceRepo_GetServiceOptionItemsByOptionIDIncludeDeleted_Call struct {
 	*mock.Call
 }
 
-// GetPackageItemsByPackageIDIncludeDeleted is a helper method to define mock.On call
+// GetServiceOptionItemsByOptionIDIncludeDeleted is a helper method to define mock.On call
 //   - ctx context.Context
-//   - servicePackageID int64
-func (_e *MockIServiceRepo_Expecter) GetPackageItemsByPackageIDIncludeDeleted(ctx interface{}, servicePackageID interface{}) *MockIServiceRepo_GetPackageItemsByPackageIDIncludeDeleted_Call {
-	return &MockIServiceRepo_GetPackageItemsByPackageIDIncludeDeleted_Call{Call: _e.mock.On("GetPackageItemsByPackageIDIncludeDeleted", ctx, servicePackageID)}
+//   - serviceOptionID int64
+func (_e *MockIServiceRepo_Expecter) GetServiceOptionItemsByOptionIDIncludeDeleted(ctx interface{}, serviceOptionID interface{}) *MockIServiceRepo_GetServiceOptionItemsByOptionIDIncludeDeleted_Call {
+	return &MockIServiceRepo_GetServiceOptionItemsByOptionIDIncludeDeleted_Call{Call: _e.mock.On("GetServiceOptionItemsByOptionIDIncludeDeleted", ctx, serviceOptionID)}
 }
 
-func (_c *MockIServiceRepo_GetPackageItemsByPackageIDIncludeDeleted_Call) Run(run func(ctx context.Context, servicePackageID int64)) *MockIServiceRepo_GetPackageItemsByPackageIDIncludeDeleted_Call {
+func (_c *MockIServiceRepo_GetServiceOptionItemsByOptionIDIncludeDeleted_Call) Run(run func(ctx context.Context, serviceOptionID int64)) *MockIServiceRepo_GetServiceOptionItemsByOptionIDIncludeDeleted_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -228,34 +228,34 @@ func (_c *MockIServiceRepo_GetPackageItemsByPackageIDIncludeDeleted_Call) Run(ru
 	return _c
 }
 
-func (_c *MockIServiceRepo_GetPackageItemsByPackageIDIncludeDeleted_Call) Return(packageItemParams []param.PackageItemParam, err error) *MockIServiceRepo_GetPackageItemsByPackageIDIncludeDeleted_Call {
-	_c.Call.Return(packageItemParams, err)
+func (_c *MockIServiceRepo_GetServiceOptionItemsByOptionIDIncludeDeleted_Call) Return(serviceOptionItemParams []param.ServiceOptionItemParam, err error) *MockIServiceRepo_GetServiceOptionItemsByOptionIDIncludeDeleted_Call {
+	_c.Call.Return(serviceOptionItemParams, err)
 	return _c
 }
 
-func (_c *MockIServiceRepo_GetPackageItemsByPackageIDIncludeDeleted_Call) RunAndReturn(run func(ctx context.Context, servicePackageID int64) ([]param.PackageItemParam, error)) *MockIServiceRepo_GetPackageItemsByPackageIDIncludeDeleted_Call {
+func (_c *MockIServiceRepo_GetServiceOptionItemsByOptionIDIncludeDeleted_Call) RunAndReturn(run func(ctx context.Context, serviceOptionID int64) ([]param.ServiceOptionItemParam, error)) *MockIServiceRepo_GetServiceOptionItemsByOptionIDIncludeDeleted_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetServicePackagesByServiceID provides a mock function for the type MockIServiceRepo
-func (_mock *MockIServiceRepo) GetServicePackagesByServiceID(ctx context.Context, serviceID int64) ([]param.ServicePackageParam, error) {
+// GetServiceOptionsByServiceID provides a mock function for the type MockIServiceRepo
+func (_mock *MockIServiceRepo) GetServiceOptionsByServiceID(ctx context.Context, serviceID int64) ([]param.ServiceOptionParam, error) {
 	ret := _mock.Called(ctx, serviceID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetServicePackagesByServiceID")
+		panic("no return value specified for GetServiceOptionsByServiceID")
 	}
 
-	var r0 []param.ServicePackageParam
+	var r0 []param.ServiceOptionParam
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) ([]param.ServicePackageParam, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) ([]param.ServiceOptionParam, error)); ok {
 		return returnFunc(ctx, serviceID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) []param.ServicePackageParam); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) []param.ServiceOptionParam); ok {
 		r0 = returnFunc(ctx, serviceID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]param.ServicePackageParam)
+			r0 = ret.Get(0).([]param.ServiceOptionParam)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
@@ -266,19 +266,19 @@ func (_mock *MockIServiceRepo) GetServicePackagesByServiceID(ctx context.Context
 	return r0, r1
 }
 
-// MockIServiceRepo_GetServicePackagesByServiceID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetServicePackagesByServiceID'
-type MockIServiceRepo_GetServicePackagesByServiceID_Call struct {
+// MockIServiceRepo_GetServiceOptionsByServiceID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetServiceOptionsByServiceID'
+type MockIServiceRepo_GetServiceOptionsByServiceID_Call struct {
 	*mock.Call
 }
 
-// GetServicePackagesByServiceID is a helper method to define mock.On call
+// GetServiceOptionsByServiceID is a helper method to define mock.On call
 //   - ctx context.Context
 //   - serviceID int64
-func (_e *MockIServiceRepo_Expecter) GetServicePackagesByServiceID(ctx interface{}, serviceID interface{}) *MockIServiceRepo_GetServicePackagesByServiceID_Call {
-	return &MockIServiceRepo_GetServicePackagesByServiceID_Call{Call: _e.mock.On("GetServicePackagesByServiceID", ctx, serviceID)}
+func (_e *MockIServiceRepo_Expecter) GetServiceOptionsByServiceID(ctx interface{}, serviceID interface{}) *MockIServiceRepo_GetServiceOptionsByServiceID_Call {
+	return &MockIServiceRepo_GetServiceOptionsByServiceID_Call{Call: _e.mock.On("GetServiceOptionsByServiceID", ctx, serviceID)}
 }
 
-func (_c *MockIServiceRepo_GetServicePackagesByServiceID_Call) Run(run func(ctx context.Context, serviceID int64)) *MockIServiceRepo_GetServicePackagesByServiceID_Call {
+func (_c *MockIServiceRepo_GetServiceOptionsByServiceID_Call) Run(run func(ctx context.Context, serviceID int64)) *MockIServiceRepo_GetServiceOptionsByServiceID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -296,12 +296,12 @@ func (_c *MockIServiceRepo_GetServicePackagesByServiceID_Call) Run(run func(ctx 
 	return _c
 }
 
-func (_c *MockIServiceRepo_GetServicePackagesByServiceID_Call) Return(servicePackageParams []param.ServicePackageParam, err error) *MockIServiceRepo_GetServicePackagesByServiceID_Call {
-	_c.Call.Return(servicePackageParams, err)
+func (_c *MockIServiceRepo_GetServiceOptionsByServiceID_Call) Return(serviceOptionParams []param.ServiceOptionParam, err error) *MockIServiceRepo_GetServiceOptionsByServiceID_Call {
+	_c.Call.Return(serviceOptionParams, err)
 	return _c
 }
 
-func (_c *MockIServiceRepo_GetServicePackagesByServiceID_Call) RunAndReturn(run func(ctx context.Context, serviceID int64) ([]param.ServicePackageParam, error)) *MockIServiceRepo_GetServicePackagesByServiceID_Call {
+func (_c *MockIServiceRepo_GetServiceOptionsByServiceID_Call) RunAndReturn(run func(ctx context.Context, serviceID int64) ([]param.ServiceOptionParam, error)) *MockIServiceRepo_GetServiceOptionsByServiceID_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -440,16 +440,16 @@ func (_c *MockIServiceRepo_HasBookingForService_Call) RunAndReturn(run func(ctx 
 	return _c
 }
 
-// InsertPackageItem provides a mock function for the type MockIServiceRepo
-func (_mock *MockIServiceRepo) InsertPackageItem(ctx context.Context, tx *sql.Tx, p param.PackageItemParam) error {
+// InsertServiceOptionItem provides a mock function for the type MockIServiceRepo
+func (_mock *MockIServiceRepo) InsertServiceOptionItem(ctx context.Context, tx *sql.Tx, p param.ServiceOptionItemParam) error {
 	ret := _mock.Called(ctx, tx, p)
 
 	if len(ret) == 0 {
-		panic("no return value specified for InsertPackageItem")
+		panic("no return value specified for InsertServiceOptionItem")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, param.PackageItemParam) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, param.ServiceOptionItemParam) error); ok {
 		r0 = returnFunc(ctx, tx, p)
 	} else {
 		r0 = ret.Error(0)
@@ -457,20 +457,20 @@ func (_mock *MockIServiceRepo) InsertPackageItem(ctx context.Context, tx *sql.Tx
 	return r0
 }
 
-// MockIServiceRepo_InsertPackageItem_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertPackageItem'
-type MockIServiceRepo_InsertPackageItem_Call struct {
+// MockIServiceRepo_InsertServiceOptionItem_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertServiceOptionItem'
+type MockIServiceRepo_InsertServiceOptionItem_Call struct {
 	*mock.Call
 }
 
-// InsertPackageItem is a helper method to define mock.On call
+// InsertServiceOptionItem is a helper method to define mock.On call
 //   - ctx context.Context
 //   - tx *sql.Tx
-//   - p param.PackageItemParam
-func (_e *MockIServiceRepo_Expecter) InsertPackageItem(ctx interface{}, tx interface{}, p interface{}) *MockIServiceRepo_InsertPackageItem_Call {
-	return &MockIServiceRepo_InsertPackageItem_Call{Call: _e.mock.On("InsertPackageItem", ctx, tx, p)}
+//   - p param.ServiceOptionItemParam
+func (_e *MockIServiceRepo_Expecter) InsertServiceOptionItem(ctx interface{}, tx interface{}, p interface{}) *MockIServiceRepo_InsertServiceOptionItem_Call {
+	return &MockIServiceRepo_InsertServiceOptionItem_Call{Call: _e.mock.On("InsertServiceOptionItem", ctx, tx, p)}
 }
 
-func (_c *MockIServiceRepo_InsertPackageItem_Call) Run(run func(ctx context.Context, tx *sql.Tx, p param.PackageItemParam)) *MockIServiceRepo_InsertPackageItem_Call {
+func (_c *MockIServiceRepo_InsertServiceOptionItem_Call) Run(run func(ctx context.Context, tx *sql.Tx, p param.ServiceOptionItemParam)) *MockIServiceRepo_InsertServiceOptionItem_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -480,9 +480,9 @@ func (_c *MockIServiceRepo_InsertPackageItem_Call) Run(run func(ctx context.Cont
 		if args[1] != nil {
 			arg1 = args[1].(*sql.Tx)
 		}
-		var arg2 param.PackageItemParam
+		var arg2 param.ServiceOptionItemParam
 		if args[2] != nil {
-			arg2 = args[2].(param.PackageItemParam)
+			arg2 = args[2].(param.ServiceOptionItemParam)
 		}
 		run(
 			arg0,
@@ -493,12 +493,12 @@ func (_c *MockIServiceRepo_InsertPackageItem_Call) Run(run func(ctx context.Cont
 	return _c
 }
 
-func (_c *MockIServiceRepo_InsertPackageItem_Call) Return(err error) *MockIServiceRepo_InsertPackageItem_Call {
+func (_c *MockIServiceRepo_InsertServiceOptionItem_Call) Return(err error) *MockIServiceRepo_InsertServiceOptionItem_Call {
 	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockIServiceRepo_InsertPackageItem_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, p param.PackageItemParam) error) *MockIServiceRepo_InsertPackageItem_Call {
+func (_c *MockIServiceRepo_InsertServiceOptionItem_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, p param.ServiceOptionItemParam) error) *MockIServiceRepo_InsertServiceOptionItem_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -577,27 +577,27 @@ func (_c *MockIServiceRepo_InsertService_Call) RunAndReturn(run func(ctx context
 	return _c
 }
 
-// InsertServicePackage provides a mock function for the type MockIServiceRepo
-func (_mock *MockIServiceRepo) InsertServicePackage(ctx context.Context, tx *sql.Tx, p param.ServicePackageParam) (*param.ServicePackageParam, error) {
+// InsertServiceOption provides a mock function for the type MockIServiceRepo
+func (_mock *MockIServiceRepo) InsertServiceOption(ctx context.Context, tx *sql.Tx, p param.ServiceOptionParam) (*param.ServiceOptionParam, error) {
 	ret := _mock.Called(ctx, tx, p)
 
 	if len(ret) == 0 {
-		panic("no return value specified for InsertServicePackage")
+		panic("no return value specified for InsertServiceOption")
 	}
 
-	var r0 *param.ServicePackageParam
+	var r0 *param.ServiceOptionParam
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, param.ServicePackageParam) (*param.ServicePackageParam, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, param.ServiceOptionParam) (*param.ServiceOptionParam, error)); ok {
 		return returnFunc(ctx, tx, p)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, param.ServicePackageParam) *param.ServicePackageParam); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, param.ServiceOptionParam) *param.ServiceOptionParam); ok {
 		r0 = returnFunc(ctx, tx, p)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*param.ServicePackageParam)
+			r0 = ret.Get(0).(*param.ServiceOptionParam)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, *sql.Tx, param.ServicePackageParam) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *sql.Tx, param.ServiceOptionParam) error); ok {
 		r1 = returnFunc(ctx, tx, p)
 	} else {
 		r1 = ret.Error(1)
@@ -605,20 +605,20 @@ func (_mock *MockIServiceRepo) InsertServicePackage(ctx context.Context, tx *sql
 	return r0, r1
 }
 
-// MockIServiceRepo_InsertServicePackage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertServicePackage'
-type MockIServiceRepo_InsertServicePackage_Call struct {
+// MockIServiceRepo_InsertServiceOption_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertServiceOption'
+type MockIServiceRepo_InsertServiceOption_Call struct {
 	*mock.Call
 }
 
-// InsertServicePackage is a helper method to define mock.On call
+// InsertServiceOption is a helper method to define mock.On call
 //   - ctx context.Context
 //   - tx *sql.Tx
-//   - p param.ServicePackageParam
-func (_e *MockIServiceRepo_Expecter) InsertServicePackage(ctx interface{}, tx interface{}, p interface{}) *MockIServiceRepo_InsertServicePackage_Call {
-	return &MockIServiceRepo_InsertServicePackage_Call{Call: _e.mock.On("InsertServicePackage", ctx, tx, p)}
+//   - p param.ServiceOptionParam
+func (_e *MockIServiceRepo_Expecter) InsertServiceOption(ctx interface{}, tx interface{}, p interface{}) *MockIServiceRepo_InsertServiceOption_Call {
+	return &MockIServiceRepo_InsertServiceOption_Call{Call: _e.mock.On("InsertServiceOption", ctx, tx, p)}
 }
 
-func (_c *MockIServiceRepo_InsertServicePackage_Call) Run(run func(ctx context.Context, tx *sql.Tx, p param.ServicePackageParam)) *MockIServiceRepo_InsertServicePackage_Call {
+func (_c *MockIServiceRepo_InsertServiceOption_Call) Run(run func(ctx context.Context, tx *sql.Tx, p param.ServiceOptionParam)) *MockIServiceRepo_InsertServiceOption_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -628,9 +628,9 @@ func (_c *MockIServiceRepo_InsertServicePackage_Call) Run(run func(ctx context.C
 		if args[1] != nil {
 			arg1 = args[1].(*sql.Tx)
 		}
-		var arg2 param.ServicePackageParam
+		var arg2 param.ServiceOptionParam
 		if args[2] != nil {
-			arg2 = args[2].(param.ServicePackageParam)
+			arg2 = args[2].(param.ServiceOptionParam)
 		}
 		run(
 			arg0,
@@ -641,12 +641,12 @@ func (_c *MockIServiceRepo_InsertServicePackage_Call) Run(run func(ctx context.C
 	return _c
 }
 
-func (_c *MockIServiceRepo_InsertServicePackage_Call) Return(servicePackageParam *param.ServicePackageParam, err error) *MockIServiceRepo_InsertServicePackage_Call {
-	_c.Call.Return(servicePackageParam, err)
+func (_c *MockIServiceRepo_InsertServiceOption_Call) Return(serviceOptionParam *param.ServiceOptionParam, err error) *MockIServiceRepo_InsertServiceOption_Call {
+	_c.Call.Return(serviceOptionParam, err)
 	return _c
 }
 
-func (_c *MockIServiceRepo_InsertServicePackage_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, p param.ServicePackageParam) (*param.ServicePackageParam, error)) *MockIServiceRepo_InsertServicePackage_Call {
+func (_c *MockIServiceRepo_InsertServiceOption_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, p param.ServiceOptionParam) (*param.ServiceOptionParam, error)) *MockIServiceRepo_InsertServiceOption_Call {
 	_c.Call.Return(run)
 	return _c
 }

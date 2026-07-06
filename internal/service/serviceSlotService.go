@@ -137,7 +137,7 @@ func (s *serviceSlotService) insertSlotsForSchedule(
 		if err != nil {
 			return 0, err
 		}
-		if err := s.insertSlotPackages(ctx, tx, id, slot.ServicePackageIDs); err != nil {
+		if err := s.insertSlotPackages(ctx, tx, id, slot.ServiceOptionIDs); err != nil {
 			return 0, err
 		}
 		if createdID == 0 {
@@ -171,12 +171,12 @@ func (s *serviceSlotService) CreateServiceSlot(ctx context.Context, p param.Serv
 		return nil, err
 	}
 
-	packagesOK, err := s.serviceSlotRepo.PackagesBelongToBusiness(ctx, p.BusinessID, p.ServicePackageIDs)
+	packagesOK, err := s.serviceSlotRepo.OptionsBelongToBusiness(ctx, p.BusinessID, p.ServiceOptionIDs)
 	if err != nil {
 		return nil, err
 	}
 	if !packagesOK {
-		return nil, errs.ValidationErrors{{Field: "servicePackageIds", Message: "One or more selected packages are invalid."}}
+		return nil, errs.ValidationErrors{{Field: "serviceOptionIds", Message: "One or more selected packages are invalid."}}
 	}
 
 	scheduled, weekdays, err := s.resolveSchedule(p)
@@ -218,7 +218,7 @@ func (s *serviceSlotService) CreateServiceSlot(ctx context.Context, p param.Serv
 
 func (s *serviceSlotService) insertSlotPackages(ctx context.Context, tx *sql.Tx, slotID int64, packageIDs []int64) error {
 	for _, pkgID := range packageIDs {
-		if err := s.serviceSlotRepo.InsertServiceSlotPackage(ctx, tx, slotID, pkgID); err != nil {
+		if err := s.serviceSlotRepo.InsertServiceSlotOption(ctx, tx, slotID, pkgID); err != nil {
 			return err
 		}
 	}
@@ -282,12 +282,12 @@ func (s *serviceSlotService) UpdateServiceSlot(ctx context.Context, p param.Serv
 		}
 	}
 
-	packagesOK, err := s.serviceSlotRepo.PackagesBelongToBusiness(ctx, p.BusinessID, p.ServicePackageIDs)
+	packagesOK, err := s.serviceSlotRepo.OptionsBelongToBusiness(ctx, p.BusinessID, p.ServiceOptionIDs)
 	if err != nil {
 		return nil, err
 	}
 	if !packagesOK {
-		return nil, errs.ValidationErrors{{Field: "servicePackageIds", Message: "One or more selected packages are invalid."}}
+		return nil, errs.ValidationErrors{{Field: "serviceOptionIds", Message: "One or more selected packages are invalid."}}
 	}
 
 	scheduled, weekdays, err := s.resolveSchedule(p)

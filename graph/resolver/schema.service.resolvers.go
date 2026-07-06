@@ -33,17 +33,17 @@ func (r *mutationResolver) CreateService(ctx context.Context, service model.Serv
 		ServiceName: service.ServiceName,
 		Description: service.Description,
 	}
-	for _, pkg := range service.ServicePackages {
-		pkgParam := param.ServicePackageParam{
-			ServicePackageName: pkg.ServicePackageName,
-			Description:        pkg.Description,
+	for _, pkg := range service.ServiceOptions {
+		pkgParam := param.ServiceOptionParam{
+			ServiceOptionName: pkg.ServiceOptionName,
+			Description:     pkg.Description,
 		}
-		for _, item := range pkg.PackageItems {
-			pkgParam.PackageItems = append(pkgParam.PackageItems, param.PackageItemParam{
-				PackageItemName: item.PackageItemName,
+		for _, item := range pkg.ServiceOptionItems {
+			pkgParam.ServiceOptionItems = append(pkgParam.ServiceOptionItems, param.ServiceOptionItemParam{
+				ServiceOptionItemName: item.ServiceOptionItemName,
 			})
 		}
-		p.ServicePackages = append(p.ServicePackages, pkgParam)
+		p.ServiceOptions = append(p.ServiceOptions, pkgParam)
 	}
 
 	result, err := r.App.ServiceService.CreateService(ctx, p)
@@ -76,17 +76,17 @@ func (r *mutationResolver) UpdateService(ctx context.Context, serviceID string, 
 		ServiceName: service.ServiceName,
 		Description: service.Description,
 	}
-	for _, pkg := range service.ServicePackages {
-		pkgParam := param.ServicePackageParam{
-			ServicePackageName: pkg.ServicePackageName,
-			Description:        pkg.Description,
+	for _, pkg := range service.ServiceOptions {
+		pkgParam := param.ServiceOptionParam{
+			ServiceOptionName: pkg.ServiceOptionName,
+			Description:     pkg.Description,
 		}
-		for _, item := range pkg.PackageItems {
-			pkgParam.PackageItems = append(pkgParam.PackageItems, param.PackageItemParam{
-				PackageItemName: item.PackageItemName,
+		for _, item := range pkg.ServiceOptionItems {
+			pkgParam.ServiceOptionItems = append(pkgParam.ServiceOptionItems, param.ServiceOptionItemParam{
+				ServiceOptionItemName: item.ServiceOptionItemName,
 			})
 		}
-		p.ServicePackages = append(p.ServicePackages, pkgParam)
+		p.ServiceOptions = append(p.ServiceOptions, pkgParam)
 	}
 
 	result, err := r.App.ServiceService.UpdateService(ctx, p)

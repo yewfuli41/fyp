@@ -26,21 +26,21 @@ func (r *serviceRepo) InsertService(ctx context.Context, tx *sql.Tx, p param.Ser
 	return scanService(row)
 }
 
-func (r *serviceRepo) InsertServicePackage(ctx context.Context, tx *sql.Tx, p param.ServicePackageParam) (*param.ServicePackageParam, error) {
+func (r *serviceRepo) InsertServiceOption(ctx context.Context, tx *sql.Tx, p param.ServiceOptionParam) (*param.ServiceOptionParam, error) {
 	row := tx.QueryRowContext(ctx, `
-		INSERT INTO service_packages (service_id, service_package_name, description)
+		INSERT INTO service_options (service_id, service_option_name, description)
 		VALUES ($1, $2, $3)
-		RETURNING service_package_id, service_id, service_package_name, description
-	`, p.ServiceID, p.ServicePackageName, p.Description)
+		RETURNING service_option_id, service_id, service_option_name, description
+	`, p.ServiceID, p.ServiceOptionName, p.Description)
 
-	return scanServicePackage(row)
+	return scanServiceOption(row)
 }
 
-func (r *serviceRepo) InsertPackageItem(ctx context.Context, tx *sql.Tx, p param.PackageItemParam) error {
+func (r *serviceRepo) InsertServiceOptionItem(ctx context.Context, tx *sql.Tx, p param.ServiceOptionItemParam) error {
 	_, err := tx.ExecContext(ctx, `
-		INSERT INTO package_items (service_package_id, package_item_name, created_at)
+		INSERT INTO service_option_items (service_option_id, service_option_item_name, created_at)
 		VALUES ($1, $2, NOW())
-	`, p.ServicePackageID, p.PackageItemName)
+	`, p.ServiceOptionID, p.ServiceOptionItemName)
 	return err
 }
 
@@ -55,11 +55,11 @@ func (r *serviceRepo) UpdateService(ctx context.Context, tx *sql.Tx, p param.Ser
 	return scanService(row)
 }
 
-func (r *serviceRepo) DeleteServicePackagesByServiceID(ctx context.Context, tx *sql.Tx, serviceID int64) error {
+func (r *serviceRepo) DeleteServiceOptionsByServiceID(ctx context.Context, tx *sql.Tx, serviceID int64) error {
 	_, err := tx.ExecContext(ctx, `
-		UPDATE package_items SET deleted_at = NOW()
-		WHERE service_package_id IN (
-			SELECT service_package_id FROM service_packages WHERE service_id = $1
+		UPDATE service_option_items SET deleted_at = NOW()
+		WHERE service_option_id IN (
+			SELECT service_option_id FROM service_options WHERE service_id = $1
 		) AND deleted_at IS NULL
 	`, serviceID)
 	if err != nil {
@@ -67,7 +67,7 @@ func (r *serviceRepo) DeleteServicePackagesByServiceID(ctx context.Context, tx *
 	}
 
 	_, err = tx.ExecContext(ctx, `
-		UPDATE service_packages SET deleted_at = NOW()
+		UPDATE service_options SET deleted_at = NOW()
 		WHERE service_id = $1 AND deleted_at IS NULL
 	`, serviceID)
 	return err
@@ -104,21 +104,21 @@ func (r *serviceRepo) GetServicesByBusinessID(ctx context.Context, businessID in
 	return services, nil
 }
 
-func (r *serviceRepo) GetServicePackagesByServiceID(ctx context.Context, serviceID int64) ([]param.ServicePackageParam, error) {
+func (r *serviceRepo) GetServiceOptionsByServiceID(ctx context.Context, serviceID int64) ([]param.ServiceOptionParam, error) {
 	rows, err := r.DB.QueryContext(ctx, `
-		SELECT service_package_id, service_id, service_package_name, description
-		FROM service_packages
+		SELECT service_option_id, service_id, service_option_name, description
+		FROM service_options
 		WHERE service_id = $1 AND deleted_at IS NULL
-		ORDER BY service_package_id
+		ORDER BY service_option_id
 	`, serviceID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var packages []param.ServicePackageParam
+	var packages []param.ServiceOptionParam
 	for rows.Next() {
-		p, err := scanServicePackage(rows)
+		p, err := scanServiceOption(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -127,22 +127,22 @@ func (r *serviceRepo) GetServicePackagesByServiceID(ctx context.Context, service
 	return packages, nil
 }
 
-func (r *serviceRepo) GetPackageItemsByPackageID(ctx context.Context, servicePackageID int64) ([]param.PackageItemParam, error) {
+func (r *serviceRepo) GetServiceOptionItemsByOptionID(ctx context.Context, serviceOptionID int64) ([]param.ServiceOptionItemParam, error) {
 	rows, err := r.DB.QueryContext(ctx, `
-		SELECT package_item_id, service_package_id, package_item_name
-		FROM package_items
-		WHERE service_package_id = $1 AND deleted_at IS NULL
-		ORDER BY package_item_id
-	`, servicePackageID)
+		SELECT service_option_item_id, service_option_id, service_option_item_name
+		FROM service_option_items
+		WHERE service_option_id = $1 AND deleted_at IS NULL
+		ORDER BY service_option_item_id
+	`, serviceOptionID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var items []param.PackageItemParam
+	var items []param.ServiceOptionItemParam
 	for rows.Next() {
-		var item param.PackageItemParam
-		if err := rows.Scan(&item.PackageItemID, &item.ServicePackageID, &item.PackageItemName); err != nil {
+		var item param.ServiceOptionItemParam
+		if err := rows.Scan(&item.ServiceOptionItemID, &item.ServiceOptionID, &item.ServiceOptionItemName); err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -150,22 +150,22 @@ func (r *serviceRepo) GetPackageItemsByPackageID(ctx context.Context, servicePac
 	return items, nil
 }
 
-func (r *serviceRepo) GetPackageItemsByPackageIDIncludeDeleted(ctx context.Context, servicePackageID int64) ([]param.PackageItemParam, error) {
+func (r *serviceRepo) GetServiceOptionItemsByOptionIDIncludeDeleted(ctx context.Context, serviceOptionID int64) ([]param.ServiceOptionItemParam, error) {
 	rows, err := r.DB.QueryContext(ctx, `
-		SELECT package_item_id, service_package_id, package_item_name
-		FROM package_items
-		WHERE service_package_id = $1
-		ORDER BY package_item_id
-	`, servicePackageID)
+		SELECT service_option_item_id, service_option_id, service_option_item_name
+		FROM service_option_items
+		WHERE service_option_id = $1
+		ORDER BY service_option_item_id
+	`, serviceOptionID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var items []param.PackageItemParam
+	var items []param.ServiceOptionItemParam
 	for rows.Next() {
-		var item param.PackageItemParam
-		if err := rows.Scan(&item.PackageItemID, &item.ServicePackageID, &item.PackageItemName); err != nil {
+		var item param.ServiceOptionItemParam
+		if err := rows.Scan(&item.ServiceOptionItemID, &item.ServiceOptionID, &item.ServiceOptionItemName); err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -177,8 +177,8 @@ func (r *serviceRepo) HasBookingForService(ctx context.Context, serviceID int64)
 	var count int
 	err := r.DB.QueryRowContext(ctx, `
 		SELECT COUNT(*) FROM bookings b
-		JOIN service_slot_packages ssp ON b.slot_package_id = ssp.slot_package_id
-		JOIN service_packages sp ON ssp.service_package_id = sp.service_package_id
+		JOIN service_slot_options ssp ON b.slot_option_id = ssp.slot_option_id
+		JOIN service_options sp ON ssp.service_option_id = sp.service_option_id
 		WHERE sp.service_id = $1 AND b.deleted_at IS NULL
 	`, serviceID).Scan(&count)
 	if err != nil {
@@ -201,10 +201,10 @@ func scanService(row rowScannerService) (*param.ServiceParam, error) {
 	return &s, nil
 }
 
-func scanServicePackage(row rowScannerService) (*param.ServicePackageParam, error) {
-	var p param.ServicePackageParam
+func scanServiceOption(row rowScannerService) (*param.ServiceOptionParam, error) {
+	var p param.ServiceOptionParam
 	var description sql.NullString
-	if err := row.Scan(&p.ServicePackageID, &p.ServiceID, &p.ServicePackageName, &description); err != nil {
+	if err := row.Scan(&p.ServiceOptionID, &p.ServiceID, &p.ServiceOptionName, &description); err != nil {
 		return nil, err
 	}
 	p.Description = utils.NullStringPtr(description)

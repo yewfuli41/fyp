@@ -6,18 +6,18 @@ import (
 	"strings"
 )
 
-type PackageItemParam struct {
-	PackageItemID    int64
-	ServicePackageID int64
-	PackageItemName  string
+type ServiceOptionItemParam struct {
+	ServiceOptionItemID    int64
+	ServiceOptionID int64
+	ServiceOptionItemName  string
 }
 
-type ServicePackageParam struct {
-	ServicePackageID   int64
+type ServiceOptionParam struct {
+	ServiceOptionID   int64
 	ServiceID          int64
-	ServicePackageName string
+	ServiceOptionName string
 	Description        *string
-	PackageItems       []PackageItemParam
+	ServiceOptionItems       []ServiceOptionItemParam
 }
 
 type ServiceParam struct {
@@ -25,7 +25,7 @@ type ServiceParam struct {
 	BusinessID      int64
 	ServiceName     string
 	Description     *string
-	ServicePackages []ServicePackageParam
+	ServiceOptions []ServiceOptionParam
 }
 
 func (p ServiceParam) Validate() error {
@@ -37,18 +37,18 @@ func (p ServiceParam) Validate() error {
 		validationErrs = append(validationErrs, e)
 	}
 
-	for i, pkg := range p.ServicePackages {
+	for i, pkg := range p.ServiceOptions {
 		if e, ok := maxLengthError(
-			fmt.Sprintf("servicePackages[%d].servicePackageName", i),
-			"service package name", pkg.ServicePackageName, maxPackageNameLength,
+			fmt.Sprintf("serviceOptions[%d].serviceOptionName", i),
+			"service option name", pkg.ServiceOptionName, maxPackageNameLength,
 		); ok {
 			validationErrs = append(validationErrs, e)
 		}
 
-		for j, item := range pkg.PackageItems {
+		for j, item := range pkg.ServiceOptionItems {
 			if e, ok := maxLengthError(
-				fmt.Sprintf("servicePackages[%d].packageItems[%d]", i, j),
-				"package item name", item.PackageItemName, maxPackageNameLength,
+				fmt.Sprintf("serviceOptions[%d].serviceOptionItems[%d]", i, j),
+				"service option item name", item.ServiceOptionItemName, maxPackageNameLength,
 			); ok {
 				validationErrs = append(validationErrs, e)
 			}

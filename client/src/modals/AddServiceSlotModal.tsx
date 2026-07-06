@@ -3,7 +3,7 @@ import { Alert, Button, Form, Modal } from "react-bootstrap";
 import type { Service } from "../services/ServiceService";
 import type { Staff } from "../services/StaffService";
 import type { ServiceSlotInput } from "../services/ServiceSlotService";
-import { cap, computeTimeOptions, defaultPackageId, todayISO, type WorkingHour } from "../utils/serviceSlotHelpers";
+import { cap, computeTimeOptions, defaultOptionId, todayISO, type WorkingHour } from "../utils/serviceSlotHelpers";
 import { DAYS_OF_WEEK } from "../utils/time";
 
 interface AddServiceSlotModalProps {
@@ -68,42 +68,42 @@ export default function AddServiceSlotModal({
                         onChange={e => {
                             const serviceId = e.target.value;
                             setFormServiceId(serviceId);
-                            const pkgId = defaultPackageId(services, serviceId);
-                            setForm(f => ({ ...f, servicePackageIds: pkgId ? [pkgId] : [] }));
-                            setFieldErrors(prev => ({ ...prev, servicePackageIds: "" }));
+                            const pkgId = defaultOptionId(services, serviceId);
+                            setForm(f => ({ ...f, serviceOptionIds: pkgId ? [pkgId] : [] }));
+                            setFieldErrors(prev => ({ ...prev, serviceOptionIds: "" }));
                         }}
                     >
                         <option value="">Select a service</option>
                         {services.map(s => <option key={s.serviceId} value={s.serviceId}>{s.serviceName}</option>)}
                     </Form.Select>
-                    {!selectedService && fieldErrors.servicePackageIds && (
-                        <div className="text-danger small mt-1">{fieldErrors.servicePackageIds}</div>
+                    {!selectedService && fieldErrors.serviceOptionIds && (
+                        <div className="text-danger small mt-1">{fieldErrors.serviceOptionIds}</div>
                     )}
                 </Form.Group>
 
                 {selectedService && (
                     <Form.Group className="mb-3">
-                        <Form.Label>Packages <span className="text-danger">*</span></Form.Label>
-                        {selectedService.servicePackages.length === 0 && (
-                            <div className="text-muted small">This service has no packages.</div>
+                        <Form.Label>Options <span className="text-danger">*</span></Form.Label>
+                        {selectedService.serviceOptions.length === 0 && (
+                            <div className="text-muted small">This service has no options.</div>
                         )}
-                        {selectedService.servicePackages.map(pkg => (
+                        {selectedService.serviceOptions.map(pkg => (
                             <Form.Check
-                                key={pkg.servicePackageId}
+                                key={pkg.serviceOptionId}
                                 type="checkbox"
-                                label={pkg.packageItems.length > 0
-                                    ? `${pkg.servicePackageName} - ${pkg.packageItems.map(i => i.packageItemName).join(", ")}`
-                                    : pkg.servicePackageName}
-                                checked={form.servicePackageIds.includes(pkg.servicePackageId)}
+                                label={pkg.serviceOptionItems.length > 0
+                                    ? `${pkg.serviceOptionName} - ${pkg.serviceOptionItems.map(i => i.serviceOptionItemName).join(", ")}`
+                                    : pkg.serviceOptionName}
+                                checked={form.serviceOptionIds.includes(pkg.serviceOptionId)}
                                 onChange={e => setForm(f => ({
                                     ...f,
-                                    servicePackageIds: e.target.checked
-                                        ? [...f.servicePackageIds, pkg.servicePackageId]
-                                        : f.servicePackageIds.filter(id => id !== pkg.servicePackageId),
+                                    serviceOptionIds: e.target.checked
+                                        ? [...f.serviceOptionIds, pkg.serviceOptionId]
+                                        : f.serviceOptionIds.filter(id => id !== pkg.serviceOptionId),
                                 }))}
                             />
                         ))}
-                        {fieldErrors.servicePackageIds && <div className="text-danger small">{fieldErrors.servicePackageIds}</div>}
+                        {fieldErrors.serviceOptionIds && <div className="text-danger small">{fieldErrors.serviceOptionIds}</div>}
                     </Form.Group>
                 )}
 

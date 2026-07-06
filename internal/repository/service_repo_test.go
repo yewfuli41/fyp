@@ -31,7 +31,7 @@ var _ = Describe("ServiceRepo", func() {
 		repo = repository.NewServiceRepo(db)
 		ctx = context.Background()
 		serviceCols = []string{"service_id", "business_id", "service_name", "description"}
-		pkgCols = []string{"service_package_id", "service_id", "service_package_name", "description"}
+		pkgCols = []string{"service_option_id", "service_id", "service_option_name", "description"}
 	})
 
 	AfterEach(func() {
@@ -59,42 +59,42 @@ var _ = Describe("ServiceRepo", func() {
 		})
 	})
 
-	Describe("InsertServicePackage", func() {
+	Describe("InsertServiceOption", func() {
 		It("inserts a new service package", func() {
-			p := param.ServicePackageParam{
+			p := param.ServiceOptionParam{
 				ServiceID:          10,
-				ServicePackageName: "Deep Tissue",
+				ServiceOptionName: "Deep Tissue",
 			}
 
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO service_packages")).
-				WithArgs(p.ServiceID, p.ServicePackageName, p.Description).
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO service_options")).
+				WithArgs(p.ServiceID, p.ServiceOptionName, p.Description).
 				WillReturnRows(sqlmock.NewRows(pkgCols).
 					AddRow(20, 10, "Deep Tissue", nil))
 
-			result, err := repo.InsertServicePackage(ctx, tx, p)
+			result, err := repo.InsertServiceOption(ctx, tx, p)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.ServicePackageID).To(Equal(int64(20)))
+			Expect(result.ServiceOptionID).To(Equal(int64(20)))
 		})
 	})
 
-	Describe("InsertPackageItem", func() {
+	Describe("InsertServiceOptionItem", func() {
 		It("inserts a new package item", func() {
-			p := param.PackageItemParam{
-				ServicePackageID: 20,
-				PackageItemName:  "Oil",
+			p := param.ServiceOptionItemParam{
+				ServiceOptionID: 20,
+				ServiceOptionItemName:  "Oil",
 			}
 
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("INSERT INTO package_items")).
-				WithArgs(p.ServicePackageID, p.PackageItemName).
+			mock.ExpectExec(regexp.QuoteMeta("INSERT INTO service_option_items")).
+				WithArgs(p.ServiceOptionID, p.ServiceOptionItemName).
 				WillReturnResult(sqlmock.NewResult(1, 1))
 
-			err := repo.InsertPackageItem(ctx, tx, p)
+			err := repo.InsertServiceOptionItem(ctx, tx, p)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
@@ -135,20 +135,20 @@ var _ = Describe("ServiceRepo", func() {
 		})
 	})
 
-	Describe("DeleteServicePackagesByServiceID", func() {
+	Describe("DeleteServiceOptionsByServiceID", func() {
 		It("soft deletes packages and items for a service", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE package_items SET deleted_at = NOW()")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE service_option_items SET deleted_at = NOW()")).
 				WithArgs(int64(10)).
 				WillReturnResult(sqlmock.NewResult(1, 1))
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE service_packages SET deleted_at = NOW()")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE service_options SET deleted_at = NOW()")).
 				WithArgs(int64(10)).
 				WillReturnResult(sqlmock.NewResult(1, 1))
 
-			err := repo.DeleteServicePackagesByServiceID(ctx, tx, 10)
+			err := repo.DeleteServiceOptionsByServiceID(ctx, tx, 10)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
@@ -169,55 +169,55 @@ var _ = Describe("ServiceRepo", func() {
 		})
 	})
 
-	Describe("GetServicePackagesByServiceID", func() {
+	Describe("GetServiceOptionsByServiceID", func() {
 		It("returns packages for a service", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_package_id, service_id, service_package_name, description FROM service_packages")).
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_option_id, service_id, service_option_name, description FROM service_options")).
 				WithArgs(int64(10)).
 				WillReturnRows(sqlmock.NewRows(pkgCols).
 					AddRow(20, 10, "Deep Tissue", nil).
 					AddRow(21, 10, "Swedish", nil))
 
-			results, err := repo.GetServicePackagesByServiceID(ctx, 10)
+			results, err := repo.GetServiceOptionsByServiceID(ctx, 10)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(results).To(HaveLen(2))
-			Expect(results[0].ServicePackageID).To(Equal(int64(20)))
+			Expect(results[0].ServiceOptionID).To(Equal(int64(20)))
 		})
 
 		It("returns empty slice when no packages exist", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_package_id, service_id, service_package_name, description FROM service_packages")).
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_option_id, service_id, service_option_name, description FROM service_options")).
 				WithArgs(int64(99)).
 				WillReturnRows(sqlmock.NewRows(pkgCols))
 
-			results, err := repo.GetServicePackagesByServiceID(ctx, 99)
+			results, err := repo.GetServiceOptionsByServiceID(ctx, 99)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(results).To(BeEmpty())
 		})
 	})
 
-	Describe("GetPackageItemsByPackageID", func() {
+	Describe("GetServiceOptionItemsByOptionID", func() {
 		It("returns items for a package", func() {
-			itemCols := []string{"package_item_id", "service_package_id", "package_item_name"}
+			itemCols := []string{"service_option_item_id", "service_option_id", "service_option_item_name"}
 
-			mock.ExpectQuery(regexp.QuoteMeta("SELECT package_item_id, service_package_id, package_item_name FROM package_items")).
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_option_item_id, service_option_id, service_option_item_name FROM service_option_items")).
 				WithArgs(int64(20)).
 				WillReturnRows(sqlmock.NewRows(itemCols).
 					AddRow(1, 20, "Oil").
 					AddRow(2, 20, "Lotion"))
 
-			results, err := repo.GetPackageItemsByPackageID(ctx, 20)
+			results, err := repo.GetServiceOptionItemsByOptionID(ctx, 20)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(results).To(HaveLen(2))
-			Expect(results[0].PackageItemName).To(Equal("Oil"))
+			Expect(results[0].ServiceOptionItemName).To(Equal("Oil"))
 		})
 
 		It("returns empty slice when no items exist", func() {
-			itemCols := []string{"package_item_id", "service_package_id", "package_item_name"}
+			itemCols := []string{"service_option_item_id", "service_option_id", "service_option_item_name"}
 
-			mock.ExpectQuery(regexp.QuoteMeta("SELECT package_item_id, service_package_id, package_item_name FROM package_items")).
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_option_item_id, service_option_id, service_option_item_name FROM service_option_items")).
 				WithArgs(int64(99)).
 				WillReturnRows(sqlmock.NewRows(itemCols))
 
-			results, err := repo.GetPackageItemsByPackageID(ctx, 99)
+			results, err := repo.GetServiceOptionItemsByOptionID(ctx, 99)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(results).To(BeEmpty())
 		})

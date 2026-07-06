@@ -9,7 +9,7 @@ import (
 
 type IServiceSlotRepo interface {
 	InsertServiceSlot(ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam) (int64, error)
-	InsertServiceSlotPackage(ctx context.Context, tx *sql.Tx, serviceSlotID int64, servicePackageID int64) error
+	InsertServiceSlotOption(ctx context.Context, tx *sql.Tx, serviceSlotID int64, serviceOptionID int64) error
 	// InsertRecurringSchedule creates one row per (staff, day) — not per
 	// package — and returns its ID so callers can attach it to every
 	// service_slots row generated for that weekday.
@@ -27,7 +27,7 @@ type IServiceSlotRepo interface {
 	SoftDeleteRecurringSchedule(ctx context.Context, tx *sql.Tx, businessID int64, recurringScheduleID int64) error
 
 	StaffBelongsToBusiness(ctx context.Context, staffID int64, businessID int64) (bool, error)
-	PackagesBelongToBusiness(ctx context.Context, businessID int64, packageIDs []int64) (bool, error)
+	OptionsBelongToBusiness(ctx context.Context, businessID int64, packageIDs []int64) (bool, error)
 	StaffCoversTime(ctx context.Context, staffID int64, weekday string, startTime, endTime time.Time) (bool, error)
 	GetAvailableStaff(ctx context.Context, businessID int64, date string, weekday string, startTime, endTime time.Time, excludeSlotID int64) ([]param.StaffParam, error)
 	HasBookingForServiceSlot(ctx context.Context, serviceSlotID int64) (bool, error)

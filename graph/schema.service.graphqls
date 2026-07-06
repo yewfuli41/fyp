@@ -4,44 +4,44 @@ type Service {
   business: BusinessProfile!
   serviceName: String!
   description: String
-  servicePackages: [ServicePackage!]!
+  serviceOptions: [ServiceOption!]!
   deletedAt: DateTime
 }
 
-type ServicePackage {
-  servicePackageId: ID!
+type ServiceOption {
+  serviceOptionId: ID!
   serviceId: ID!
   service: Service!
-  servicePackageName: String!
+  serviceOptionName: String!
   description: String
-  packageItems: [PackageItem!]!
-  serviceSlotPackages: [ServiceSlotPackage!]!
+  serviceOptionItems: [ServiceOptionItem!]!
+  serviceSlotOptions: [ServiceSlotOption!]!
   recurringSchedules: [RecurringSchedule!]!
   deletedAt: DateTime
 }
 
-type PackageItem {
-  packageItemId: ID!
-  servicePackageId: ID!
-  servicePackage: ServicePackage!
-  packageItemName: String!
+type ServiceOptionItem {
+  serviceOptionItemId: ID!
+  serviceOptionId: ID!
+  servicePackage: ServiceOption!
+  serviceOptionItemName: String!
   deletedAt: DateTime
 }
 
-input PackageItemInput {
-  packageItemName: String!
+input ServiceOptionItemInput {
+  serviceOptionItemName: String!
 }
 
-input ServicePackageInput {
-  servicePackageName: String!
+input ServiceOptionInput {
+  serviceOptionName: String!
   description: String
-  packageItems: [PackageItemInput!]!
+  serviceOptionItems: [ServiceOptionItemInput!]!
 }
 
 input ServiceInput {
   serviceName: String!
   description: String
-  servicePackages: [ServicePackageInput!]!
+  serviceOptions: [ServiceOptionInput!]!
 }
 
 extend type Query {

@@ -8,7 +8,7 @@ import {
 } from "../services/ServiceService";
 import { userProfile } from "../services/ProfileService";
 import { applyGraphQLErrors } from "../utils/graphqlErrors";
-import { emptyInput, emptyPackage } from "../utils/serviceFormHelpers";
+import { emptyInput, emptyOption } from "../utils/serviceFormHelpers";
 import ServiceFormModal from "../modals/ServiceFormModal";
 import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
 
@@ -86,15 +86,15 @@ export default function ServicePage() {
         setFormInput({
             serviceName: svc.serviceName,
             description: svc.description ?? "",
-            servicePackages: svc.servicePackages.length > 0
-                ? svc.servicePackages.map(pkg => ({
-                    servicePackageName: pkg.servicePackageName,
+            serviceOptions: svc.serviceOptions.length > 0
+                ? svc.serviceOptions.map(pkg => ({
+                    serviceOptionName: pkg.serviceOptionName,
                     description: pkg.description ?? "",
-                    packageItems: pkg.packageItems.length > 0
-                        ? pkg.packageItems.map(item => ({ packageItemName: item.packageItemName }))
-                        : [{ packageItemName: "" }],
+                    serviceOptionItems: pkg.serviceOptionItems.length > 0
+                        ? pkg.serviceOptionItems.map(item => ({ serviceOptionItemName: item.serviceOptionItemName }))
+                        : [{ serviceOptionItemName: "" }],
                 }))
-                : [emptyPackage(svc.serviceName)],
+                : [emptyOption(svc.serviceName)],
         });
         setFormError("");
         setFieldErrors({});
@@ -112,12 +112,12 @@ export default function ServicePage() {
         const payload: ServiceInput = {
             serviceName: formInput.serviceName,
             description: formInput.description || undefined,
-            servicePackages: formInput.servicePackages
-                .filter(pkg => pkg.servicePackageName.trim())
+            serviceOptions: formInput.serviceOptions
+                .filter(pkg => pkg.serviceOptionName.trim())
                 .map(pkg => ({
-                    servicePackageName: pkg.servicePackageName,
+                    serviceOptionName: pkg.serviceOptionName,
                     description: pkg.description || undefined,
-                    packageItems: pkg.packageItems.filter(i => i.packageItemName.trim()),
+                    serviceOptionItems: pkg.serviceOptionItems.filter(i => i.serviceOptionItemName.trim()),
                 })),
         };
 
@@ -174,13 +174,13 @@ export default function ServicePage() {
         return (
             svc.serviceName.toLowerCase().includes(searchText) ||
 
-            svc.servicePackages.some(pkg =>
-                pkg.servicePackageName
+            svc.serviceOptions.some(pkg =>
+                pkg.serviceOptionName
                     .toLowerCase()
                     .includes(searchText) ||
 
-                pkg.packageItems.some(item =>
-                    item.packageItemName
+                pkg.serviceOptionItems.some(item =>
+                    item.serviceOptionItemName
                         .toLowerCase()
                         .includes(searchText)
                 )
@@ -231,7 +231,7 @@ export default function ServicePage() {
                 </div>
                 <Form.Control
                     type="text"
-                    placeholder="Search services and packages..."
+                    placeholder="Search services and options..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     style={{ width: "440px" }}
@@ -264,24 +264,24 @@ export default function ServicePage() {
                                         {svc.description || "No description"}
                                     </p>
                                     <br></br>
-                                    <h3 className="h6 fw-bold mt-3 mb-2 text-start">Service Packages</h3>
-                                    {svc.servicePackages.length === 0 ? (
-                                        <p className="text-muted mb-0">No packages</p>
+                                    <h3 className="h6 fw-bold mt-3 mb-2 text-start">Service Options</h3>
+                                    {svc.serviceOptions.length === 0 ? (
+                                        <p className="text-muted mb-0">No options</p>
                                     ) : (
                                         <div className="d-flex flex-column gap-2 text-start">
-                                            {svc.servicePackages.map(pkg => (
-                                                <div key={pkg.servicePackageId}>
+                                            {svc.serviceOptions.map(pkg => (
+                                                <div key={pkg.serviceOptionId}>
                                                     <div className="fw-semibold">
-                                                        {pkg.servicePackageName}
+                                                        {pkg.serviceOptionName}
                                                         {pkg.description && (
                                                             <span className="text-muted fw-normal ms-1">— {pkg.description}</span>
                                                         )}
                                                     </div>
-                                                    {pkg.packageItems.length > 0 && (
+                                                    {pkg.serviceOptionItems.length > 0 && (
                                                         <ul className="mb-0 mt-1 ps-3">
-                                                            {pkg.packageItems.map(item => (
-                                                                <li key={item.packageItemId} className="text-muted small">
-                                                                    {item.packageItemName}
+                                                            {pkg.serviceOptionItems.map(item => (
+                                                                <li key={item.serviceOptionItemId} className="text-muted small">
+                                                                    {item.serviceOptionItemName}
                                                                 </li>
                                                             ))}
                                                         </ul>

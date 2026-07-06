@@ -1,51 +1,51 @@
 import { doGraphQL } from "../api/graphql";
 
-export interface PackageItemInput {
-    packageItemName: string;
+export interface ServiceOptionItemInput {
+    serviceOptionItemName: string;
 }
 
-export interface ServicePackageInput {
-    servicePackageName: string;
+export interface ServiceOptionInput {
+    serviceOptionName: string;
     description?: string;
-    packageItems: PackageItemInput[];
+    serviceOptionItems: ServiceOptionItemInput[];
 }
 
 export interface ServiceInput {
     serviceName: string;
     description?: string;
-    servicePackages: ServicePackageInput[];
+    serviceOptions: ServiceOptionInput[];
 }
 
-export interface PackageItem {
-    packageItemId: string;
-    packageItemName: string;
+export interface ServiceOptionItem {
+    serviceOptionItemId: string;
+    serviceOptionItemName: string;
 }
 
-export interface ServicePackage {
-    servicePackageId: string;
-    servicePackageName: string;
+export interface ServiceOption {
+    serviceOptionId: string;
+    serviceOptionName: string;
     description?: string;
-    packageItems: PackageItem[];
+    serviceOptionItems: ServiceOptionItem[];
 }
 
 export interface Service {
     serviceId: string;
     serviceName: string;
     description?: string;
-    servicePackages: ServicePackage[];
+    serviceOptions: ServiceOption[];
 }
 
 const SERVICE_FIELDS = `
     serviceId
     serviceName
     description
-    servicePackages {
-        servicePackageId
-        servicePackageName
+    serviceOptions {
+        serviceOptionId
+        serviceOptionName
         description
-        packageItems {
-            packageItemId
-            packageItemName
+        serviceOptionItems {
+            serviceOptionItemId
+            serviceOptionItemName
         }
     }
 `;
@@ -53,11 +53,11 @@ const SERVICE_FIELDS = `
 const serializeInput = (service: ServiceInput): string => `{
     serviceName: ${JSON.stringify(service.serviceName)},
     description: ${service.description ? JSON.stringify(service.description) : "null"},
-    servicePackages: [${service.servicePackages.map(pkg => `{
-        servicePackageName: ${JSON.stringify(pkg.servicePackageName)},
+    serviceOptions: [${service.serviceOptions.map(pkg => `{
+        serviceOptionName: ${JSON.stringify(pkg.serviceOptionName)},
         description: ${pkg.description ? JSON.stringify(pkg.description) : "null"},
-        packageItems: [${pkg.packageItems.map(item => `{
-            packageItemName: ${JSON.stringify(item.packageItemName)}
+        serviceOptionItems: [${pkg.serviceOptionItems.map(item => `{
+            serviceOptionItemName: ${JSON.stringify(item.serviceOptionItemName)}
         }`).join(",")}]
     }`).join(",")}]
 }`;

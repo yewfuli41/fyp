@@ -28,71 +28,71 @@ func NewServiceService(db *sql.DB, serviceRepo interfaces.IServiceRepo) interfac
 // after the service itself (representing "book this service, no specific
 // package"), without duplicating one the user already named that way.
 func ensureDefaultPackage(p *param.ServiceParam) {
-	for _, pkg := range p.ServicePackages {
-		if strings.EqualFold(pkg.ServicePackageName, p.ServiceName) {
+	for _, pkg := range p.ServiceOptions {
+		if strings.EqualFold(pkg.ServiceOptionName, p.ServiceName) {
 			return
 		}
 	}
-	p.ServicePackages = append([]param.ServicePackageParam{{ServicePackageName: p.ServiceName}}, p.ServicePackages...)
+	p.ServiceOptions = append([]param.ServiceOptionParam{{ServiceOptionName: p.ServiceName}}, p.ServiceOptions...)
 }
 
-// ensureDefaultPackageItems guarantees every package always has an item named
+// ensureDefaultServiceOptionItems guarantees every package always has an item named
 // after the service itself, without duplicating one the user already named
 // that way.
-func ensureDefaultPackageItems(packages []param.ServicePackageParam, serviceName string) {
+func ensureDefaultServiceOptionItems(packages []param.ServiceOptionParam, serviceName string) {
 	for i := range packages {
 		hasDefault := false
-		for _, item := range packages[i].PackageItems {
-			if strings.EqualFold(item.PackageItemName, serviceName) {
+		for _, item := range packages[i].ServiceOptionItems {
+			if strings.EqualFold(item.ServiceOptionItemName, serviceName) {
 				hasDefault = true
 				break
 			}
 		}
 		if !hasDefault {
-			packages[i].PackageItems = append([]param.PackageItemParam{{PackageItemName: serviceName}}, packages[i].PackageItems...)
+			packages[i].ServiceOptionItems = append([]param.ServiceOptionItemParam{{ServiceOptionItemName: serviceName}}, packages[i].ServiceOptionItems...)
 		}
 	}
 }
 
 // itemSetSignature returns a canonical, order-independent representation of a
 // package's item names, used to detect packages with identical item lists.
-func itemSetSignature(items []param.PackageItemParam) string {
+func itemSetSignature(items []param.ServiceOptionItemParam) string {
 	names := make([]string, len(items))
 	for i, item := range items {
-		names[i] = strings.ToLower(item.PackageItemName)
+		names[i] = strings.ToLower(item.ServiceOptionItemName)
 	}
 	sort.Strings(names)
 	return strings.Join(names, "\x00")
 }
 
-func validatePackageDuplicates(packages []param.ServicePackageParam) errs.ValidationErrors {
+func validatePackageDuplicates(packages []param.ServiceOptionParam) errs.ValidationErrors {
 	var validationErrs errs.ValidationErrors
 	seenPkgNames := make(map[string]bool)
 	seenItemSets := make(map[string]int)
 	for i, pkg := range packages {
-		lower := strings.ToLower(pkg.ServicePackageName)
+		lower := strings.ToLower(pkg.ServiceOptionName)
 		if seenPkgNames[lower] {
 			validationErrs = append(validationErrs, errs.ValidationError{
-				Field: fmt.Sprintf("servicePackageName[%d]", i), Message: "Service package name already exists",
+				Field: fmt.Sprintf("serviceOptionName[%d]", i), Message: "Service package name already exists",
 			})
 		}
 		seenPkgNames[lower] = true
 
 		seenItemNames := make(map[string]bool)
-		for j, item := range pkg.PackageItems {
-			lowerItem := strings.ToLower(item.PackageItemName)
+		for j, item := range pkg.ServiceOptionItems {
+			lowerItem := strings.ToLower(item.ServiceOptionItemName)
 			if seenItemNames[lowerItem] {
 				validationErrs = append(validationErrs, errs.ValidationError{
-					Field: fmt.Sprintf("packageItemName[%d][%d]", i, j), Message: "Package item name already exists",
+					Field: fmt.Sprintf("serviceOptionItemName[%d][%d]", i, j), Message: "Package item name already exists",
 				})
 			}
 			seenItemNames[lowerItem] = true
 		}
 
-		signature := itemSetSignature(pkg.PackageItems)
+		signature := itemSetSignature(pkg.ServiceOptionItems)
 		if firstIdx, exists := seenItemSets[signature]; exists {
 			validationErrs = append(validationErrs, errs.ValidationError{
-				Field:   fmt.Sprintf("servicePackages[%d]", i),
+				Field:   fmt.Sprintf("serviceOptions[%d]", i),
 				Message: fmt.Sprintf("Package items are identical to package %d", firstIdx+1),
 			})
 		} else {
@@ -108,9 +108,9 @@ func (s *serviceService) CreateService(ctx context.Context, p param.ServiceParam
 	}
 
 	ensureDefaultPackage(&p)
-	ensureDefaultPackageItems(p.ServicePackages, p.ServiceName)
+	ensureDefaultServiceOptionItems(p.ServiceOptions, p.ServiceName)
 
-	if validationErrs := validatePackageDuplicates(p.ServicePackages); len(validationErrs) > 0 {
+	if validationErrs := validatePackageDuplicates(p.ServiceOptions); len(validationErrs) > 0 {
 		return nil, validationErrs
 	}
 
@@ -124,26 +124,26 @@ func (s *serviceService) CreateService(ctx context.Context, p param.ServiceParam
 			return err
 		}
 
-		for i, pkg := range p.ServicePackages {
+		for i, pkg := range p.ServiceOptions {
 			pkg.ServiceID = created.ServiceID
-			createdPkg, err := s.serviceRepo.InsertServicePackage(ctx, tx, pkg)
+			createdPkg, err := s.serviceRepo.InsertServiceOption(ctx, tx, pkg)
 			if err != nil {
-				if database.IsUniqueViolation(err, "service_packages_unique_name") {
-					return errs.ValidationErrors{{Field: fmt.Sprintf("servicePackageName[%d]", i), Message: "Service package name already exists"}}
+				if database.IsUniqueViolation(err, "service_options_unique_name") {
+					return errs.ValidationErrors{{Field: fmt.Sprintf("serviceOptionName[%d]", i), Message: "Service package name already exists"}}
 				}
 				return err
 			}
-			for j, item := range pkg.PackageItems {
-				item.ServicePackageID = createdPkg.ServicePackageID
-				if err := s.serviceRepo.InsertPackageItem(ctx, tx, item); err != nil {
-					if database.IsUniqueViolation(err, "package_items_unique_name") {
-						return errs.ValidationErrors{{Field: fmt.Sprintf("packageItemName[%d][%d]", i, j), Message: "Package item name already exists"}}
+			for j, item := range pkg.ServiceOptionItems {
+				item.ServiceOptionID = createdPkg.ServiceOptionID
+				if err := s.serviceRepo.InsertServiceOptionItem(ctx, tx, item); err != nil {
+					if database.IsUniqueViolation(err, "service_option_items_unique_name") {
+						return errs.ValidationErrors{{Field: fmt.Sprintf("serviceOptionItemName[%d][%d]", i, j), Message: "Package item name already exists"}}
 					}
 					return err
 				}
 			}
-			createdPkg.PackageItems = pkg.PackageItems
-			created.ServicePackages = append(created.ServicePackages, *createdPkg)
+			createdPkg.ServiceOptionItems = pkg.ServiceOptionItems
+			created.ServiceOptions = append(created.ServiceOptions, *createdPkg)
 		}
 		result = created
 		return nil
@@ -160,9 +160,9 @@ func (s *serviceService) UpdateService(ctx context.Context, p param.ServiceParam
 	}
 
 	ensureDefaultPackage(&p)
-	ensureDefaultPackageItems(p.ServicePackages, p.ServiceName)
+	ensureDefaultServiceOptionItems(p.ServiceOptions, p.ServiceName)
 
-	if validationErrs := validatePackageDuplicates(p.ServicePackages); len(validationErrs) > 0 {
+	if validationErrs := validatePackageDuplicates(p.ServiceOptions); len(validationErrs) > 0 {
 		return nil, validationErrs
 	}
 
@@ -176,30 +176,30 @@ func (s *serviceService) UpdateService(ctx context.Context, p param.ServiceParam
 			return err
 		}
 
-		if err := s.serviceRepo.DeleteServicePackagesByServiceID(ctx, tx, updated.ServiceID); err != nil {
+		if err := s.serviceRepo.DeleteServiceOptionsByServiceID(ctx, tx, updated.ServiceID); err != nil {
 			return err
 		}
 
-		for i, pkg := range p.ServicePackages {
+		for i, pkg := range p.ServiceOptions {
 			pkg.ServiceID = updated.ServiceID
-			createdPkg, err := s.serviceRepo.InsertServicePackage(ctx, tx, pkg)
+			createdPkg, err := s.serviceRepo.InsertServiceOption(ctx, tx, pkg)
 			if err != nil {
-				if database.IsUniqueViolation(err, "service_packages_unique_name") {
-					return errs.ValidationErrors{{Field: fmt.Sprintf("servicePackageName[%d]", i), Message: "Service package name already exists"}}
+				if database.IsUniqueViolation(err, "service_options_unique_name") {
+					return errs.ValidationErrors{{Field: fmt.Sprintf("serviceOptionName[%d]", i), Message: "Service package name already exists"}}
 				}
 				return err
 			}
-			for j, item := range pkg.PackageItems {
-				item.ServicePackageID = createdPkg.ServicePackageID
-				if err := s.serviceRepo.InsertPackageItem(ctx, tx, item); err != nil {
-					if database.IsUniqueViolation(err, "package_items_unique_name") {
-						return errs.ValidationErrors{{Field: fmt.Sprintf("packageItemName[%d][%d]", i, j), Message: "Package item name already exists"}}
+			for j, item := range pkg.ServiceOptionItems {
+				item.ServiceOptionID = createdPkg.ServiceOptionID
+				if err := s.serviceRepo.InsertServiceOptionItem(ctx, tx, item); err != nil {
+					if database.IsUniqueViolation(err, "service_option_items_unique_name") {
+						return errs.ValidationErrors{{Field: fmt.Sprintf("serviceOptionItemName[%d][%d]", i, j), Message: "Package item name already exists"}}
 					}
 					return err
 				}
 			}
-			createdPkg.PackageItems = pkg.PackageItems
-			updated.ServicePackages = append(updated.ServicePackages, *createdPkg)
+			createdPkg.ServiceOptionItems = pkg.ServiceOptionItems
+			updated.ServiceOptions = append(updated.ServiceOptions, *createdPkg)
 		}
 		result = updated
 		return nil
@@ -231,18 +231,18 @@ func (s *serviceService) GetServicesByBusinessID(ctx context.Context, businessID
 	}
 
 	for i := range services {
-		packages, err := s.serviceRepo.GetServicePackagesByServiceID(ctx, services[i].ServiceID)
+		packages, err := s.serviceRepo.GetServiceOptionsByServiceID(ctx, services[i].ServiceID)
 		if err != nil {
 			return nil, err
 		}
 		for j := range packages {
-			items, err := s.serviceRepo.GetPackageItemsByPackageID(ctx, packages[j].ServicePackageID)
+			items, err := s.serviceRepo.GetServiceOptionItemsByOptionID(ctx, packages[j].ServiceOptionID)
 			if err != nil {
 				return nil, err
 			}
-			packages[j].PackageItems = items
+			packages[j].ServiceOptionItems = items
 		}
-		services[i].ServicePackages = packages
+		services[i].ServiceOptions = packages
 	}
 	return services, nil
 }

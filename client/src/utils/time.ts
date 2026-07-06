@@ -55,7 +55,7 @@ export const endTimeSlice = (startTime: string, options?: OptionParam): string[]
     if(options === undefined || startTime > options.businessStartTime)
         startIndex = TIME_ARRAY.indexOf(startTime) + 1
     else 
-        startIndex = TIME_ARRAY.indexOf(options.businessStartTime)
+        startIndex = TIME_ARRAY.indexOf(options.businessStartTime) + 1
     if (startIndex === -1) 
         return TIME_ARRAY
     else if(options){

@@ -41,8 +41,8 @@ func (r *mutationResolver) CreateServiceSlot(ctx context.Context, input model.Se
 		staffID = staffScope
 	}
 
-	packageIDs := make([]int64, 0, len(input.ServicePackageIds))
-	for _, id := range input.ServicePackageIds {
+	packageIDs := make([]int64, 0, len(input.ServiceOptionIds))
+	for _, id := range input.ServiceOptionIds {
 		pid, err := parseID(id)
 		if err != nil {
 			return nil, fmt.Errorf("invalid package ID")
@@ -60,14 +60,14 @@ func (r *mutationResolver) CreateServiceSlot(ctx context.Context, input model.Se
 	}
 
 	p := param.ServiceSlotParam{
-		BusinessID:        businessID,
-		StaffID:           staffID,
-		Date:              date,
-		DaysOfWeek:        daysOfWeek,
-		StartTime:         input.StartTime,
-		EndTime:           input.EndTime,
-		ServicePackageIDs: packageIDs,
-		CreatedBy:         currentUser.UserID,
+		BusinessID:     businessID,
+		StaffID:        staffID,
+		Date:           date,
+		DaysOfWeek:     daysOfWeek,
+		StartTime:      input.StartTime,
+		EndTime:        input.EndTime,
+		ServiceOptionIDs: packageIDs,
+		CreatedBy:      currentUser.UserID,
 	}
 
 	result, err := r.App.ServiceSlotService.CreateServiceSlot(ctx, p)
@@ -108,8 +108,8 @@ func (r *mutationResolver) UpdateServiceSlot(ctx context.Context, serviceSlotID 
 		staffID = staffScope
 	}
 
-	packageIDs := make([]int64, 0, len(input.ServicePackageIds))
-	for _, id := range input.ServicePackageIds {
+	packageIDs := make([]int64, 0, len(input.ServiceOptionIds))
+	for _, id := range input.ServiceOptionIds {
 		pid, err := parseID(id)
 		if err != nil {
 			return nil, fmt.Errorf("invalid package ID")
@@ -127,15 +127,15 @@ func (r *mutationResolver) UpdateServiceSlot(ctx context.Context, serviceSlotID 
 	}
 
 	p := param.ServiceSlotParam{
-		ServiceSlotID:     slotID,
-		BusinessID:        businessID,
-		StaffID:           staffID,
-		Date:              date,
-		DaysOfWeek:        daysOfWeek,
-		StartTime:         input.StartTime,
-		EndTime:           input.EndTime,
-		ServicePackageIDs: packageIDs,
-		CreatedBy:         currentUser.UserID,
+		ServiceSlotID:  slotID,
+		BusinessID:     businessID,
+		StaffID:        staffID,
+		Date:           date,
+		DaysOfWeek:     daysOfWeek,
+		StartTime:      input.StartTime,
+		EndTime:        input.EndTime,
+		ServiceOptionIDs: packageIDs,
+		CreatedBy:      currentUser.UserID,
 	}
 
 	result, err := r.App.ServiceSlotService.UpdateServiceSlot(ctx, p, applyToFutureRecurring, staffScope)

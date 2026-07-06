@@ -1,10 +1,10 @@
 import { doGraphQL } from "../api/graphql";
 
 export interface SlotPackage {
-    slotPackageId: string;
-    servicePackage: {
-        servicePackageId: string;
-        servicePackageName: string;
+    slotOptionId: string;
+    serviceOption: {
+        serviceOptionId: string;
+        serviceOptionName: string;
         service: { serviceId: string; serviceName: string };
     };
 }
@@ -15,7 +15,7 @@ export interface ServiceSlot {
     startTime: string; // RFC3339, e.g. "0000-01-01T09:00:00Z"
     endTime: string;
     staff?: { staffId: string; name: string } | null;
-    serviceSlotPackages: SlotPackage[];
+    serviceSlotOptions: SlotPackage[];
     hasBooking: boolean;
 }
 
@@ -25,7 +25,7 @@ export interface ServiceSlotInput {
     daysOfWeek: string[];   // ... recurring weekdays e.g. ["monday"]
     startTime: string;      // "HH:MM"
     endTime: string;        // "HH:MM"
-    servicePackageIds: string[];
+    serviceOptionIds: string[];
 }
 
 // The Time scalar is RFC3339; the backend only cares about the clock part.
@@ -46,11 +46,11 @@ const SLOT_FIELDS = `
     startTime
     endTime
     staff { staffId name }
-    serviceSlotPackages {
-        slotPackageId
-        servicePackage {
-            servicePackageId
-            servicePackageName
+    serviceSlotOptions {
+        slotOptionId
+        serviceOption {
+            serviceOptionId
+            serviceOptionName
             service { serviceId serviceName }
         }
     }
@@ -69,7 +69,7 @@ const buildInputBody = (input: ServiceSlotInput): string => {
         ${scheduleLine}
         startTime: "${toTimeScalar(input.startTime)}",
         endTime: "${toTimeScalar(input.endTime)}",
-        servicePackageIds: [${input.servicePackageIds.map(id => `"${id}"`).join(", ")}]
+        serviceOptionIds: [${input.serviceOptionIds.map(id => `"${id}"`).join(", ")}]
     `;
 };
 

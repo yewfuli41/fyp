@@ -3,7 +3,7 @@ import { Alert, Button, Form, Modal } from "react-bootstrap";
 import type { Service } from "../services/ServiceService";
 import type { Staff } from "../services/StaffService";
 import { extractTime, type ServiceSlot, type ServiceSlotInput } from "../services/ServiceSlotService";
-import { cap, computeTimeOptions, defaultPackageId, todayISO, type WorkingHour } from "../utils/serviceSlotHelpers";
+import { cap, computeTimeOptions, defaultOptionId, todayISO, type WorkingHour } from "../utils/serviceSlotHelpers";
 import { DAYS_OF_WEEK } from "../utils/time";
 
 interface ManageServiceSlotModalProps {
@@ -89,14 +89,14 @@ export default function ManageServiceSlotModal({
                         <p className="mb-1"><strong>Date:</strong> {managing.date}</p>
                         <p className="mb-1"><strong>Time:</strong> {extractTime(managing.startTime)}–{extractTime(managing.endTime)}</p>
                         <p className="mb-1"><strong>Staff:</strong> {managing.staff?.name ?? "—"}</p>
-                        <p className="mb-3"><strong>Packages:</strong>{" "}
-                            {managing.serviceSlotPackages.map(p => p.servicePackage.servicePackageName).join(", ") || "—"}
+                        <p className="mb-3"><strong>Options:</strong>{" "}
+                            {managing.serviceSlotOptions.map(p => p.serviceOption.serviceOptionName).join(", ") || "—"}
                         </p>
 
                         {allowReassign ? (
                             <>
                                 <Alert variant="info" className="py-2 small">
-                                    This slot already has a booking — date, time, staff and packages can no longer be
+                                    This slot already has a booking — date, time, staff and options can no longer be
                                     changed. You can still reassign staff below.
                                 </Alert>
 
@@ -133,42 +133,42 @@ export default function ManageServiceSlotModal({
                                 onChange={e => {
                                     const serviceId = e.target.value;
                                     setEditFormServiceId(serviceId);
-                                    const pkgId = defaultPackageId(services, serviceId);
-                                    setEditForm(f => ({ ...f, servicePackageIds: pkgId ? [pkgId] : [] }));
-                                    setEditFieldErrors(prev => ({ ...prev, servicePackageIds: "" }));
+                                    const pkgId = defaultOptionId(services, serviceId);
+                                    setEditForm(f => ({ ...f, serviceOptionIds: pkgId ? [pkgId] : [] }));
+                                    setEditFieldErrors(prev => ({ ...prev, serviceOptionIds: "" }));
                                 }}
                             >
                                 <option value="">Select a service</option>
                                 {services.map(s => <option key={s.serviceId} value={s.serviceId}>{s.serviceName}</option>)}
                             </Form.Select>
-                            {!editSelectedService && editFieldErrors.servicePackageIds && (
-                                <div className="text-danger small mt-1">{editFieldErrors.servicePackageIds}</div>
+                            {!editSelectedService && editFieldErrors.serviceOptionIds && (
+                                <div className="text-danger small mt-1">{editFieldErrors.serviceOptionIds}</div>
                             )}
                         </Form.Group>
 
                         {editSelectedService && (
                             <Form.Group className="mb-3">
-                                <Form.Label>Packages <span className="text-danger">*</span></Form.Label>
-                                {editSelectedService.servicePackages.length === 0 && (
-                                    <div className="text-muted small">This service has no packages.</div>
+                                <Form.Label>Options <span className="text-danger">*</span></Form.Label>
+                                {editSelectedService.serviceOptions.length === 0 && (
+                                    <div className="text-muted small">This service has no options.</div>
                                 )}
-                                {editSelectedService.servicePackages.map(pkg => (
+                                {editSelectedService.serviceOptions.map(pkg => (
                                     <Form.Check
-                                        key={pkg.servicePackageId}
+                                        key={pkg.serviceOptionId}
                                         type="checkbox"
-                                        label={pkg.packageItems.length > 0
-                                            ? `${pkg.servicePackageName} - ${pkg.packageItems.map(i => i.packageItemName).join(", ")}`
-                                            : pkg.servicePackageName}
-                                        checked={editForm.servicePackageIds.includes(pkg.servicePackageId)}
+                                         label={pkg.serviceOptionItems.length > 0
+                                            ? `${pkg.serviceOptionName} - ${pkg.serviceOptionItems.map(i => i.serviceOptionItemName).join(", ")}`
+                                            : pkg.serviceOptionName}
+                                        checked={editForm.serviceOptionIds.includes(pkg.serviceOptionId)}
                                         onChange={e => setEditForm(f => ({
                                             ...f,
-                                            servicePackageIds: e.target.checked
-                                                ? [...f.servicePackageIds, pkg.servicePackageId]
-                                                : f.servicePackageIds.filter(id => id !== pkg.servicePackageId),
+                                            serviceOptionIds: e.target.checked
+                                                ? [...f.serviceOptionIds, pkg.serviceOptionId]
+                                                : f.serviceOptionIds.filter(id => id !== pkg.serviceOptionId),
                                         }))}
                                     />
                                 ))}
-                                {editFieldErrors.servicePackageIds && <div className="text-danger small">{editFieldErrors.servicePackageIds}</div>}
+                                {editFieldErrors.serviceOptionIds && <div className="text-danger small">{editFieldErrors.serviceOptionIds}</div>}
                             </Form.Group>
                         )}
 

@@ -51,14 +51,14 @@ export const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export const emptyForm = (date: string): ServiceSlotInput => ({
     staffId: "", date, daysOfWeek: [], startTime: DEFAULT_START, endTime: DEFAULT_END,
-    servicePackageIds: [],
+    serviceOptionIds: [],
 });
 
-// A service's first package (lowest servicePackageId) is always its
+// A service's first package (lowest serviceOptionId) is always its
 // auto-created default package (named after the service itself), so
 // selecting a service can safely pre-check it as the initial package choice.
-export const defaultPackageId = (services: Service[], serviceId: string): string | undefined =>
-    services.find(s => s.serviceId === serviceId)?.servicePackages[0]?.servicePackageId;
+export const defaultOptionId = (services: Service[], serviceId: string): string | undefined =>
+    services.find(s => s.serviceId === serviceId)?.serviceOptions[0]?.serviceOptionId;
 
 // Allowed slot times = working-hours envelope of the chosen staff (or the
 // business, for owner-managed) across the selected weekday(s) / date. Shared

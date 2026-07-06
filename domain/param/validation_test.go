@@ -149,14 +149,14 @@ var _ = Describe("maxLengthError boundaries", func() {
 		It("rejects a package name one character over the limit", func() {
 			p := param.ServiceParam{
 				ServiceName: "Massage",
-				ServicePackages: []param.ServicePackageParam{
-					{ServicePackageName: strings.Repeat("p", 256)},
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionName: strings.Repeat("p", 256)},
 				},
 			}
 			err := p.Validate()
 			Expect(err).To(HaveOccurred())
 			Expect(err.(errs.ValidationErrors)).To(ContainElement(
-				errs.ValidationError{Field: "servicePackages[0].servicePackageName", Message: "Service package name must be at most 255 characters"},
+				errs.ValidationError{Field: "serviceOptions[0].serviceOptionName", Message: "Service option name must be at most 255 characters"},
 			))
 		})
 	})

@@ -36,22 +36,22 @@ func MapService(s *param.ServiceParam) *model.Service {
 		return nil
 	}
 
-	packages := make([]*model.ServicePackage, len(s.ServicePackages))
-	for i, pkg := range s.ServicePackages {
-		items := make([]*model.PackageItem, len(pkg.PackageItems))
-		for j, item := range pkg.PackageItems {
-			items[j] = &model.PackageItem{
-				PackageItemID:   strconv.FormatInt(item.PackageItemID, 10),
-				PackageItemName: item.PackageItemName,
+	packages := make([]*model.ServiceOption, len(s.ServiceOptions))
+	for i, pkg := range s.ServiceOptions {
+		items := make([]*model.ServiceOptionItem, len(pkg.ServiceOptionItems))
+		for j, item := range pkg.ServiceOptionItems {
+			items[j] = &model.ServiceOptionItem{
+				ServiceOptionItemID:   strconv.FormatInt(item.ServiceOptionItemID, 10),
+				ServiceOptionItemName: item.ServiceOptionItemName,
 			}
 		}
-		packages[i] = &model.ServicePackage{
-			ServicePackageID:    strconv.FormatInt(pkg.ServicePackageID, 10),
+		packages[i] = &model.ServiceOption{
+			ServiceOptionID:    strconv.FormatInt(pkg.ServiceOptionID, 10),
 			ServiceID:           strconv.FormatInt(pkg.ServiceID, 10),
-			ServicePackageName:  pkg.ServicePackageName,
+			ServiceOptionName:  pkg.ServiceOptionName,
 			Description:         pkg.Description,
-			PackageItems:        items,
-			ServiceSlotPackages: []*model.ServiceSlotPackage{},
+			ServiceOptionItems:        items,
+			ServiceSlotOptions: []*model.ServiceSlotOption{},
 			RecurringSchedules:  []*model.RecurringSchedule{},
 		}
 	}
@@ -61,7 +61,7 @@ func MapService(s *param.ServiceParam) *model.Service {
 		BusinessID:      strconv.FormatInt(s.BusinessID, 10),
 		ServiceName:     s.ServiceName,
 		Description:     s.Description,
-		ServicePackages: packages,
+		ServiceOptions: packages,
 	}
 }
 
@@ -110,23 +110,23 @@ func MapServiceSlot(s *param.ServiceSlotParam) *model.ServiceSlot {
 		staffModel = MapStaff(&param.StaffParam{StaffID: *s.StaffID, StaffName: s.StaffName})
 	}
 
-	packages := make([]*model.ServiceSlotPackage, len(s.Packages))
+	packages := make([]*model.ServiceSlotOption, len(s.Packages))
 	for i, pkg := range s.Packages {
-		packages[i] = &model.ServiceSlotPackage{
-			SlotPackageID:    strconv.FormatInt(pkg.SlotPackageID, 10),
-			ServicePackageID: strconv.FormatInt(pkg.ServicePackageID, 10),
+		packages[i] = &model.ServiceSlotOption{
+			SlotOptionID:    strconv.FormatInt(pkg.SlotOptionID, 10),
+			ServiceOptionID: strconv.FormatInt(pkg.ServiceOptionID, 10),
 			ServiceSlotID:    slotID,
-			ServicePackage: &model.ServicePackage{
-				ServicePackageID:   strconv.FormatInt(pkg.ServicePackageID, 10),
+			ServiceOption: &model.ServiceOption{
+				ServiceOptionID:   strconv.FormatInt(pkg.ServiceOptionID, 10),
 				ServiceID:          strconv.FormatInt(pkg.ServiceID, 10),
-				ServicePackageName: pkg.ServicePackageName,
+				ServiceOptionName: pkg.ServiceOptionName,
 				Service: &model.Service{
 					ServiceID:       strconv.FormatInt(pkg.ServiceID, 10),
 					ServiceName:     pkg.ServiceName,
-					ServicePackages: []*model.ServicePackage{},
+					ServiceOptions: []*model.ServiceOption{},
 				},
-				PackageItems:        []*model.PackageItem{},
-				ServiceSlotPackages: []*model.ServiceSlotPackage{},
+				ServiceOptionItems:        []*model.ServiceOptionItem{},
+				ServiceSlotOptions: []*model.ServiceSlotOption{},
 				RecurringSchedules:  []*model.RecurringSchedule{},
 			},
 			Bookings: []*model.Booking{},
@@ -140,7 +140,7 @@ func MapServiceSlot(s *param.ServiceSlotParam) *model.ServiceSlot {
 		Date:                s.Date,
 		StartTime:           s.StartTime,
 		EndTime:             s.EndTime,
-		ServiceSlotPackages: packages,
+		ServiceSlotOptions: packages,
 		HasBooking:          s.HasBooking,
 	}
 }

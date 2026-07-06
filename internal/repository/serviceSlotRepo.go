@@ -42,8 +42,8 @@ func recurringScheduleArg(recurringScheduleID *int64) any {
 // may have no staff, so scoping goes through the packages.
 func businessScopeSQL(slotAlias, businessParam string) string {
 	return fmt.Sprintf(`EXISTS (
-		SELECT 1 FROM service_slot_packages ssp
-		JOIN service_packages sp ON sp.service_package_id = ssp.service_package_id
+		SELECT 1 FROM service_slot_options ssp
+		JOIN service_options sp ON sp.service_option_id = ssp.service_option_id
 		JOIN services s ON s.service_id = sp.service_id
 		WHERE ssp.service_slot_id = %s.service_slot_id
 			AND s.business_id = %s
@@ -56,7 +56,7 @@ func businessScopeSQL(slotAlias, businessParam string) string {
 func hasBookingSQL(slotAlias string) string {
 	return fmt.Sprintf(`EXISTS (
 		SELECT 1 FROM bookings b
-		JOIN service_slot_packages ssp ON b.slot_package_id = ssp.slot_package_id
+		JOIN service_slot_options ssp ON b.slot_option_id = ssp.slot_option_id
 		WHERE ssp.service_slot_id = %s.service_slot_id
 			AND b.deleted_at IS NULL
 	)`, slotAlias)
@@ -72,17 +72,17 @@ func (r *serviceSlotRepo) InsertServiceSlot(ctx context.Context, tx *sql.Tx, p p
 	return slotID, err
 }
 
-func (r *serviceSlotRepo) InsertServiceSlotPackage(ctx context.Context, tx *sql.Tx, serviceSlotID int64, servicePackageID int64) error {
+func (r *serviceSlotRepo) InsertServiceSlotOption(ctx context.Context, tx *sql.Tx, serviceSlotID int64, serviceOptionID int64) error {
 	_, err := tx.ExecContext(ctx, `
-		INSERT INTO service_slot_packages (service_package_id, service_slot_id)
+		INSERT INTO service_slot_options (service_option_id, service_slot_id)
 		VALUES ($1, $2)
-	`, servicePackageID, serviceSlotID)
+	`, serviceOptionID, serviceSlotID)
 	return err
 }
 
 // InsertRecurringSchedule records one (staff, day) series — not per package,
 // since a slot's bookable packages are attached separately via
-// service_slot_packages regardless of how many there are.
+// service_slot_options regardless of how many there are.
 func (r *serviceSlotRepo) InsertRecurringSchedule(ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam, day string) (int64, error) {
 	// recurring_schedules.staff_id is NOT NULL, so only staff-assigned slots are recorded here.
 	if p.StaffID == nil {
@@ -125,8 +125,8 @@ func (r *serviceSlotRepo) GetServiceSlotsByBusinessAndDate(ctx context.Context, 
 		args = append(args, *serviceID)
 		query += fmt.Sprintf(`
 			AND EXISTS (
-				SELECT 1 FROM service_slot_packages ssp
-				JOIN service_packages sp ON sp.service_package_id = ssp.service_package_id
+				SELECT 1 FROM service_slot_options ssp
+				JOIN service_options sp ON sp.service_option_id = ssp.service_option_id
 				WHERE ssp.service_slot_id = ss.service_slot_id
 					AND sp.service_id = $%d
 					AND ssp.deleted_at IS NULL
@@ -153,7 +153,7 @@ func (r *serviceSlotRepo) GetServiceSlotsByBusinessAndDate(ctx context.Context, 
 	}
 
 	for i := range slots {
-		packages, err := r.getSlotPackages(ctx, slots[i].ServiceSlotID)
+		packages, err := r.getSlotOptions(ctx, slots[i].ServiceSlotID)
 		if err != nil {
 			return nil, err
 		}
@@ -184,7 +184,7 @@ func (r *serviceSlotRepo) GetServiceSlotByID(ctx context.Context, serviceSlotID 
 	if err != nil {
 		return nil, err
 	}
-	packages, err := r.getSlotPackages(ctx, slot.ServiceSlotID)
+	packages, err := r.getSlotOptions(ctx, slot.ServiceSlotID)
 	if err != nil {
 		return nil, err
 	}
@@ -192,30 +192,30 @@ func (r *serviceSlotRepo) GetServiceSlotByID(ctx context.Context, serviceSlotID 
 	return slot, nil
 }
 
-func (r *serviceSlotRepo) getSlotPackages(ctx context.Context, serviceSlotID int64) ([]param.SlotPackageParam, error) {
+func (r *serviceSlotRepo) getSlotOptions(ctx context.Context, serviceSlotID int64) ([]param.SlotTierParam, error) {
 	rows, err := r.DB.QueryContext(ctx, `
 		SELECT
-			ssp.slot_package_id,
-			sp.service_package_id,
-			sp.service_package_name,
+			ssp.slot_option_id,
+			sp.service_option_id,
+			sp.service_option_name,
 			s.service_id,
 			s.service_name
-		FROM service_slot_packages ssp
-		JOIN service_packages sp ON sp.service_package_id = ssp.service_package_id
+		FROM service_slot_options ssp
+		JOIN service_options sp ON sp.service_option_id = ssp.service_option_id
 		JOIN services s ON s.service_id = sp.service_id
 		WHERE ssp.service_slot_id = $1
 			AND ssp.deleted_at IS NULL
-		ORDER BY ssp.slot_package_id
+		ORDER BY ssp.slot_option_id
 	`, serviceSlotID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var packages []param.SlotPackageParam
+	var packages []param.SlotTierParam
 	for rows.Next() {
-		var pkg param.SlotPackageParam
-		if err := rows.Scan(&pkg.SlotPackageID, &pkg.ServicePackageID, &pkg.ServicePackageName, &pkg.ServiceID, &pkg.ServiceName); err != nil {
+		var pkg param.SlotTierParam
+		if err := rows.Scan(&pkg.SlotOptionID, &pkg.ServiceOptionID, &pkg.ServiceOptionName, &pkg.ServiceID, &pkg.ServiceName); err != nil {
 			return nil, err
 		}
 		packages = append(packages, pkg)
@@ -237,7 +237,7 @@ func (r *serviceSlotRepo) HasBookingForServiceSlot(ctx context.Context, serviceS
 	var count int
 	err := r.DB.QueryRowContext(ctx, `
 		SELECT COUNT(*) FROM bookings b
-		JOIN service_slot_packages ssp ON b.slot_package_id = ssp.slot_package_id
+		JOIN service_slot_options ssp ON b.slot_option_id = ssp.slot_option_id
 		WHERE ssp.service_slot_id = $1 AND b.deleted_at IS NULL
 	`, serviceSlotID).Scan(&count)
 	if err != nil {
@@ -317,16 +317,16 @@ func (r *serviceSlotRepo) StaffBelongsToBusiness(ctx context.Context, staffID in
 	return exists, err
 }
 
-func (r *serviceSlotRepo) PackagesBelongToBusiness(ctx context.Context, businessID int64, packageIDs []int64) (bool, error) {
+func (r *serviceSlotRepo) OptionsBelongToBusiness(ctx context.Context, businessID int64, packageIDs []int64) (bool, error) {
 	if len(packageIDs) == 0 {
 		return false, nil
 	}
 	var count int
 	err := r.DB.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM service_packages sp
+		SELECT COUNT(*) FROM service_options sp
 		JOIN services s ON s.service_id = sp.service_id
 		WHERE s.business_id = $1
-			AND sp.service_package_id = ANY($2)
+			AND sp.service_option_id = ANY($2)
 			AND sp.deleted_at IS NULL
 	`, businessID, pq.Array(packageIDs)).Scan(&count)
 	if err != nil {

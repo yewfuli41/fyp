@@ -600,38 +600,38 @@ func (_c *MockIServiceSlotRepo_InsertServiceSlot_Call) RunAndReturn(run func(ctx
 	return _c
 }
 
-// InsertServiceSlotPackage provides a mock function for the type MockIServiceSlotRepo
-func (_mock *MockIServiceSlotRepo) InsertServiceSlotPackage(ctx context.Context, tx *sql.Tx, serviceSlotID int64, servicePackageID int64) error {
-	ret := _mock.Called(ctx, tx, serviceSlotID, servicePackageID)
+// InsertServiceSlotOption provides a mock function for the type MockIServiceSlotRepo
+func (_mock *MockIServiceSlotRepo) InsertServiceSlotOption(ctx context.Context, tx *sql.Tx, serviceSlotID int64, serviceOptionID int64) error {
+	ret := _mock.Called(ctx, tx, serviceSlotID, serviceOptionID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for InsertServiceSlotPackage")
+		panic("no return value specified for InsertServiceSlotOption")
 	}
 
 	var r0 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, int64, int64) error); ok {
-		r0 = returnFunc(ctx, tx, serviceSlotID, servicePackageID)
+		r0 = returnFunc(ctx, tx, serviceSlotID, serviceOptionID)
 	} else {
 		r0 = ret.Error(0)
 	}
 	return r0
 }
 
-// MockIServiceSlotRepo_InsertServiceSlotPackage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertServiceSlotPackage'
-type MockIServiceSlotRepo_InsertServiceSlotPackage_Call struct {
+// MockIServiceSlotRepo_InsertServiceSlotOption_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertServiceSlotOption'
+type MockIServiceSlotRepo_InsertServiceSlotOption_Call struct {
 	*mock.Call
 }
 
-// InsertServiceSlotPackage is a helper method to define mock.On call
+// InsertServiceSlotOption is a helper method to define mock.On call
 //   - ctx context.Context
 //   - tx *sql.Tx
 //   - serviceSlotID int64
-//   - servicePackageID int64
-func (_e *MockIServiceSlotRepo_Expecter) InsertServiceSlotPackage(ctx interface{}, tx interface{}, serviceSlotID interface{}, servicePackageID interface{}) *MockIServiceSlotRepo_InsertServiceSlotPackage_Call {
-	return &MockIServiceSlotRepo_InsertServiceSlotPackage_Call{Call: _e.mock.On("InsertServiceSlotPackage", ctx, tx, serviceSlotID, servicePackageID)}
+//   - serviceOptionID int64
+func (_e *MockIServiceSlotRepo_Expecter) InsertServiceSlotOption(ctx interface{}, tx interface{}, serviceSlotID interface{}, serviceOptionID interface{}) *MockIServiceSlotRepo_InsertServiceSlotOption_Call {
+	return &MockIServiceSlotRepo_InsertServiceSlotOption_Call{Call: _e.mock.On("InsertServiceSlotOption", ctx, tx, serviceSlotID, serviceOptionID)}
 }
 
-func (_c *MockIServiceSlotRepo_InsertServiceSlotPackage_Call) Run(run func(ctx context.Context, tx *sql.Tx, serviceSlotID int64, servicePackageID int64)) *MockIServiceSlotRepo_InsertServiceSlotPackage_Call {
+func (_c *MockIServiceSlotRepo_InsertServiceSlotOption_Call) Run(run func(ctx context.Context, tx *sql.Tx, serviceSlotID int64, serviceOptionID int64)) *MockIServiceSlotRepo_InsertServiceSlotOption_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -659,22 +659,22 @@ func (_c *MockIServiceSlotRepo_InsertServiceSlotPackage_Call) Run(run func(ctx c
 	return _c
 }
 
-func (_c *MockIServiceSlotRepo_InsertServiceSlotPackage_Call) Return(err error) *MockIServiceSlotRepo_InsertServiceSlotPackage_Call {
+func (_c *MockIServiceSlotRepo_InsertServiceSlotOption_Call) Return(err error) *MockIServiceSlotRepo_InsertServiceSlotOption_Call {
 	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockIServiceSlotRepo_InsertServiceSlotPackage_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, serviceSlotID int64, servicePackageID int64) error) *MockIServiceSlotRepo_InsertServiceSlotPackage_Call {
+func (_c *MockIServiceSlotRepo_InsertServiceSlotOption_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, serviceSlotID int64, serviceOptionID int64) error) *MockIServiceSlotRepo_InsertServiceSlotOption_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// PackagesBelongToBusiness provides a mock function for the type MockIServiceSlotRepo
-func (_mock *MockIServiceSlotRepo) PackagesBelongToBusiness(ctx context.Context, businessID int64, packageIDs []int64) (bool, error) {
+// OptionsBelongToBusiness provides a mock function for the type MockIServiceSlotRepo
+func (_mock *MockIServiceSlotRepo) OptionsBelongToBusiness(ctx context.Context, businessID int64, packageIDs []int64) (bool, error) {
 	ret := _mock.Called(ctx, businessID, packageIDs)
 
 	if len(ret) == 0 {
-		panic("no return value specified for PackagesBelongToBusiness")
+		panic("no return value specified for OptionsBelongToBusiness")
 	}
 
 	var r0 bool
@@ -695,20 +695,20 @@ func (_mock *MockIServiceSlotRepo) PackagesBelongToBusiness(ctx context.Context,
 	return r0, r1
 }
 
-// MockIServiceSlotRepo_PackagesBelongToBusiness_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PackagesBelongToBusiness'
-type MockIServiceSlotRepo_PackagesBelongToBusiness_Call struct {
+// MockIServiceSlotRepo_OptionsBelongToBusiness_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OptionsBelongToBusiness'
+type MockIServiceSlotRepo_OptionsBelongToBusiness_Call struct {
 	*mock.Call
 }
 
-// PackagesBelongToBusiness is a helper method to define mock.On call
+// OptionsBelongToBusiness is a helper method to define mock.On call
 //   - ctx context.Context
 //   - businessID int64
 //   - packageIDs []int64
-func (_e *MockIServiceSlotRepo_Expecter) PackagesBelongToBusiness(ctx interface{}, businessID interface{}, packageIDs interface{}) *MockIServiceSlotRepo_PackagesBelongToBusiness_Call {
-	return &MockIServiceSlotRepo_PackagesBelongToBusiness_Call{Call: _e.mock.On("PackagesBelongToBusiness", ctx, businessID, packageIDs)}
+func (_e *MockIServiceSlotRepo_Expecter) OptionsBelongToBusiness(ctx interface{}, businessID interface{}, packageIDs interface{}) *MockIServiceSlotRepo_OptionsBelongToBusiness_Call {
+	return &MockIServiceSlotRepo_OptionsBelongToBusiness_Call{Call: _e.mock.On("OptionsBelongToBusiness", ctx, businessID, packageIDs)}
 }
 
-func (_c *MockIServiceSlotRepo_PackagesBelongToBusiness_Call) Run(run func(ctx context.Context, businessID int64, packageIDs []int64)) *MockIServiceSlotRepo_PackagesBelongToBusiness_Call {
+func (_c *MockIServiceSlotRepo_OptionsBelongToBusiness_Call) Run(run func(ctx context.Context, businessID int64, packageIDs []int64)) *MockIServiceSlotRepo_OptionsBelongToBusiness_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -731,12 +731,12 @@ func (_c *MockIServiceSlotRepo_PackagesBelongToBusiness_Call) Run(run func(ctx c
 	return _c
 }
 
-func (_c *MockIServiceSlotRepo_PackagesBelongToBusiness_Call) Return(b bool, err error) *MockIServiceSlotRepo_PackagesBelongToBusiness_Call {
+func (_c *MockIServiceSlotRepo_OptionsBelongToBusiness_Call) Return(b bool, err error) *MockIServiceSlotRepo_OptionsBelongToBusiness_Call {
 	_c.Call.Return(b, err)
 	return _c
 }
 
-func (_c *MockIServiceSlotRepo_PackagesBelongToBusiness_Call) RunAndReturn(run func(ctx context.Context, businessID int64, packageIDs []int64) (bool, error)) *MockIServiceSlotRepo_PackagesBelongToBusiness_Call {
+func (_c *MockIServiceSlotRepo_OptionsBelongToBusiness_Call) RunAndReturn(run func(ctx context.Context, businessID int64, packageIDs []int64) (bool, error)) *MockIServiceSlotRepo_OptionsBelongToBusiness_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -45,7 +45,7 @@ type ServiceSlot {
   date: Date!
   startTime: Time!
   endTime: Time!
-  serviceSlotPackages: [ServiceSlotPackage!]!
+  serviceSlotOptions: [ServiceSlotOption!]!
   hasBooking: Boolean!
   deletedAt: DateTime
   createdAt: DateTime!
@@ -53,10 +53,10 @@ type ServiceSlot {
   creator: User
 }
 
-type ServiceSlotPackage {
-  slotPackageId: ID!
-  servicePackageId: ID!
-  servicePackage: ServicePackage!
+type ServiceSlotOption {
+  slotOptionId: ID!
+  serviceOptionId: ID!
+  serviceOption: ServiceOption!
   serviceSlotId: ID!
   serviceSlot: ServiceSlot!
   bookings: [Booking!]!
@@ -67,8 +67,8 @@ type RecurringSchedule {
   recurringScheduleId: ID!
   staffId: ID!
   staff: Staff!
-  servicePackageId: ID!
-  servicePackage: ServicePackage!
+  serviceOptionId: ID!
+  serviceOption: ServiceOption!
   day: DayOfWeek!
   startTime: Time!
   endTime: Time!
@@ -82,8 +82,8 @@ type Booking {
   bookingId: ID!
   userId: ID!
   user: User!
-  slotPackageId: ID!
-  slotPackage: ServiceSlotPackage!
+  slotOptionId: ID!
+  slotOption: ServiceSlotOption!
   status: BookingStatus
   bookingType: BookingType!
   deletedAt: DateTime

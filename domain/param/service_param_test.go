@@ -19,10 +19,10 @@ var _ = Describe("ServiceParam", func() {
 		It("returns nil for a valid service with packages and items", func() {
 			p := param.ServiceParam{
 				ServiceName: "Massage",
-				ServicePackages: []param.ServicePackageParam{
+				ServiceOptions: []param.ServiceOptionParam{
 					{
-						ServicePackageName: "Deep Tissue",
-						PackageItems:       []param.PackageItemParam{{PackageItemName: "Oil"}},
+						ServiceOptionName: "Deep Tissue",
+						ServiceOptionItems:       []param.ServiceOptionItemParam{{ServiceOptionItemName: "Oil"}},
 					},
 				},
 			}
@@ -41,30 +41,30 @@ var _ = Describe("ServiceParam", func() {
 		It("returns error for package name exceeding max length", func() {
 			p := param.ServiceParam{
 				ServiceName: "Massage",
-				ServicePackages: []param.ServicePackageParam{
-					{ServicePackageName: strings.Repeat("a", 256)},
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionName: strings.Repeat("a", 256)},
 				},
 			}
 			err := p.Validate()
 			Expect(err).To(HaveOccurred())
-			Expect(err.(errs.ValidationErrors)[0].Field).To(Equal("servicePackages[0].servicePackageName"))
+			Expect(err.(errs.ValidationErrors)[0].Field).To(Equal("serviceOptions[0].serviceOptionName"))
 		})
 
 		It("returns error for package item name exceeding max length", func() {
 			p := param.ServiceParam{
 				ServiceName: "Massage",
-				ServicePackages: []param.ServicePackageParam{
+				ServiceOptions: []param.ServiceOptionParam{
 					{
-						ServicePackageName: "Deep Tissue",
-						PackageItems: []param.PackageItemParam{
-							{PackageItemName: strings.Repeat("b", 256)},
+						ServiceOptionName: "Deep Tissue",
+						ServiceOptionItems: []param.ServiceOptionItemParam{
+							{ServiceOptionItemName: strings.Repeat("b", 256)},
 						},
 					},
 				},
 			}
 			err := p.Validate()
 			Expect(err).To(HaveOccurred())
-			Expect(err.(errs.ValidationErrors)[0].Field).To(Equal("servicePackages[0].packageItems[0]"))
+			Expect(err.(errs.ValidationErrors)[0].Field).To(Equal("serviceOptions[0].serviceOptionItems[0]"))
 		})
 	})
 })

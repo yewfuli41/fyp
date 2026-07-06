@@ -40,18 +40,18 @@ CREATE TABLE IF NOT EXISTS services (
     deleted_at TIMESTAMPTZ
 );
 
-CREATE TABLE IF NOT EXISTS service_packages (
-    service_package_id BIGSERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS service_options (
+    service_option_id BIGSERIAL PRIMARY KEY,
     service_id BIGINT NOT NULL REFERENCES services(service_id) ON DELETE CASCADE,
-    service_package_name VARCHAR(255) NOT NULL,
+    service_option_name VARCHAR(255) NOT NULL,
     description TEXT,
     deleted_at TIMESTAMPTZ
 );
 
-CREATE TABLE IF NOT EXISTS package_items (
-    package_item_id BIGSERIAL PRIMARY KEY,
-    service_package_id BIGINT NOT NULL REFERENCES service_packages(service_package_id) ON DELETE CASCADE,
-    package_item_name VARCHAR(255) NOT NULL,
+CREATE TABLE IF NOT EXISTS service_option_items (
+    service_option_item_id BIGSERIAL PRIMARY KEY,
+    service_option_id BIGINT NOT NULL REFERENCES service_options(service_option_id) ON DELETE CASCADE,
+    service_option_item_name VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMPTZ
 );
@@ -63,8 +63,7 @@ CREATE TABLE IF NOT EXISTS staff (
     staff_name VARCHAR(255) NOT NULL,
     staff_contact_number VARCHAR(30),
     position VARCHAR(100),
-    deleted_at TIMESTAMPTZ,
-    UNIQUE (user_id, business_id)
+    deleted_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS staff_working_hours (
@@ -120,12 +119,12 @@ CREATE TABLE IF NOT EXISTS service_slots (
     CHECK (start_time < end_time)
 );
 
-CREATE TABLE IF NOT EXISTS service_slot_packages (
-    slot_package_id BIGSERIAL PRIMARY KEY,
-    service_package_id BIGINT NOT NULL REFERENCES service_packages(service_package_id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS service_slot_options (
+    slot_option_id BIGSERIAL PRIMARY KEY,
+    service_option_id BIGINT NOT NULL REFERENCES service_options(service_option_id) ON DELETE CASCADE,
     service_slot_id BIGINT NOT NULL REFERENCES service_slots(service_slot_id) ON DELETE CASCADE,
     deleted_at TIMESTAMPTZ,
-    UNIQUE (service_package_id, service_slot_id)
+    UNIQUE (service_option_id, service_slot_id)
 );
 
 CREATE SEQUENCE IF NOT EXISTS booking_group_seq START 1;
@@ -133,7 +132,7 @@ CREATE SEQUENCE IF NOT EXISTS booking_group_seq START 1;
 CREATE TABLE IF NOT EXISTS bookings (
     booking_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
-    slot_package_id BIGINT NOT NULL REFERENCES service_slot_packages(slot_package_id) ON DELETE RESTRICT,
+    slot_option_id BIGINT NOT NULL REFERENCES service_slot_options(slot_option_id) ON DELETE RESTRICT,
     booking_group_id BIGINT NOT NULL,
     status VARCHAR(30),
     booking_type VARCHAR(30) NOT NULL,
@@ -147,27 +146,27 @@ CREATE TABLE IF NOT EXISTS bookings (
 
 CREATE INDEX IF NOT EXISTS idx_business_working_hours_business_id ON business_working_hours(business_id);
 CREATE INDEX IF NOT EXISTS idx_services_business_id ON services(business_id);
-CREATE INDEX IF NOT EXISTS idx_service_packages_service_id ON service_packages(service_id);
-CREATE INDEX IF NOT EXISTS idx_package_items_service_package_id ON package_items(service_package_id);
+CREATE INDEX IF NOT EXISTS idx_service_options_service_id ON service_options(service_id);
+CREATE INDEX IF NOT EXISTS idx_service_option_items_service_option_id ON service_option_items(service_option_id);
 CREATE INDEX IF NOT EXISTS idx_staff_user_id ON staff(user_id);
 CREATE INDEX IF NOT EXISTS idx_staff_business_id ON staff(business_id);
 CREATE INDEX IF NOT EXISTS idx_staff_working_hours_staff_id ON staff_working_hours(staff_id);
 CREATE INDEX IF NOT EXISTS idx_leave_applications_staff_id ON leave_applications(staff_id);
 CREATE INDEX IF NOT EXISTS idx_service_slots_staff_id ON service_slots(staff_id);
 CREATE INDEX IF NOT EXISTS idx_service_slots_recurring_schedule_id ON service_slots(recurring_schedule_id);
-CREATE INDEX IF NOT EXISTS idx_service_slot_packages_service_package_id ON service_slot_packages(service_package_id);
-CREATE INDEX IF NOT EXISTS idx_service_slot_packages_service_slot_id ON service_slot_packages(service_slot_id);
+CREATE INDEX IF NOT EXISTS idx_service_slot_options_service_option_id ON service_slot_options(service_option_id);
+CREATE INDEX IF NOT EXISTS idx_service_slot_options_service_slot_id ON service_slot_options(service_slot_id);
 CREATE INDEX IF NOT EXISTS idx_recurring_schedules_staff_id ON recurring_schedules(staff_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings(user_id);
-CREATE INDEX IF NOT EXISTS idx_bookings_slot_package_id ON bookings(slot_package_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_slot_option_id ON bookings(slot_option_id);
 CREATE UNIQUE INDEX services_unique_name
 ON services (business_id, LOWER(service_name))
 WHERE deleted_at IS NULL;
 
-CREATE UNIQUE INDEX service_packages_unique_name
-ON service_packages (service_id, LOWER(service_package_name))
+CREATE UNIQUE INDEX service_options_unique_name
+ON service_options (service_id, LOWER(service_option_name))
 WHERE deleted_at IS NULL;
 
-CREATE UNIQUE INDEX package_items_unique_name
-ON package_items (service_package_id, LOWER(package_item_name))
+CREATE UNIQUE INDEX service_option_items_unique_name
+ON service_option_items (service_option_id, LOWER(service_option_item_name))
 WHERE deleted_at IS NULL;

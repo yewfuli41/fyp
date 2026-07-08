@@ -91,7 +91,9 @@ export default function AddServiceSlotModal({
                             <Form.Check
                                 key={pkg.servicePackageId}
                                 type="checkbox"
-                                label={pkg.servicePackageName}
+                                label={pkg.packageItems.length > 0
+                                    ? `${pkg.servicePackageName} - ${pkg.packageItems.map(i => i.packageItemName).join(", ")}`
+                                    : pkg.servicePackageName}
                                 checked={form.servicePackageIds.includes(pkg.servicePackageId)}
                                 onChange={e => setForm(f => ({
                                     ...f,

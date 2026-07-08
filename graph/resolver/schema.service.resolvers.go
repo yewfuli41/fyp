@@ -36,7 +36,7 @@ func (r *mutationResolver) CreateService(ctx context.Context, service model.Serv
 	for _, pkg := range service.ServiceOptions {
 		pkgParam := param.ServiceOptionParam{
 			ServiceOptionName: pkg.ServiceOptionName,
-			Description:     pkg.Description,
+			Description:       pkg.Description,
 		}
 		for _, item := range pkg.ServiceOptionItems {
 			pkgParam.ServiceOptionItems = append(pkgParam.ServiceOptionItems, param.ServiceOptionItemParam{
@@ -79,7 +79,7 @@ func (r *mutationResolver) UpdateService(ctx context.Context, serviceID string, 
 	for _, pkg := range service.ServiceOptions {
 		pkgParam := param.ServiceOptionParam{
 			ServiceOptionName: pkg.ServiceOptionName,
-			Description:     pkg.Description,
+			Description:       pkg.Description,
 		}
 		for _, item := range pkg.ServiceOptionItems {
 			pkgParam.ServiceOptionItems = append(pkgParam.ServiceOptionItems, param.ServiceOptionItemParam{
@@ -144,8 +144,3 @@ func (r *queryResolver) DisplayServices(ctx context.Context) ([]*model.Service, 
 	}
 	return result, nil
 }
-
-// Query returns graph.QueryResolver implementation.
-func (r *Resolver) Query() graph.QueryResolver { return &queryResolver{r} }
-
-type queryResolver struct{ *Resolver }

@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { Alert, Button, Form, Modal } from "react-bootstrap";
 import type { ServiceInput, ServiceOptionInput } from "../services/ServiceService";
-import { emptyOption, syncDefaultItems, syncDefaultOption } from "../utils/serviceFormHelpers";
+import { emptyOption, syncDefaultOption } from "../utils/serviceFormHelpers";
 import { FIELD_LIMITS } from "../utils/fieldLimits";
 
 interface ServiceFormModalProps {
@@ -34,7 +34,7 @@ export default function ServiceFormModal({
     const addOption = () =>
         setFormInput(prev => ({
             ...prev,
-            serviceOptions: [...prev.serviceOptions, emptyOption(prev.serviceName)],
+            serviceOptions: [...prev.serviceOptions, emptyOption()],
         }));
 
     const removeOption = (optionIdx: number) =>
@@ -89,11 +89,11 @@ export default function ServiceFormModal({
                             value={formInput.serviceName}
                             onChange={e => {
                                 const newName = e.target.value;
-                                setFormInput(prev => {
-                                    const withDefaultPkg = syncDefaultOption(prev.serviceOptions, newName);
-                                    const withDefaultItems = syncDefaultItems(withDefaultPkg, newName);
-                                    return { ...prev, serviceName: newName, serviceOptions: withDefaultItems };
-                                });
+                                setFormInput(prev => ({
+                                    ...prev,
+                                    serviceName: newName,
+                                    serviceOptions: syncDefaultOption(prev.serviceOptions, newName),
+                                }));
                                 setFieldErrors(prev => ({ ...prev, serviceName: "" }));
                             }}
                             maxLength={FIELD_LIMITS.serviceName}
@@ -119,9 +119,8 @@ export default function ServiceFormModal({
                         </Button>
                     </div>
                     <p className="text-muted small mb-2">
-                       A default option with the same name as the service is created automatically, allowing customers to book the service without selecting a specific option.
+                        A default option is always required. If left unnamed, it will use the service name.
                     </p>
-
                     {formInput.serviceOptions.map((pkg, optionIdx) => {
                         const isDefault = optionIdx === 0;
                         return (
@@ -175,9 +174,7 @@ export default function ServiceFormModal({
                                     </Button>
                                 </div>
 
-                                {pkg.serviceOptionItems.map((item, itemIdx) => {
-                                    const isDefaultItem = itemIdx === 0;
-                                    return (
+                                {pkg.serviceOptionItems.map((item, itemIdx) => (
                                     <div key={itemIdx} className="mb-2">
                                         <div className="d-flex gap-2">
                                             <Form.Control
@@ -186,17 +183,14 @@ export default function ServiceFormModal({
                                                 value={item.serviceOptionItemName}
                                                 onChange={e => updateServiceOptionItem(optionIdx, itemIdx, e.target.value)}
                                                 maxLength={FIELD_LIMITS.serviceOptionItemName}
-                                                disabled={isDefaultItem}
                                             />
-                                            {pkg.serviceOptionItems.length > 1 && !isDefaultItem && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline-danger"
-                                                    onClick={() => removeServiceOptionItem(optionIdx, itemIdx)}
-                                                >
-                                                    ✕
-                                                </Button>
-                                            )}
+                                            <Button
+                                                size="sm"
+                                                variant="outline-danger"
+                                                onClick={() => removeServiceOptionItem(optionIdx, itemIdx)}
+                                            >
+                                                ✕
+                                            </Button>
                                         </div>
                                         {fieldErrors[`serviceOptionItemName[${optionIdx}][${itemIdx}]`] && (
                                             <div className="text-danger small mt-1">
@@ -204,8 +198,7 @@ export default function ServiceFormModal({
                                             </div>
                                         )}
                                     </div>
-                                    );
-                                })}
+                                ))}
                             </div>
                         );
                     })}

@@ -24,18 +24,14 @@ export interface GraphQLResponse<T = unknown> {
 	errors?: GraphQLError[];
 }
 
-// TODO:
-// Support GraphQL variables in doGraphQL()
-// after FYP
 export const doGraphQL = async <T>(
     query: string,
     accessToken?: string,
-
 ): Promise<GraphQLResponse<T>> => {
     try{
         const res = await apiClient.post<GraphQLResponse<T>>(
-            "/query", 
-            {query}, 
+            "/query",
+            {query},
             {headers: buildHeaders(accessToken)}
         );
 

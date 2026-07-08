@@ -106,6 +106,74 @@ func (_c *MockIBusinessService_GetBusinessProfileByOwnerID_Call) RunAndReturn(ru
 	return _c
 }
 
+// GetBusinesses provides a mock function for the type MockIBusinessService
+func (_mock *MockIBusinessService) GetBusinesses(ctx context.Context, search string) ([]param.BusinessProfileParam, error) {
+	ret := _mock.Called(ctx, search)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBusinesses")
+	}
+
+	var r0 []param.BusinessProfileParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]param.BusinessProfileParam, error)); ok {
+		return returnFunc(ctx, search)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []param.BusinessProfileParam); ok {
+		r0 = returnFunc(ctx, search)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]param.BusinessProfileParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, search)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBusinessService_GetBusinesses_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBusinesses'
+type MockIBusinessService_GetBusinesses_Call struct {
+	*mock.Call
+}
+
+// GetBusinesses is a helper method to define mock.On call
+//   - ctx context.Context
+//   - search string
+func (_e *MockIBusinessService_Expecter) GetBusinesses(ctx interface{}, search interface{}) *MockIBusinessService_GetBusinesses_Call {
+	return &MockIBusinessService_GetBusinesses_Call{Call: _e.mock.On("GetBusinesses", ctx, search)}
+}
+
+func (_c *MockIBusinessService_GetBusinesses_Call) Run(run func(ctx context.Context, search string)) *MockIBusinessService_GetBusinesses_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBusinessService_GetBusinesses_Call) Return(businessProfileParams []param.BusinessProfileParam, err error) *MockIBusinessService_GetBusinesses_Call {
+	_c.Call.Return(businessProfileParams, err)
+	return _c
+}
+
+func (_c *MockIBusinessService_GetBusinesses_Call) RunAndReturn(run func(ctx context.Context, search string) ([]param.BusinessProfileParam, error)) *MockIBusinessService_GetBusinesses_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RegisterBusinessProfile provides a mock function for the type MockIBusinessService
 func (_mock *MockIBusinessService) RegisterBusinessProfile(ctx context.Context, param1 param.BusinessProfileParam) (*param.BusinessProfileParam, error) {
 	ret := _mock.Called(ctx, param1)

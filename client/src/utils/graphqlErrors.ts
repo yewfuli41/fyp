@@ -45,7 +45,7 @@ export function parseGraphQLErrors(
 }
 
 export interface ApplyGraphQLErrorsOptions {
-    setFieldErrors: (errors: FieldErrors) => void;
+    setFieldErrors?: (errors: FieldErrors) => void;
     setFormError: (message: string) => void;
     fallbackMessage?: string;
 }
@@ -64,7 +64,12 @@ export function applyGraphQLErrors(
     if (!parsed.hasErrors) return false;
 
     if (Object.keys(parsed.fieldErrors).length > 0) {
-        setFieldErrors(parsed.fieldErrors);
+        if (setFieldErrors) {
+            setFieldErrors(parsed.fieldErrors);
+        } else {
+            const first = Object.values(parsed.fieldErrors)[0];
+            if (first) setFormError(first);
+        }
     }
     if (parsed.formError) {
         setFormError(parsed.formError);

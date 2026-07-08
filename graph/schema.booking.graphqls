@@ -1,0 +1,10 @@
+extend type Query {
+  publicBusinesses: [BusinessProfile!]!
+  publicServices(businessId: ID!): [Service!]!
+  publicStaff(businessId: ID!): [Staff!]!
+  availableSlots(businessId: ID!, serviceOptionId: ID!, date: Date!, staffId: ID): [ServiceSlot!]!
+}
+
+extend type Mutation {
+  createBooking(slotOptionId: ID!): Booking!
+}

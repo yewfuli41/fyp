@@ -16,18 +16,18 @@ type AuthPayload struct {
 }
 
 type Booking struct {
-	BookingID     string           `json:"bookingId"`
-	UserID        string           `json:"userId"`
-	User          *User            `json:"user"`
-	SlotOptionID    string           `json:"slotOptionId"`
-	SlotTier      *ServiceSlotOption `json:"slotOption"`
-	Status        *BookingStatus   `json:"status,omitempty"`
-	BookingType   BookingType      `json:"bookingType"`
-	DeletedAt     *string          `json:"deletedAt,omitempty"`
-	CreatedAt     string           `json:"createdAt"`
-	DecidedAt     *string          `json:"decidedAt,omitempty"`
-	DecidedBy     *string          `json:"decidedBy,omitempty"`
-	DecidedByUser *User            `json:"decidedByUser,omitempty"`
+	BookingID     string             `json:"bookingId"`
+	UserID        string             `json:"userId"`
+	User          *User              `json:"user"`
+	SlotOptionID  string             `json:"slotOptionId"`
+	SlotOption    *ServiceSlotOption `json:"slotOption"`
+	Status        *BookingStatus     `json:"status,omitempty"`
+	BookingType   BookingType        `json:"bookingType"`
+	DeletedAt     *string            `json:"deletedAt,omitempty"`
+	CreatedAt     string             `json:"createdAt"`
+	DecidedAt     *string            `json:"decidedAt,omitempty"`
+	DecidedBy     *string            `json:"decidedBy,omitempty"`
+	DecidedByUser *User              `json:"decidedByUser,omitempty"`
 }
 
 type BusinessProfile struct {
@@ -92,42 +92,60 @@ type Query struct {
 }
 
 type RecurringSchedule struct {
-	RecurringScheduleID string       `json:"recurringScheduleId"`
-	StaffID             string       `json:"staffId"`
-	Staff               *Staff       `json:"staff"`
-	ServiceOptionID       string       `json:"serviceOptionId"`
-	ServiceOption         *ServiceOption `json:"serviceOption"`
-	Day                 DayOfWeek    `json:"day"`
-	StartTime           time.Time    `json:"startTime"`
-	EndTime             time.Time    `json:"endTime"`
-	DeletedAt           *string      `json:"deletedAt,omitempty"`
-	CreatedAt           string       `json:"createdAt"`
-	CreatedBy           *string      `json:"createdBy,omitempty"`
-	Creator             *User        `json:"creator,omitempty"`
+	RecurringScheduleID string         `json:"recurringScheduleId"`
+	StaffID             string         `json:"staffId"`
+	Staff               *Staff         `json:"staff"`
+	ServiceOptionID     string         `json:"serviceOptionId"`
+	ServiceOption       *ServiceOption `json:"serviceOption"`
+	Day                 DayOfWeek      `json:"day"`
+	StartTime           time.Time      `json:"startTime"`
+	EndTime             time.Time      `json:"endTime"`
+	DeletedAt           *string        `json:"deletedAt,omitempty"`
+	CreatedAt           string         `json:"createdAt"`
+	CreatedBy           *string        `json:"createdBy,omitempty"`
+	Creator             *User          `json:"creator,omitempty"`
 }
 
 type Service struct {
-	ServiceID    string           `json:"serviceId"`
-	BusinessID   string           `json:"businessId"`
-	Business     *BusinessProfile `json:"business"`
-	ServiceName  string           `json:"serviceName"`
-	Description  *string          `json:"description,omitempty"`
-	ServiceOptions []*ServiceOption   `json:"serviceOptions"`
-	DeletedAt    *string          `json:"deletedAt,omitempty"`
+	ServiceID      string           `json:"serviceId"`
+	BusinessID     string           `json:"businessId"`
+	Business       *BusinessProfile `json:"business"`
+	ServiceName    string           `json:"serviceName"`
+	Description    *string          `json:"description,omitempty"`
+	ServiceOptions []*ServiceOption `json:"serviceOptions"`
+	DeletedAt      *string          `json:"deletedAt,omitempty"`
 }
 
 type ServiceInput struct {
-	ServiceName  string              `json:"serviceName"`
-	Description  *string             `json:"description,omitempty"`
+	ServiceName    string                `json:"serviceName"`
+	Description    *string               `json:"description,omitempty"`
 	ServiceOptions []*ServiceOptionInput `json:"serviceOptions"`
 }
 
+type ServiceOption struct {
+	ServiceOptionID    string               `json:"serviceOptionId"`
+	ServiceID          string               `json:"serviceId"`
+	Service            *Service             `json:"service"`
+	ServiceOptionName  string               `json:"serviceOptionName"`
+	Description        *string              `json:"description,omitempty"`
+	ServiceOptionItems []*ServiceOptionItem `json:"serviceOptionItems"`
+	ServiceSlotOptions []*ServiceSlotOption `json:"serviceSlotOptions"`
+	RecurringSchedules []*RecurringSchedule `json:"recurringSchedules"`
+	DeletedAt          *string              `json:"deletedAt,omitempty"`
+}
+
+type ServiceOptionInput struct {
+	ServiceOptionName  string                    `json:"serviceOptionName"`
+	Description        *string                   `json:"description,omitempty"`
+	ServiceOptionItems []*ServiceOptionItemInput `json:"serviceOptionItems"`
+}
+
 type ServiceOptionItem struct {
-	ServiceOptionItemID   string       `json:"serviceOptionItemId"`
-	ServiceOptionID   string       `json:"serviceOptionId"`
-	ServicePackage  *ServiceOption `json:"servicePackage"`
-	ServiceOptionItemName string       `json:"serviceOptionItemName"`
-	DeletedAt       *string      `json:"deletedAt,omitempty"`
+	ServiceOptionItemID   string         `json:"serviceOptionItemId"`
+	ServiceOptionID       string         `json:"serviceOptionId"`
+	ServicePackage        *ServiceOption `json:"servicePackage"`
+	ServiceOptionItemName string         `json:"serviceOptionItemName"`
+	DeletedAt             *string        `json:"deletedAt,omitempty"`
 }
 
 type ServiceOptionItemInput struct {
@@ -135,55 +153,37 @@ type ServiceOptionItemInput struct {
 }
 
 type ServiceSlot struct {
-	ServiceSlotID    string             `json:"serviceSlotId"`
-	StaffID          *string            `json:"staffId,omitempty"`
-	Staff            *Staff             `json:"staff,omitempty"`
-	Date             string             `json:"date"`
-	StartTime        time.Time          `json:"startTime"`
-	EndTime          time.Time          `json:"endTime"`
+	ServiceSlotID      string               `json:"serviceSlotId"`
+	StaffID            *string              `json:"staffId,omitempty"`
+	Staff              *Staff               `json:"staff,omitempty"`
+	Date               string               `json:"date"`
+	StartTime          time.Time            `json:"startTime"`
+	EndTime            time.Time            `json:"endTime"`
 	ServiceSlotOptions []*ServiceSlotOption `json:"serviceSlotOptions"`
-	HasBooking       bool               `json:"hasBooking"`
-	DeletedAt        *string            `json:"deletedAt,omitempty"`
-	CreatedAt        string             `json:"createdAt"`
-	CreatedBy        *string            `json:"createdBy,omitempty"`
-	Creator          *User              `json:"creator,omitempty"`
+	HasBooking         bool                 `json:"hasBooking"`
+	DeletedAt          *string              `json:"deletedAt,omitempty"`
+	CreatedAt          string               `json:"createdAt"`
+	CreatedBy          *string              `json:"createdBy,omitempty"`
+	Creator            *User                `json:"creator,omitempty"`
 }
 
 type ServiceSlotInput struct {
-	StaffID        *string     `json:"staffId,omitempty"`
-	Date           *string     `json:"date,omitempty"`
-	DaysOfWeek     []DayOfWeek `json:"daysOfWeek,omitempty"`
-	StartTime      time.Time   `json:"startTime"`
-	EndTime        time.Time   `json:"endTime"`
+	StaffID          *string     `json:"staffId,omitempty"`
+	Date             *string     `json:"date,omitempty"`
+	DaysOfWeek       []DayOfWeek `json:"daysOfWeek,omitempty"`
+	StartTime        time.Time   `json:"startTime"`
+	EndTime          time.Time   `json:"endTime"`
 	ServiceOptionIds []string    `json:"serviceOptionIds"`
 }
 
 type ServiceSlotOption struct {
-	SlotOptionID    string       `json:"slotOptionId"`
-	ServiceOptionID string       `json:"serviceOptionId"`
+	SlotOptionID    string         `json:"slotOptionId"`
+	ServiceOptionID string         `json:"serviceOptionId"`
 	ServiceOption   *ServiceOption `json:"serviceOption"`
-	ServiceSlotID string       `json:"serviceSlotId"`
-	ServiceSlot   *ServiceSlot `json:"serviceSlot"`
-	Bookings      []*Booking   `json:"bookings"`
-	DeletedAt     *string      `json:"deletedAt,omitempty"`
-}
-
-type ServiceOption struct {
-	ServiceOptionID      string               `json:"serviceOptionId"`
-	ServiceID          string               `json:"serviceId"`
-	Service            *Service             `json:"service"`
-	ServiceOptionName    string               `json:"serviceOptionName"`
-	Description        *string              `json:"description,omitempty"`
-	ServiceOptionItems       []*ServiceOptionItem       `json:"serviceOptionItems"`
-	ServiceSlotOptions   []*ServiceSlotOption   `json:"serviceSlotOptions"`
-	RecurringSchedules []*RecurringSchedule `json:"recurringSchedules"`
-	DeletedAt          *string              `json:"deletedAt,omitempty"`
-}
-
-type ServiceOptionInput struct {
-	ServiceOptionName string              `json:"serviceOptionName"`
-	Description     *string             `json:"description,omitempty"`
-	ServiceOptionItems    []*ServiceOptionItemInput `json:"serviceOptionItems"`
+	ServiceSlotID   string         `json:"serviceSlotId"`
+	ServiceSlot     *ServiceSlot   `json:"serviceSlot"`
+	Bookings        []*Booking     `json:"bookings"`
+	DeletedAt       *string        `json:"deletedAt,omitempty"`
 }
 
 type SignUpInput struct {

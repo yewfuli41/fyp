@@ -16,6 +16,7 @@ type App struct {
 	StaffService       interfaces.IStaffService
 	ServiceSlotService interfaces.IServiceSlotService
 	EmailService       interfaces.IEmailService
+	BookingService     interfaces.IBookingService
 }
 
 func NewApp(db *sql.DB, cfg *config.Config) *App {
@@ -32,6 +33,8 @@ func NewApp(db *sql.DB, cfg *config.Config) *App {
 	staffService := service.NewStaffService(db, staffRepo, businessRepo, authRepo, emailService)
 	serviceSlotRepo := repository.NewServiceSlotRepo(db)
 	serviceSlotService := service.NewServiceSlotService(db, serviceSlotRepo, cfg.ServiceSlot)
+	bookingRepo := repository.NewBookingRepo(db)
+	bookingService := service.NewBookingService(bookingRepo)
 	return &App{
 		AuthService:        authService,
 		ProfileService:     profileService,
@@ -40,5 +43,6 @@ func NewApp(db *sql.DB, cfg *config.Config) *App {
 		StaffService:       staffService,
 		ServiceSlotService: serviceSlotService,
 		EmailService:       emailService,
+		BookingService:     bookingService,
 	}
 }

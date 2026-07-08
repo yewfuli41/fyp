@@ -88,6 +88,10 @@ func (s *businessService) UpdateBusinessProfile(ctx context.Context, businessPar
 	return businessProfile, nil
 }
 
+func (s *businessService) GetBusinesses(ctx context.Context, search string) ([]param.BusinessProfileParam, error) {
+	return s.businessRepo.GetBusinesses(ctx, search)
+}
+
 func (s *businessService) GetBusinessProfileByOwnerID(ctx context.Context, ownerID int64) (*param.BusinessProfileParam, error) {
 	businessProfile, err := s.businessRepo.GetBusinessProfileByOwnerID(ctx, ownerID)
 	if err != nil {

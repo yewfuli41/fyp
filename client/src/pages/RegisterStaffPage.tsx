@@ -54,14 +54,40 @@ export default function RegisterStaffPage() {
     // once real data arrives, snap any mismatched rows to the first valid day.
     useEffect(() => {
         if (availableDays.length === 0) return;
-        setStaffWorkingHours(prev => prev.map(wh =>
-            availableDays.includes(wh.day) ? wh : { ...wh, day: availableDays[0] }
-        ));
+        setStaffWorkingHours(prev => prev.map(wh => {
+            const day = availableDays.includes(wh.day) ? wh.day : availableDays[0];
+            const biz = businessWorkingHours.find(b => b.day === day);
+            if (!biz) return { ...wh, day };
+            const bizStart = extractTime(biz.startTime);
+            const bizEnd = extractTime(biz.endTime);
+            const opts = { businessStartTime: bizStart, businessEndTime: bizEnd };
+            const startOpts = startTimeSlice(bizEnd, opts);
+            const newStart = startOpts[0] ?? bizStart;
+            const endOpts = endTimeSlice(newStart, opts);
+            return {
+                day,
+                startTime: newStart + ":00",
+                endTime: (endOpts[endOpts.length - 1] ?? bizEnd) + ":00",
+            };
+        }));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [businessWorkingHours]);
 
     const handleAddWorkingHour = () => {
-        setStaffWorkingHours([...staffWorkingHours, { day: availableDays[0] ?? "monday", startTime: "09:00:00", endTime: "18:00:00" }]);
+        const day = availableDays[0] ?? "monday";
+        const biz = businessWorkingHours.find(wh => wh.day === day);
+        let startTime = "09:00:00", endTime = "18:00:00";
+        if (biz) {
+            const bizStart = extractTime(biz.startTime);
+            const bizEnd = extractTime(biz.endTime);
+            const opts = { businessStartTime: bizStart, businessEndTime: bizEnd };
+            const startOpts = startTimeSlice(bizEnd, opts);
+            const newStart = startOpts[0] ?? bizStart;
+            const endOpts = endTimeSlice(newStart, opts);
+            startTime = newStart + ":00";
+            endTime = (endOpts[endOpts.length - 1] ?? bizEnd) + ":00";
+        }
+        setStaffWorkingHours([...staffWorkingHours, { day, startTime, endTime }]);
     };
 
     const handleRemoveWorkingHour = (index: number) => {
@@ -70,7 +96,23 @@ export default function RegisterStaffPage() {
 
     const handleWorkingHourChange = (index: number, field: keyof WorkingHour, value: string) => {
         const newWorkingHours = [...staffWorkingHours];
-        newWorkingHours[index] = { ...newWorkingHours[index], [field]: value };
+        if (field === "day") {
+            const biz = businessWorkingHours.find(wh => wh.day === value);
+            if (biz) {
+                const bizStart = extractTime(biz.startTime);
+                const bizEnd = extractTime(biz.endTime);
+                const opts = { businessStartTime: bizStart, businessEndTime: bizEnd };
+                const startOpts = startTimeSlice(bizEnd, opts);
+                const newStart = startOpts[0] ?? bizStart;
+                const endOpts = endTimeSlice(newStart, opts);
+                const newEnd = endOpts[endOpts.length - 1] ?? bizEnd;
+                newWorkingHours[index] = { day: value, startTime: newStart + ":00", endTime: newEnd + ":00" };
+            } else {
+                newWorkingHours[index] = { ...newWorkingHours[index], day: value };
+            }
+        } else {
+            newWorkingHours[index] = { ...newWorkingHours[index], [field]: value };
+        }
         setStaffWorkingHours(newWorkingHours);
         setFieldErrors(prev => ({ ...prev, [`workingHours[${index}]`]: "" }));
     };

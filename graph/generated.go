@@ -51,8 +51,8 @@ type ComplexityRoot struct {
 		DecidedBy     func(childComplexity int) int
 		DecidedByUser func(childComplexity int) int
 		DeletedAt     func(childComplexity int) int
-		SlotTier      func(childComplexity int) int
-		SlotOptionID    func(childComplexity int) int
+		SlotOption    func(childComplexity int) int
+		SlotOptionID  func(childComplexity int) int
 		Status        func(childComplexity int) int
 		User          func(childComplexity int) int
 		UserID        func(childComplexity int) int
@@ -99,6 +99,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		CreateBooking            func(childComplexity int, slotOptionID string) int
 		CreateService            func(childComplexity int, service model.ServiceInput) int
 		CreateServiceSlot        func(childComplexity int, input model.ServiceSlotInput) int
 		DeleteService            func(childComplexity int, serviceID string) int
@@ -118,10 +119,14 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		AvailableSlots        func(childComplexity int, businessID string, serviceOptionID string, date string, staffID *string) int
 		AvailableStaffForSlot func(childComplexity int, serviceSlotID string) int
 		DisplayServiceSlots   func(childComplexity int, date string, staffID *string, serviceID *string, unassignedOnly *bool) int
 		DisplayServices       func(childComplexity int) int
 		DisplayStaff          func(childComplexity int) int
+		PublicBusinesses      func(childComplexity int) int
+		PublicServices        func(childComplexity int, businessID string) int
+		PublicStaff           func(childComplexity int, businessID string) int
 		UserProfile           func(childComplexity int) int
 	}
 
@@ -133,54 +138,21 @@ type ComplexityRoot struct {
 		DeletedAt           func(childComplexity int) int
 		EndTime             func(childComplexity int) int
 		RecurringScheduleID func(childComplexity int) int
-		ServiceOption         func(childComplexity int) int
-		ServiceOptionID       func(childComplexity int) int
+		ServiceOption       func(childComplexity int) int
+		ServiceOptionID     func(childComplexity int) int
 		Staff               func(childComplexity int) int
 		StaffID             func(childComplexity int) int
 		StartTime           func(childComplexity int) int
 	}
 
 	Service struct {
-		Business     func(childComplexity int) int
-		BusinessID   func(childComplexity int) int
-		DeletedAt    func(childComplexity int) int
-		Description  func(childComplexity int) int
-		ServiceID    func(childComplexity int) int
-		ServiceName  func(childComplexity int) int
+		Business       func(childComplexity int) int
+		BusinessID     func(childComplexity int) int
+		DeletedAt      func(childComplexity int) int
+		Description    func(childComplexity int) int
+		ServiceID      func(childComplexity int) int
+		ServiceName    func(childComplexity int) int
 		ServiceOptions func(childComplexity int) int
-	}
-
-	ServiceOptionItem struct {
-		DeletedAt       func(childComplexity int) int
-		ServiceOptionItemID   func(childComplexity int) int
-		ServiceOptionItemName func(childComplexity int) int
-		ServicePackage  func(childComplexity int) int
-		ServiceOptionID   func(childComplexity int) int
-	}
-
-	ServiceSlot struct {
-		CreatedAt        func(childComplexity int) int
-		CreatedBy        func(childComplexity int) int
-		Creator          func(childComplexity int) int
-		Date             func(childComplexity int) int
-		DeletedAt        func(childComplexity int) int
-		EndTime          func(childComplexity int) int
-		HasBooking       func(childComplexity int) int
-		ServiceSlotID    func(childComplexity int) int
-		ServiceSlotOptions func(childComplexity int) int
-		Staff            func(childComplexity int) int
-		StaffID          func(childComplexity int) int
-		StartTime        func(childComplexity int) int
-	}
-
-	ServiceSlotOption struct {
-		Bookings      func(childComplexity int) int
-		DeletedAt     func(childComplexity int) int
-		ServiceSlot   func(childComplexity int) int
-		ServiceSlotID func(childComplexity int) int
-		ServiceOption   func(childComplexity int) int
-		ServiceOptionID func(childComplexity int) int
-		SlotOptionID    func(childComplexity int) int
 	}
 
 	ServiceOption struct {
@@ -189,10 +161,43 @@ type ComplexityRoot struct {
 		RecurringSchedules func(childComplexity int) int
 		Service            func(childComplexity int) int
 		ServiceID          func(childComplexity int) int
-		ServiceOptionItems       func(childComplexity int) int
-		ServiceSlotOptions   func(childComplexity int) int
-		ServiceOptionID      func(childComplexity int) int
-		ServiceOptionName    func(childComplexity int) int
+		ServiceOptionID    func(childComplexity int) int
+		ServiceOptionItems func(childComplexity int) int
+		ServiceOptionName  func(childComplexity int) int
+		ServiceSlotOptions func(childComplexity int) int
+	}
+
+	ServiceOptionItem struct {
+		DeletedAt             func(childComplexity int) int
+		ServiceOptionID       func(childComplexity int) int
+		ServiceOptionItemID   func(childComplexity int) int
+		ServiceOptionItemName func(childComplexity int) int
+		ServicePackage        func(childComplexity int) int
+	}
+
+	ServiceSlot struct {
+		CreatedAt          func(childComplexity int) int
+		CreatedBy          func(childComplexity int) int
+		Creator            func(childComplexity int) int
+		Date               func(childComplexity int) int
+		DeletedAt          func(childComplexity int) int
+		EndTime            func(childComplexity int) int
+		HasBooking         func(childComplexity int) int
+		ServiceSlotID      func(childComplexity int) int
+		ServiceSlotOptions func(childComplexity int) int
+		Staff              func(childComplexity int) int
+		StaffID            func(childComplexity int) int
+		StartTime          func(childComplexity int) int
+	}
+
+	ServiceSlotOption struct {
+		Bookings        func(childComplexity int) int
+		DeletedAt       func(childComplexity int) int
+		ServiceOption   func(childComplexity int) int
+		ServiceOptionID func(childComplexity int) int
+		ServiceSlot     func(childComplexity int) int
+		ServiceSlotID   func(childComplexity int) int
+		SlotOptionID    func(childComplexity int) int
 	}
 
 	Staff struct {
@@ -238,6 +243,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
+	CreateBooking(ctx context.Context, slotOptionID string) (*model.Booking, error)
 	RegisterBusinessProfile(ctx context.Context, business model.BusinessProfileInput) (*model.BusinessProfile, error)
 	UpdateBusinessProfile(ctx context.Context, business model.BusinessProfileInput) (*model.BusinessProfile, error)
 	CreateService(ctx context.Context, service model.ServiceInput) (*model.Service, error)
@@ -256,6 +262,10 @@ type MutationResolver interface {
 	UpdateProfile(ctx context.Context, user model.UpdateProfileInput) (*model.User, error)
 }
 type QueryResolver interface {
+	PublicBusinesses(ctx context.Context) ([]*model.BusinessProfile, error)
+	PublicServices(ctx context.Context, businessID string) ([]*model.Service, error)
+	PublicStaff(ctx context.Context, businessID string) ([]*model.Staff, error)
+	AvailableSlots(ctx context.Context, businessID string, serviceOptionID string, date string, staffID *string) ([]*model.ServiceSlot, error)
 	DisplayServices(ctx context.Context) ([]*model.Service, error)
 	DisplayServiceSlots(ctx context.Context, date string, staffID *string, serviceID *string, unassignedOnly *bool) ([]*model.ServiceSlot, error)
 	AvailableStaffForSlot(ctx context.Context, serviceSlotID string) ([]*model.Staff, error)
@@ -333,11 +343,11 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Booking.DeletedAt(childComplexity), true
 	case "Booking.slotOption":
-		if e.ComplexityRoot.Booking.SlotTier == nil {
+		if e.ComplexityRoot.Booking.SlotOption == nil {
 			break
 		}
 
-		return e.ComplexityRoot.Booking.SlotTier(childComplexity), true
+		return e.ComplexityRoot.Booking.SlotOption(childComplexity), true
 	case "Booking.slotOptionId":
 		if e.ComplexityRoot.Booking.SlotOptionID == nil {
 			break
@@ -552,6 +562,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.LeaveApplication.Status(childComplexity), true
 
+	case "Mutation.createBooking":
+		if e.ComplexityRoot.Mutation.CreateBooking == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createBooking_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateBooking(childComplexity, args["slotOptionId"].(string)), true
 	case "Mutation.createService":
 		if e.ComplexityRoot.Mutation.CreateService == nil {
 			break
@@ -729,6 +750,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.UpdateStaff(childComplexity, args["staffId"].(string), args["staff"].(model.UpdateStaffInput)), true
 
+	case "Query.availableSlots":
+		if e.ComplexityRoot.Query.AvailableSlots == nil {
+			break
+		}
+
+		args, err := ec.field_Query_availableSlots_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.AvailableSlots(childComplexity, args["businessId"].(string), args["serviceOptionId"].(string), args["date"].(string), args["staffId"].(*string)), true
 	case "Query.availableStaffForSlot":
 		if e.ComplexityRoot.Query.AvailableStaffForSlot == nil {
 			break
@@ -764,6 +796,34 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.DisplayStaff(childComplexity), true
 
+	case "Query.publicBusinesses":
+		if e.ComplexityRoot.Query.PublicBusinesses == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.PublicBusinesses(childComplexity), true
+	case "Query.publicServices":
+		if e.ComplexityRoot.Query.PublicServices == nil {
+			break
+		}
+
+		args, err := ec.field_Query_publicServices_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.PublicServices(childComplexity, args["businessId"].(string)), true
+	case "Query.publicStaff":
+		if e.ComplexityRoot.Query.PublicStaff == nil {
+			break
+		}
+
+		args, err := ec.field_Query_publicStaff_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.PublicStaff(childComplexity, args["businessId"].(string)), true
 	case "Query.userProfile":
 		if e.ComplexityRoot.Query.UserProfile == nil {
 			break
@@ -887,12 +947,73 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Service.ServiceOptions(childComplexity), true
 
+	case "ServiceOption.deletedAt":
+		if e.ComplexityRoot.ServiceOption.DeletedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.DeletedAt(childComplexity), true
+	case "ServiceOption.description":
+		if e.ComplexityRoot.ServiceOption.Description == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.Description(childComplexity), true
+	case "ServiceOption.recurringSchedules":
+		if e.ComplexityRoot.ServiceOption.RecurringSchedules == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.RecurringSchedules(childComplexity), true
+	case "ServiceOption.service":
+		if e.ComplexityRoot.ServiceOption.Service == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.Service(childComplexity), true
+	case "ServiceOption.serviceId":
+		if e.ComplexityRoot.ServiceOption.ServiceID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.ServiceID(childComplexity), true
+	case "ServiceOption.serviceOptionId":
+		if e.ComplexityRoot.ServiceOption.ServiceOptionID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.ServiceOptionID(childComplexity), true
+	case "ServiceOption.serviceOptionItems":
+		if e.ComplexityRoot.ServiceOption.ServiceOptionItems == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.ServiceOptionItems(childComplexity), true
+	case "ServiceOption.serviceOptionName":
+		if e.ComplexityRoot.ServiceOption.ServiceOptionName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.ServiceOptionName(childComplexity), true
+	case "ServiceOption.serviceSlotOptions":
+		if e.ComplexityRoot.ServiceOption.ServiceSlotOptions == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.ServiceSlotOptions(childComplexity), true
+
 	case "ServiceOptionItem.deletedAt":
 		if e.ComplexityRoot.ServiceOptionItem.DeletedAt == nil {
 			break
 		}
 
 		return e.ComplexityRoot.ServiceOptionItem.DeletedAt(childComplexity), true
+	case "ServiceOptionItem.serviceOptionId":
+		if e.ComplexityRoot.ServiceOptionItem.ServiceOptionID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOptionItem.ServiceOptionID(childComplexity), true
 	case "ServiceOptionItem.serviceOptionItemId":
 		if e.ComplexityRoot.ServiceOptionItem.ServiceOptionItemID == nil {
 			break
@@ -911,12 +1032,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.ServiceOptionItem.ServicePackage(childComplexity), true
-	case "ServiceOptionItem.serviceOptionId":
-		if e.ComplexityRoot.ServiceOptionItem.ServiceOptionID == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServiceOptionItem.ServiceOptionID(childComplexity), true
 
 	case "ServiceSlot.createdAt":
 		if e.ComplexityRoot.ServiceSlot.CreatedAt == nil {
@@ -1003,18 +1118,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.ServiceSlotOption.DeletedAt(childComplexity), true
-	case "ServiceSlotOption.serviceSlot":
-		if e.ComplexityRoot.ServiceSlotOption.ServiceSlot == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServiceSlotOption.ServiceSlot(childComplexity), true
-	case "ServiceSlotOption.serviceSlotId":
-		if e.ComplexityRoot.ServiceSlotOption.ServiceSlotID == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServiceSlotOption.ServiceSlotID(childComplexity), true
 	case "ServiceSlotOption.serviceOption":
 		if e.ComplexityRoot.ServiceSlotOption.ServiceOption == nil {
 			break
@@ -1027,67 +1130,24 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.ServiceSlotOption.ServiceOptionID(childComplexity), true
+	case "ServiceSlotOption.serviceSlot":
+		if e.ComplexityRoot.ServiceSlotOption.ServiceSlot == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceSlotOption.ServiceSlot(childComplexity), true
+	case "ServiceSlotOption.serviceSlotId":
+		if e.ComplexityRoot.ServiceSlotOption.ServiceSlotID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceSlotOption.ServiceSlotID(childComplexity), true
 	case "ServiceSlotOption.slotOptionId":
 		if e.ComplexityRoot.ServiceSlotOption.SlotOptionID == nil {
 			break
 		}
 
 		return e.ComplexityRoot.ServiceSlotOption.SlotOptionID(childComplexity), true
-
-	case "ServiceOption.deletedAt":
-		if e.ComplexityRoot.ServiceOption.DeletedAt == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServiceOption.DeletedAt(childComplexity), true
-	case "ServiceOption.description":
-		if e.ComplexityRoot.ServiceOption.Description == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServiceOption.Description(childComplexity), true
-	case "ServiceOption.recurringSchedules":
-		if e.ComplexityRoot.ServiceOption.RecurringSchedules == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServiceOption.RecurringSchedules(childComplexity), true
-	case "ServiceOption.service":
-		if e.ComplexityRoot.ServiceOption.Service == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServiceOption.Service(childComplexity), true
-	case "ServiceOption.serviceId":
-		if e.ComplexityRoot.ServiceOption.ServiceID == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServiceOption.ServiceID(childComplexity), true
-	case "ServiceOption.serviceOptionItems":
-		if e.ComplexityRoot.ServiceOption.ServiceOptionItems == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServiceOption.ServiceOptionItems(childComplexity), true
-	case "ServiceOption.serviceSlotOptions":
-		if e.ComplexityRoot.ServiceOption.ServiceSlotOptions == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServiceOption.ServiceSlotOptions(childComplexity), true
-	case "ServiceOption.serviceOptionId":
-		if e.ComplexityRoot.ServiceOption.ServiceOptionID == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServiceOption.ServiceOptionID(childComplexity), true
-	case "ServiceOption.serviceOptionName":
-		if e.ComplexityRoot.ServiceOption.ServiceOptionName == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ServiceOption.ServiceOptionName(childComplexity), true
 
 	case "Staff.business":
 		if e.ComplexityRoot.Staff.Business == nil {
@@ -1295,9 +1355,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBusinessProfileInput,
 		ec.unmarshalInputLogInInput,
 		ec.unmarshalInputServiceInput,
+		ec.unmarshalInputServiceOptionInput,
 		ec.unmarshalInputServiceOptionItemInput,
 		ec.unmarshalInputServiceSlotInput,
-		ec.unmarshalInputServiceOptionInput,
 		ec.unmarshalInputSignUpInput,
 		ec.unmarshalInputStaffInput,
 		ec.unmarshalInputUpdateProfileInput,
@@ -1377,7 +1437,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "schema.business.graphqls" "schema.graphqls" "schema.service.graphqls" "schema.serviceSlot.graphqls" "schema.staff.graphqls" "schema.user.graphqls"
+//go:embed "schema.booking.graphqls" "schema.business.graphqls" "schema.graphqls" "schema.service.graphqls" "schema.serviceSlot.graphqls" "schema.staff.graphqls" "schema.user.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -1389,6 +1449,7 @@ func sourceData(filename string) string {
 }
 
 var sources = []*ast.Source{
+	{Name: "schema.booking.graphqls", Input: sourceData("schema.booking.graphqls"), BuiltIn: false},
 	{Name: "schema.business.graphqls", Input: sourceData("schema.business.graphqls"), BuiltIn: false},
 	{Name: "schema.graphqls", Input: sourceData("schema.graphqls"), BuiltIn: false},
 	{Name: "schema.service.graphqls", Input: sourceData("schema.service.graphqls"), BuiltIn: false},
@@ -1572,6 +1633,30 @@ func (ec *executionContext) childFields_Service(ctx context.Context, field graph
 	return nil, fmt.Errorf("no field named %q was found under type Service", field.Name)
 }
 
+func (ec *executionContext) childFields_ServiceOption(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "serviceOptionId":
+		return ec.fieldContext_ServiceOption_serviceOptionId(ctx, field)
+	case "serviceId":
+		return ec.fieldContext_ServiceOption_serviceId(ctx, field)
+	case "service":
+		return ec.fieldContext_ServiceOption_service(ctx, field)
+	case "serviceOptionName":
+		return ec.fieldContext_ServiceOption_serviceOptionName(ctx, field)
+	case "description":
+		return ec.fieldContext_ServiceOption_description(ctx, field)
+	case "serviceOptionItems":
+		return ec.fieldContext_ServiceOption_serviceOptionItems(ctx, field)
+	case "serviceSlotOptions":
+		return ec.fieldContext_ServiceOption_serviceSlotOptions(ctx, field)
+	case "recurringSchedules":
+		return ec.fieldContext_ServiceOption_recurringSchedules(ctx, field)
+	case "deletedAt":
+		return ec.fieldContext_ServiceOption_deletedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type ServiceOption", field.Name)
+}
+
 func (ec *executionContext) childFields_ServiceOptionItem(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "serviceOptionItemId":
@@ -1636,30 +1721,6 @@ func (ec *executionContext) childFields_ServiceSlotOption(ctx context.Context, f
 		return ec.fieldContext_ServiceSlotOption_deletedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type ServiceSlotOption", field.Name)
-}
-
-func (ec *executionContext) childFields_ServiceOption(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-	switch field.Name {
-	case "serviceOptionId":
-		return ec.fieldContext_ServiceOption_serviceOptionId(ctx, field)
-	case "serviceId":
-		return ec.fieldContext_ServiceOption_serviceId(ctx, field)
-	case "service":
-		return ec.fieldContext_ServiceOption_service(ctx, field)
-	case "serviceOptionName":
-		return ec.fieldContext_ServiceOption_serviceOptionName(ctx, field)
-	case "description":
-		return ec.fieldContext_ServiceOption_description(ctx, field)
-	case "serviceOptionItems":
-		return ec.fieldContext_ServiceOption_serviceOptionItems(ctx, field)
-	case "serviceSlotOptions":
-		return ec.fieldContext_ServiceOption_serviceSlotOptions(ctx, field)
-	case "recurringSchedules":
-		return ec.fieldContext_ServiceOption_recurringSchedules(ctx, field)
-	case "deletedAt":
-		return ec.fieldContext_ServiceOption_deletedAt(ctx, field)
-	}
-	return nil, fmt.Errorf("no field named %q was found under type ServiceOption", field.Name)
 }
 
 func (ec *executionContext) childFields_Staff(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1859,6 +1920,20 @@ func (ec *executionContext) childFields___Type(ctx context.Context, field graphq
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_createBooking_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "slotOptionId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["slotOptionId"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_createServiceSlot_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -2146,6 +2221,44 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_availableSlots_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "serviceOptionId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["serviceOptionId"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "date",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["date"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "staffId",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOID2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["staffId"] = arg3
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_availableStaffForSlot_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2195,6 +2308,34 @@ func (ec *executionContext) field_Query_displayServiceSlots_args(ctx context.Con
 		return nil, err
 	}
 	args["unassignedOnly"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_publicServices_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_publicStaff_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessId"] = arg0
 	return args, nil
 }
 
@@ -2427,7 +2568,7 @@ func (ec *executionContext) _Booking_slotOption(ctx context.Context, field graph
 			return ec.fieldContext_Booking_slotOption(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.SlotTier, nil
+			return obj.SlotOption, nil
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *model.ServiceSlotOption) graphql.Marshaler {
@@ -3387,6 +3528,50 @@ func (ec *executionContext) fieldContext_LeaveApplication_createdAt(_ context.Co
 	return graphql.NewScalarFieldContext("LeaveApplication", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
+func (ec *executionContext) _Mutation_createBooking(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createBooking(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateBooking(ctx, fc.Args["slotOptionId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Booking) graphql.Marshaler {
+			return ec.marshalNBooking2ᚖfypᚋgraphᚋmodelᚐBooking(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createBooking(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Booking(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createBooking_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_registerBusinessProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4085,6 +4270,170 @@ func (ec *executionContext) fieldContext_Mutation_updateProfile(ctx context.Cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateProfile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_publicBusinesses(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_publicBusinesses(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().PublicBusinesses(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.BusinessProfile) graphql.Marshaler {
+			return ec.marshalNBusinessProfile2ᚕᚖfypᚋgraphᚋmodelᚐBusinessProfileᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_publicBusinesses(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BusinessProfile(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_publicServices(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_publicServices(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().PublicServices(ctx, fc.Args["businessId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.Service) graphql.Marshaler {
+			return ec.marshalNService2ᚕᚖfypᚋgraphᚋmodelᚐServiceᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_publicServices(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Service(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_publicServices_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_publicStaff(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_publicStaff(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().PublicStaff(ctx, fc.Args["businessId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.Staff) graphql.Marshaler {
+			return ec.marshalNStaff2ᚕᚖfypᚋgraphᚋmodelᚐStaffᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_publicStaff(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Staff(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_publicStaff_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_availableSlots(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_availableSlots(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().AvailableSlots(ctx, fc.Args["businessId"].(string), fc.Args["serviceOptionId"].(string), fc.Args["date"].(string), fc.Args["staffId"].(*string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceSlot) graphql.Marshaler {
+			return ec.marshalNServiceSlot2ᚕᚖfypᚋgraphᚋmodelᚐServiceSlotᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_availableSlots(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ServiceSlot(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_availableSlots_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4833,6 +5182,249 @@ func (ec *executionContext) fieldContext_Service_deletedAt(_ context.Context, fi
 	return graphql.NewScalarFieldContext("Service", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
+func (ec *executionContext) _ServiceOption_serviceOptionId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_serviceOptionId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceOptionID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_serviceOptionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceOption_serviceId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_serviceId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_serviceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceOption_service(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_service(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Service, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Service) graphql.Marshaler {
+			return ec.marshalNService2ᚖfypᚋgraphᚋmodelᚐService(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_service(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ServiceOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Service(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ServiceOption_serviceOptionName(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_serviceOptionName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceOptionName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_serviceOptionName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceOption_description(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_description(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Description, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceOption_serviceOptionItems(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_serviceOptionItems(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceOptionItems, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceOptionItem) graphql.Marshaler {
+			return ec.marshalNServiceOptionItem2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionItemᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_serviceOptionItems(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ServiceOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ServiceOptionItem(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ServiceOption_serviceSlotOptions(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_serviceSlotOptions(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceSlotOptions, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceSlotOption) graphql.Marshaler {
+			return ec.marshalNServiceSlotOption2ᚕᚖfypᚋgraphᚋmodelᚐServiceSlotOptionᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_serviceSlotOptions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ServiceOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ServiceSlotOption(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ServiceOption_recurringSchedules(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_recurringSchedules(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RecurringSchedules, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.RecurringSchedule) graphql.Marshaler {
+			return ec.marshalNRecurringSchedule2ᚕᚖfypᚋgraphᚋmodelᚐRecurringScheduleᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_recurringSchedules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ServiceOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_RecurringSchedule(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ServiceOption_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_deletedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DeletedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalODateTime2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_deletedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
 func (ec *executionContext) _ServiceOptionItem_serviceOptionItemId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOptionItem) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5446,249 +6038,6 @@ func (ec *executionContext) _ServiceSlotOption_deletedAt(ctx context.Context, fi
 }
 func (ec *executionContext) fieldContext_ServiceSlotOption_deletedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("ServiceSlotOption", field, false, false, errors.New("field of type DateTime does not have child fields"))
-}
-
-func (ec *executionContext) _ServiceOption_serviceOptionId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceOption_serviceOptionId(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.ServiceOptionID, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
-			return ec.marshalNID2string(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_ServiceOption_serviceOptionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type ID does not have child fields"))
-}
-
-func (ec *executionContext) _ServiceOption_serviceId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceOption_serviceId(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.ServiceID, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
-			return ec.marshalNID2string(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_ServiceOption_serviceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type ID does not have child fields"))
-}
-
-func (ec *executionContext) _ServiceOption_service(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceOption_service(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.Service, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *model.Service) graphql.Marshaler {
-			return ec.marshalNService2ᚖfypᚋgraphᚋmodelᚐService(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_ServiceOption_service(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ServiceOption",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_Service(ctx, field)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ServiceOption_serviceOptionName(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceOption_serviceOptionName(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.ServiceOptionName, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
-			return ec.marshalNString2string(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_ServiceOption_serviceOptionName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type String does not have child fields"))
-}
-
-func (ec *executionContext) _ServiceOption_description(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceOption_description(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.Description, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
-			return ec.marshalOString2ᚖstring(ctx, selections, v)
-		},
-		true,
-		false,
-	)
-}
-func (ec *executionContext) fieldContext_ServiceOption_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type String does not have child fields"))
-}
-
-func (ec *executionContext) _ServiceOption_serviceOptionItems(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceOption_serviceOptionItems(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.ServiceOptionItems, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceOptionItem) graphql.Marshaler {
-			return ec.marshalNServiceOptionItem2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionItemᚄ(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_ServiceOption_serviceOptionItems(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ServiceOption",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_ServiceOptionItem(ctx, field)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ServiceOption_serviceSlotOptions(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceOption_serviceSlotOptions(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.ServiceSlotOptions, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceSlotOption) graphql.Marshaler {
-			return ec.marshalNServiceSlotOption2ᚕᚖfypᚋgraphᚋmodelᚐServiceSlotOptionᚄ(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_ServiceOption_serviceSlotOptions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ServiceOption",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_ServiceSlotOption(ctx, field)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ServiceOption_recurringSchedules(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceOption_recurringSchedules(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.RecurringSchedules, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v []*model.RecurringSchedule) graphql.Marshaler {
-			return ec.marshalNRecurringSchedule2ᚕᚖfypᚋgraphᚋmodelᚐRecurringScheduleᚄ(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_ServiceOption_recurringSchedules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ServiceOption",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_RecurringSchedule(ctx, field)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ServiceOption_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ServiceOption_deletedAt(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.DeletedAt, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
-			return ec.marshalODateTime2ᚖstring(ctx, selections, v)
-		},
-		true,
-		false,
-	)
-}
-func (ec *executionContext) fieldContext_ServiceOption_deletedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
 func (ec *executionContext) _Staff_staffId(ctx context.Context, field graphql.CollectedField, obj *model.Staff) (ret graphql.Marshaler) {
@@ -7729,6 +8078,50 @@ func (ec *executionContext) unmarshalInputServiceInput(ctx context.Context, obj 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputServiceOptionInput(ctx context.Context, obj any) (model.ServiceOptionInput, error) {
+	var it model.ServiceOptionInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"serviceOptionName", "description", "serviceOptionItems"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "serviceOptionName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceOptionName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceOptionName = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "serviceOptionItems":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceOptionItems"))
+			data, err := ec.unmarshalNServiceOptionItemInput2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionItemInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceOptionItems = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputServiceOptionItemInput(ctx context.Context, obj any) (model.ServiceOptionItemInput, error) {
 	var it model.ServiceOptionItemInput
 	if obj == nil {
@@ -7819,50 +8212,6 @@ func (ec *executionContext) unmarshalInputServiceSlotInput(ctx context.Context, 
 				return it, err
 			}
 			it.ServiceOptionIds = data
-		}
-	}
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputServiceOptionInput(ctx context.Context, obj any) (model.ServiceOptionInput, error) {
-	var it model.ServiceOptionInput
-	if obj == nil {
-		return it, nil
-	}
-
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"serviceOptionName", "description", "serviceOptionItems"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "serviceOptionName":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceOptionName"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ServiceOptionName = data
-		case "description":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Description = data
-		case "serviceOptionItems":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceOptionItems"))
-			data, err := ec.unmarshalNServiceOptionItemInput2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionItemInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ServiceOptionItems = data
 		}
 	}
 	return it, nil
@@ -8499,6 +8848,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
+		case "createBooking":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createBooking(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "registerBusinessProfile":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_registerBusinessProfile(ctx, field)
@@ -8653,6 +9009,94 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "publicBusinesses":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_publicBusinesses(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "publicServices":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_publicServices(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "publicStaff":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_publicStaff(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "availableSlots":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_availableSlots(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "displayServices":
 			field := field
 
@@ -8939,6 +9383,79 @@ func (ec *executionContext) _Service(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var serviceOptionImplementors = []string{"ServiceOption"}
+
+func (ec *executionContext) _ServiceOption(ctx context.Context, sel ast.SelectionSet, obj *model.ServiceOption) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, serviceOptionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ServiceOption")
+		case "serviceOptionId":
+			out.Values[i] = ec._ServiceOption_serviceOptionId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceId":
+			out.Values[i] = ec._ServiceOption_serviceId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "service":
+			out.Values[i] = ec._ServiceOption_service(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceOptionName":
+			out.Values[i] = ec._ServiceOption_serviceOptionName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._ServiceOption_description(ctx, field, obj)
+		case "serviceOptionItems":
+			out.Values[i] = ec._ServiceOption_serviceOptionItems(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceSlotOptions":
+			out.Values[i] = ec._ServiceOption_serviceSlotOptions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "recurringSchedules":
+			out.Values[i] = ec._ServiceOption_recurringSchedules(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deletedAt":
+			out.Values[i] = ec._ServiceOption_deletedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var serviceOptionItemImplementors = []string{"ServiceOptionItem"}
 
 func (ec *executionContext) _ServiceOptionItem(ctx context.Context, sel ast.SelectionSet, obj *model.ServiceOptionItem) graphql.Marshaler {
@@ -9117,79 +9634,6 @@ func (ec *executionContext) _ServiceSlotOption(ctx context.Context, sel ast.Sele
 			}
 		case "deletedAt":
 			out.Values[i] = ec._ServiceSlotOption_deletedAt(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
-
-	for label, dfs := range deferred {
-		ec.ProcessDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var serviceOptionImplementors = []string{"ServiceOption"}
-
-func (ec *executionContext) _ServiceOption(ctx context.Context, sel ast.SelectionSet, obj *model.ServiceOption) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, serviceOptionImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ServiceOption")
-		case "serviceOptionId":
-			out.Values[i] = ec._ServiceOption_serviceOptionId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "serviceId":
-			out.Values[i] = ec._ServiceOption_serviceId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "service":
-			out.Values[i] = ec._ServiceOption_service(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "serviceOptionName":
-			out.Values[i] = ec._ServiceOption_serviceOptionName(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "description":
-			out.Values[i] = ec._ServiceOption_description(ctx, field, obj)
-		case "serviceOptionItems":
-			out.Values[i] = ec._ServiceOption_serviceOptionItems(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "serviceSlotOptions":
-			out.Values[i] = ec._ServiceOption_serviceSlotOptions(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "recurringSchedules":
-			out.Values[i] = ec._ServiceOption_recurringSchedules(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "deletedAt":
-			out.Values[i] = ec._ServiceOption_deletedAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9806,6 +10250,10 @@ func (ec *executionContext) marshalNAuthPayload2ᚖfypᚋgraphᚋmodelᚐAuthPay
 	return ec._AuthPayload(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNBooking2fypᚋgraphᚋmodelᚐBooking(ctx context.Context, sel ast.SelectionSet, v model.Booking) graphql.Marshaler {
+	return ec._Booking(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNBooking2ᚕᚖfypᚋgraphᚋmodelᚐBookingᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Booking) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -9860,6 +10308,22 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 
 func (ec *executionContext) marshalNBusinessProfile2fypᚋgraphᚋmodelᚐBusinessProfile(ctx context.Context, sel ast.SelectionSet, v model.BusinessProfile) graphql.Marshaler {
 	return ec._BusinessProfile(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBusinessProfile2ᚕᚖfypᚋgraphᚋmodelᚐBusinessProfileᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.BusinessProfile) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBusinessProfile2ᚖfypᚋgraphᚋmodelᚐBusinessProfile(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNBusinessProfile2ᚖfypᚋgraphᚋmodelᚐBusinessProfile(ctx context.Context, sel ast.SelectionSet, v *model.BusinessProfile) graphql.Marshaler {
@@ -10109,6 +10573,52 @@ func (ec *executionContext) unmarshalNServiceInput2fypᚋgraphᚋmodelᚐService
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNServiceOption2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServiceOption) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNServiceOption2ᚖfypᚋgraphᚋmodelᚐServiceOption(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNServiceOption2ᚖfypᚋgraphᚋmodelᚐServiceOption(ctx context.Context, sel ast.SelectionSet, v *model.ServiceOption) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ServiceOption(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNServiceOptionInput2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionInputᚄ(ctx context.Context, v any) ([]*model.ServiceOptionInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.ServiceOptionInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNServiceOptionInput2ᚖfypᚋgraphᚋmodelᚐServiceOptionInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNServiceOptionInput2ᚖfypᚋgraphᚋmodelᚐServiceOptionInput(ctx context.Context, v any) (*model.ServiceOptionInput, error) {
+	res, err := ec.unmarshalInputServiceOptionInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNServiceOptionItem2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServiceOptionItem) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -10214,52 +10724,6 @@ func (ec *executionContext) marshalNServiceSlotOption2ᚖfypᚋgraphᚋmodelᚐS
 		return graphql.Null
 	}
 	return ec._ServiceSlotOption(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNServiceOption2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServiceOption) graphql.Marshaler {
-	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
-		fc := graphql.GetFieldContext(ctx)
-		fc.Result = &v[i]
-		return ec.marshalNServiceOption2ᚖfypᚋgraphᚋmodelᚐServiceOption(ctx, sel, v[i])
-	})
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNServiceOption2ᚖfypᚋgraphᚋmodelᚐServiceOption(ctx context.Context, sel ast.SelectionSet, v *model.ServiceOption) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._ServiceOption(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNServiceOptionInput2ᚕᚖfypᚋgraphᚋmodelᚐServiceOptionInputᚄ(ctx context.Context, v any) ([]*model.ServiceOptionInput, error) {
-	var vSlice []any
-	vSlice = graphql.CoerceList(v)
-	var err error
-	res := make([]*model.ServiceOptionInput, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNServiceOptionInput2ᚖfypᚋgraphᚋmodelᚐServiceOptionInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) unmarshalNServiceOptionInput2ᚖfypᚋgraphᚋmodelᚐServiceOptionInput(ctx context.Context, v any) (*model.ServiceOptionInput, error) {
-	res, err := ec.unmarshalInputServiceOptionInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNSignUpInput2fypᚋgraphᚋmodelᚐSignUpInput(ctx context.Context, v any) (model.SignUpInput, error) {

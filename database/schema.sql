@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
     slot_option_id BIGINT NOT NULL REFERENCES service_slot_options(slot_option_id) ON DELETE RESTRICT,
     booking_group_id BIGINT NOT NULL,
-    status VARCHAR(30),
+    status VARCHAR(30) NOT NULL DEFAULT 'pending',
     booking_type VARCHAR(30) NOT NULL,
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -170,3 +170,8 @@ WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX service_option_items_unique_name
 ON service_option_items (service_option_id, LOWER(service_option_item_name))
 WHERE deleted_at IS NULL;
+
+CREATE UNIQUE INDEX uq_active_booking_per_slot
+ON bookings(slot_option_id)
+WHERE deleted_at IS NULL
+  AND status NOT IN ('cancelled', 'rejected');

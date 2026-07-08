@@ -9,6 +9,7 @@ import (
 type IStaffRepo interface {
 	InsertStaff(ctx context.Context, tx *sql.Tx, p param.StaffParam) (*int64, error)
 	InsertStaffWorkingHours(ctx context.Context, tx *sql.Tx, param param.StaffParam) error
+	DeleteStaffWorkingHours(ctx context.Context, tx *sql.Tx, staffID int64) error
 	GetStaffByUserID(ctx context.Context, userID int64) (*param.StaffParam, error)
 	GetStaffByBusinessID(ctx context.Context, businessID int64) ([]param.StaffParam, error)
 	GetStaffWorkingHours(ctx context.Context, staffID int64) ([]param.WorkingHourParam, error)

@@ -24,33 +24,16 @@ func NewServiceService(db *sql.DB, serviceRepo interfaces.IServiceRepo) interfac
 	}
 }
 
-// ensureDefaultPackage guarantees every service has a package named exactly
-// after the service itself (representing "book this service, no specific
-// package"), without duplicating one the user already named that way.
-func ensureDefaultPackage(p *param.ServiceParam) {
-	for _, pkg := range p.ServiceOptions {
-		if strings.EqualFold(pkg.ServiceOptionName, p.ServiceName) {
-			return
-		}
-	}
-	p.ServiceOptions = append([]param.ServiceOptionParam{{ServiceOptionName: p.ServiceName}}, p.ServiceOptions...)
-}
 
-// ensureDefaultServiceOptionItems guarantees every package always has an item named
-// after the service itself, without duplicating one the user already named
-// that way.
-func ensureDefaultServiceOptionItems(packages []param.ServiceOptionParam, serviceName string) {
-	for i := range packages {
-		hasDefault := false
-		for _, item := range packages[i].ServiceOptionItems {
-			if strings.EqualFold(item.ServiceOptionItemName, serviceName) {
-				hasDefault = true
-				break
-			}
-		}
-		if !hasDefault {
-			packages[i].ServiceOptionItems = append([]param.ServiceOptionItemParam{{ServiceOptionItemName: serviceName}}, packages[i].ServiceOptionItems...)
-		}
+// ensureDefaultOption guarantees there is always at least one option.
+// If the first option has no name the service name is used as a fallback.
+func ensureDefaultOption(p *param.ServiceParam) {
+	if len(p.ServiceOptions) == 0 {
+		p.ServiceOptions = []param.ServiceOptionParam{{ServiceOptionName: p.ServiceName}}
+		return
+	}
+	if strings.TrimSpace(p.ServiceOptions[0].ServiceOptionName) == "" {
+		p.ServiceOptions[0].ServiceOptionName = p.ServiceName
 	}
 }
 
@@ -107,8 +90,7 @@ func (s *serviceService) CreateService(ctx context.Context, p param.ServiceParam
 		return nil, err
 	}
 
-	ensureDefaultPackage(&p)
-	ensureDefaultServiceOptionItems(p.ServiceOptions, p.ServiceName)
+	ensureDefaultOption(&p)
 
 	if validationErrs := validatePackageDuplicates(p.ServiceOptions); len(validationErrs) > 0 {
 		return nil, validationErrs
@@ -159,8 +141,7 @@ func (s *serviceService) UpdateService(ctx context.Context, p param.ServiceParam
 		return nil, err
 	}
 
-	ensureDefaultPackage(&p)
-	ensureDefaultServiceOptionItems(p.ServiceOptions, p.ServiceName)
+	ensureDefaultOption(&p)
 
 	if validationErrs := validatePackageDuplicates(p.ServiceOptions); len(validationErrs) > 0 {
 		return nil, validationErrs

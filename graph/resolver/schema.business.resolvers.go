@@ -94,8 +94,3 @@ func (r *mutationResolver) UpdateBusinessProfile(ctx context.Context, business m
 
 	return graph.MapBusinessProfile(businessProfile, owner), nil
 }
-
-// Mutation returns graph.MutationResolver implementation.
-func (r *Resolver) Mutation() graph.MutationResolver { return &mutationResolver{r} }
-
-type mutationResolver struct{ *Resolver }

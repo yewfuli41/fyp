@@ -14,10 +14,13 @@ type IBusinessRepo interface {
 	GetBusinessProfileByOwnerID(ctx context.Context, ownerID int64) (*param.BusinessProfileParam, error)
 	GetBusinessWorkingHours(ctx context.Context, businessID int64) ([]param.WorkingHourParam, error)
 	BusinessEmailExists(ctx context.Context, businessEmail string) (bool, error)
+	GetBusinesses(ctx context.Context, search string) ([]param.BusinessProfileParam, error)
+	GetBusinessByID(ctx context.Context, businessID int64) (*param.BusinessProfileParam, error)
 }
 
 type IBusinessService interface {
 	RegisterBusinessProfile(ctx context.Context, param param.BusinessProfileParam) (*param.BusinessProfileParam, error)
 	UpdateBusinessProfile(ctx context.Context, param param.BusinessProfileParam) (*param.BusinessProfileParam, error)
 	GetBusinessProfileByOwnerID(ctx context.Context, ownerID int64) (*param.BusinessProfileParam, error)
+	GetBusinesses(ctx context.Context, search string) ([]param.BusinessProfileParam, error)
 }

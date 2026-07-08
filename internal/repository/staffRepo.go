@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
 )
@@ -16,12 +17,39 @@ func NewStaffRepo(db *sql.DB) interfaces.IStaffRepo {
 }
 
 func (s *staffRepo) InsertStaff(ctx context.Context, tx *sql.Tx, p param.StaffParam) (*int64, error) {
+	// Restore a previously soft-deleted record if one exists for this user.
+	var staffID int64
+	err := tx.QueryRowContext(ctx, `
+		UPDATE staff SET
+			business_id          = $2,
+			staff_name           = $3,
+			staff_contact_number = $4,
+			position             = $5,
+			deleted_at           = NULL
+		WHERE user_id = $1 AND deleted_at IS NOT NULL
+		RETURNING staff_id
+	`, p.UserID, p.BusinessID, p.StaffName, p.StaffContactNumber, p.Position).Scan(&staffID)
+	if err == nil {
+		return &staffID, nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+	// No soft-deleted record — normal insert (unique violation = active staff).
 	row := tx.QueryRowContext(ctx, `
 		INSERT INTO staff (user_id, business_id, staff_name, staff_contact_number, position)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING staff_id
 	`, p.UserID, p.BusinessID, p.StaffName, p.StaffContactNumber, p.Position)
 	return scanStaffID(row)
+}
+
+func (s *staffRepo) DeleteStaffWorkingHours(ctx context.Context, tx *sql.Tx, staffID int64) error {
+	_, err := tx.ExecContext(ctx, `
+		UPDATE staff_working_hours SET deleted_at = NOW()
+		WHERE staff_id = $1 AND deleted_at IS NULL
+	`, staffID)
+	return err
 }
 
 func (s *staffRepo) InsertStaffWorkingHours(ctx context.Context, tx *sql.Tx, param param.StaffParam) error {
@@ -185,8 +213,8 @@ func (s *staffRepo) HasBookingForStaff(ctx context.Context, staffID int64) (bool
 	var count int
 	err := s.DB.QueryRowContext(ctx, `
 		SELECT COUNT(*) FROM bookings b
-		JOIN service_slot_packages ssp ON b.slot_package_id = ssp.slot_package_id
-		JOIN service_slots ss ON ssp.service_slot_id = ss.service_slot_id
+		JOIN service_slot_options sso ON b.slot_option_id = sso.slot_option_id
+		JOIN service_slots ss ON sso.service_slot_id = ss.service_slot_id
 		WHERE ss.staff_id = $1 AND b.deleted_at IS NULL
 	`, staffID).Scan(&count)
 	if err != nil {

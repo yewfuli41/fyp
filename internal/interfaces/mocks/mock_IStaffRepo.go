@@ -39,6 +39,69 @@ func (_m *MockIStaffRepo) EXPECT() *MockIStaffRepo_Expecter {
 	return &MockIStaffRepo_Expecter{mock: &_m.Mock}
 }
 
+// DeleteStaffWorkingHours provides a mock function for the type MockIStaffRepo
+func (_mock *MockIStaffRepo) DeleteStaffWorkingHours(ctx context.Context, tx *sql.Tx, staffID int64) error {
+	ret := _mock.Called(ctx, tx, staffID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteStaffWorkingHours")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, int64) error); ok {
+		r0 = returnFunc(ctx, tx, staffID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIStaffRepo_DeleteStaffWorkingHours_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteStaffWorkingHours'
+type MockIStaffRepo_DeleteStaffWorkingHours_Call struct {
+	*mock.Call
+}
+
+// DeleteStaffWorkingHours is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx *sql.Tx
+//   - staffID int64
+func (_e *MockIStaffRepo_Expecter) DeleteStaffWorkingHours(ctx interface{}, tx interface{}, staffID interface{}) *MockIStaffRepo_DeleteStaffWorkingHours_Call {
+	return &MockIStaffRepo_DeleteStaffWorkingHours_Call{Call: _e.mock.On("DeleteStaffWorkingHours", ctx, tx, staffID)}
+}
+
+func (_c *MockIStaffRepo_DeleteStaffWorkingHours_Call) Run(run func(ctx context.Context, tx *sql.Tx, staffID int64)) *MockIStaffRepo_DeleteStaffWorkingHours_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *sql.Tx
+		if args[1] != nil {
+			arg1 = args[1].(*sql.Tx)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIStaffRepo_DeleteStaffWorkingHours_Call) Return(err error) *MockIStaffRepo_DeleteStaffWorkingHours_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIStaffRepo_DeleteStaffWorkingHours_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, staffID int64) error) *MockIStaffRepo_DeleteStaffWorkingHours_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetStaffByBusinessID provides a mock function for the type MockIStaffRepo
 func (_mock *MockIStaffRepo) GetStaffByBusinessID(ctx context.Context, businessID int64) ([]param.StaffParam, error) {
 	ret := _mock.Called(ctx, businessID)

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
 	"fyp/utils"
@@ -182,6 +183,46 @@ func (b *businessRepo) GetBusinessWorkingHours(ctx context.Context, businessID i
 	}
 
 	return workingHours, nil
+}
+
+func (b *businessRepo) GetBusinesses(ctx context.Context, search string) ([]param.BusinessProfileParam, error) {
+	query := `
+		SELECT business_id, owner_user_id, business_name, description, address,
+		       image_url, business_contact_number, business_email
+		FROM business_profiles
+		WHERE 1=1`
+	args := []any{}
+	if search != "" {
+		args = append(args, "%"+search+"%")
+		query += fmt.Sprintf(" AND LOWER(business_name) LIKE LOWER($%d)", len(args))
+	}
+	query += " ORDER BY business_name"
+
+	rows, err := b.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []param.BusinessProfileParam
+	for rows.Next() {
+		bp, err := ScanBusinessProfile(rows)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, *bp)
+	}
+	return results, rows.Err()
+}
+
+func (b *businessRepo) GetBusinessByID(ctx context.Context, businessID int64) (*param.BusinessProfileParam, error) {
+	row := b.DB.QueryRowContext(ctx, `
+		SELECT business_id, owner_user_id, business_name, description, address,
+		       image_url, business_contact_number, business_email
+		FROM business_profiles
+		WHERE business_id = $1
+	`, businessID)
+	return ScanBusinessProfile(row)
 }
 
 func ScanBusinessProfile(row rowScanner) (*param.BusinessProfileParam, error) {

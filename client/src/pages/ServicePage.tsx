@@ -8,7 +8,7 @@ import {
 } from "../services/ServiceService";
 import { userProfile } from "../services/ProfileService";
 import { applyGraphQLErrors } from "../utils/graphqlErrors";
-import { emptyInput, emptyOption } from "../utils/serviceFormHelpers";
+import { emptyInput } from "../utils/serviceFormHelpers";
 import ServiceFormModal from "../modals/ServiceFormModal";
 import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
 
@@ -94,7 +94,7 @@ export default function ServicePage() {
                         ? pkg.serviceOptionItems.map(item => ({ serviceOptionItemName: item.serviceOptionItemName }))
                         : [{ serviceOptionItemName: "" }],
                 }))
-                : [emptyOption(svc.serviceName)],
+                : [],
         });
         setFormError("");
         setFieldErrors({});

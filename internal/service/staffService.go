@@ -141,6 +141,9 @@ func (s *staffService) RegisterStaff(ctx context.Context, ownerParam *param.Busi
 			return err
 		}
 		staffParam.StaffID = *staffID
+		if err = s.staffRepo.DeleteStaffWorkingHours(ctx, tx, staffParam.StaffID); err != nil {
+			return err
+		}
 		err = s.staffRepo.InsertStaffWorkingHours(ctx, tx, staffParam)
 		return err
 	})

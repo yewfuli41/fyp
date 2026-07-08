@@ -60,14 +60,14 @@ func (r *mutationResolver) CreateServiceSlot(ctx context.Context, input model.Se
 	}
 
 	p := param.ServiceSlotParam{
-		BusinessID:     businessID,
-		StaffID:        staffID,
-		Date:           date,
-		DaysOfWeek:     daysOfWeek,
-		StartTime:      input.StartTime,
-		EndTime:        input.EndTime,
+		BusinessID:       businessID,
+		StaffID:          staffID,
+		Date:             date,
+		DaysOfWeek:       daysOfWeek,
+		StartTime:        input.StartTime,
+		EndTime:          input.EndTime,
 		ServiceOptionIDs: packageIDs,
-		CreatedBy:      currentUser.UserID,
+		CreatedBy:        currentUser.UserID,
 	}
 
 	result, err := r.App.ServiceSlotService.CreateServiceSlot(ctx, p)
@@ -127,15 +127,15 @@ func (r *mutationResolver) UpdateServiceSlot(ctx context.Context, serviceSlotID 
 	}
 
 	p := param.ServiceSlotParam{
-		ServiceSlotID:  slotID,
-		BusinessID:     businessID,
-		StaffID:        staffID,
-		Date:           date,
-		DaysOfWeek:     daysOfWeek,
-		StartTime:      input.StartTime,
-		EndTime:        input.EndTime,
+		ServiceSlotID:    slotID,
+		BusinessID:       businessID,
+		StaffID:          staffID,
+		Date:             date,
+		DaysOfWeek:       daysOfWeek,
+		StartTime:        input.StartTime,
+		EndTime:          input.EndTime,
 		ServiceOptionIDs: packageIDs,
-		CreatedBy:      currentUser.UserID,
+		CreatedBy:        currentUser.UserID,
 	}
 
 	result, err := r.App.ServiceSlotService.UpdateServiceSlot(ctx, p, applyToFutureRecurring, staffScope)

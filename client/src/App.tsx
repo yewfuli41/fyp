@@ -34,8 +34,8 @@ function App() {
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/book" element={<BookLandingPage />} />
         <Route path="/businesses" element={<BusinessListPage />} />
-        <Route path="/businesses/:businessId/services" element={<BusinessServicesPage />} />
         <Route element={<ProtectedRoute />}>
+          <Route path="/businesses/:businessId/services" element={<BusinessServicesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/register-business" element={<RegisterBusinessPage />} />
         </Route>

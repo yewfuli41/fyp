@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Container, Dropdown, Form, Nav, Navbar } from "react-bootstrap";
+import { Container, Dropdown, Form, Nav, Navbar, Button } from "react-bootstrap";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
@@ -121,9 +121,11 @@ export default function AppNavbar() {
                         ) : (
                             <>
                                 <Nav.Link as={NavLink} to="/login">Log in</Nav.Link>
-                                <Nav.Link as={NavLink} to="/signup" className="btn btn-primary btn-sm text-white px-3">
-                                    Sign up
-                                </Nav.Link>
+                                <NavLink to="/signup" className="text-decoration-none">
+                                    <Button variant="primary">
+                                        Sign up
+                                    </Button>
+                                </NavLink>
                             </>
                         )}
                     </Nav>

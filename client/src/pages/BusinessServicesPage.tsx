@@ -41,7 +41,6 @@ export default function BusinessServicesPage() {
     }, [businessId]);
 
     const openBooking = (optionId: string, optionName: string) => {
-        if (!activeToken) { navigate("/login"); return; }
         setSelectedOptionId(optionId);
         setSelectedOptionName(optionName);
         setShowBooking(true);

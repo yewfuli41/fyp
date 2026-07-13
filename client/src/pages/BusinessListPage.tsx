@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { Alert, Button, Col, Container, Form, Row, Spinner } from "react-bootstrap";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getPublicBusinesses, type PublicBusiness } from "../services/PublicService";
+import { getPublicBusinesses, getPublicServices, type PublicBusiness, type PublicService } from "../services/PublicService";
+import "../styles/BookLandingPage.css";
 
 export default function BusinessListPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [all, setAll] = useState<PublicBusiness[]>([]);
+    const [servicesByBusiness, setServicesByBusiness] = useState<Record<string, PublicService[]>>({});
     const [search, setSearch] = useState(searchParams.get("search") ?? "");
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
@@ -15,7 +17,20 @@ export default function BusinessListPage() {
         const load = async () => {
             try {
                 const res = await getPublicBusinesses();
-                setAll(res.data?.publicBusinesses ?? []);
+                const businesses = res.data?.publicBusinesses ?? [];
+                setAll(businesses);
+
+                const servicesEntries = await Promise.all(
+                    businesses.map(async biz => {
+                        try {
+                            const svcRes = await getPublicServices(biz.businessId);
+                            return [biz.businessId, svcRes.data?.publicServices ?? []] as const;
+                        } catch {
+                            return [biz.businessId, []] as const;
+                        }
+                    })
+                );
+                setServicesByBusiness(Object.fromEntries(servicesEntries));
             } catch {
                 setError("Failed to load businesses.");
             } finally {
@@ -33,6 +48,10 @@ export default function BusinessListPage() {
         )
         : all;
 
+    const handleBook = (businessId: string) => {
+        navigate(`/businesses/${businessId}/services`);
+    };
+
     return (
         <Container className="py-4">
             <Row className="align-items-center mb-3">
@@ -44,7 +63,7 @@ export default function BusinessListPage() {
                         placeholder="Search businesses…"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        style={{ width: 240 }}
+                        style={{ width: 400 }}
                     />
                 </Col>
             </Row>
@@ -55,40 +74,50 @@ export default function BusinessListPage() {
             ) : filtered.length === 0 ? (
                 <p className="text-muted">No businesses found.</p>
             ) : (
-                filtered.map(biz => (
-                    <div key={biz.businessId} className="mb-4">
-                        <Row className="align-items-start">
-                            {biz.imageUrl && (
-                                <Col xs="auto">
-                                    <img
-                                        src={biz.imageUrl}
-                                        alt={biz.businessName}
-                                        style={{ width: 90, height: 70, objectFit: "cover", borderRadius: 6 }}
-                                    />
-                                </Col>
-                            )}
-                            <Col>
-                                <h5 className="mb-1">{biz.businessName}</h5>
-                                {biz.description && <p className="text-muted mb-1 small">{biz.description}</p>}
-                                <div className="d-flex gap-3 flex-wrap text-muted small">
-                                    {biz.address && <span>📍 {biz.address}</span>}
-                                    {biz.businessContactNumber && <span>📞 {biz.businessContactNumber}</span>}
-                                    {biz.businessEmail && <span>✉ {biz.businessEmail}</span>}
+                <Row className="g-3">
+                    {filtered.map(biz => {
+                        const services = servicesByBusiness[biz.businessId] ?? [];
+                        return (
+                            <Col key={biz.businessId} xs={12} md={6} lg={4}>
+                                <div className="biz-card text-start">
+                                    <div className="d-flex align-items-center gap-3 mb-3">
+                                        {biz.imageUrl ? (
+                                            <img className="biz-avatar" src={biz.imageUrl} alt={biz.businessName} />
+                                        ) : (
+                                            <div className="biz-avatar">{biz.businessName.charAt(0).toUpperCase()}</div>
+                                        )}
+                                        <div className="biz-name">{biz.businessName}</div>
+                                    </div>
+                                    {biz.description && <p className="text-muted small mb-3">{biz.description}</p>}
+                                    <div className="d-flex flex-column gap-2 text-muted small mb-3 biz-contact">
+                                        {biz.address && <span>📍 {biz.address}</span>}
+                                        {biz.businessContactNumber && <span>📞 {biz.businessContactNumber}</span>}
+                                        {biz.businessEmail && <span>✉ {biz.businessEmail}</span>}
+                                    </div>
+                                    <div className="biz-services mb-3">
+                                        <div className="biz-services-label">Services</div>
+                                        {services.length === 0 ? (
+                                            <span className="text-muted small">No services listed.</span>
+                                        ) : (
+                                            <div className="d-flex flex-wrap gap-2">
+                                                {services.map(svc => (
+                                                    <span key={svc.serviceId} className="biz-service-pill">
+                                                        {svc.serviceName}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="mt-auto text-end">
+                                        <Button variant="primary" size="sm" onClick={() => handleBook(biz.businessId)}>
+                                            Book
+                                        </Button>
+                                    </div>
                                 </div>
                             </Col>
-                            <Col xs="auto" className="d-flex align-items-center">
-                                <Button
-                                    variant="primary"
-                                    size="sm"
-                                    onClick={() => navigate(`/businesses/${biz.businessId}/services`)}
-                                >
-                                    Book
-                                </Button>
-                            </Col>
-                        </Row>
-                        <hr />
-                    </div>
-                ))
+                        );
+                    })}
+                </Row>
             )}
         </Container>
     );

@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Alert, Button, Col, Container, Form, Row, Spinner } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getPublicBusinesses, type PublicBusiness } from "../services/PublicService";
 
 export default function BusinessListPage() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [all, setAll] = useState<PublicBusiness[]>([]);
-    const [search, setSearch] = useState("");
+    const [search, setSearch] = useState(searchParams.get("search") ?? "");
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
 

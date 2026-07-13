@@ -197,3 +197,71 @@ func (_c *MockIBookingService_GetAvailableSlots_Call) RunAndReturn(run func(ctx 
 	_c.Call.Return(run)
 	return _c
 }
+
+// GetRecentlyBookedBusinesses provides a mock function for the type MockIBookingService
+func (_mock *MockIBookingService) GetRecentlyBookedBusinesses(ctx context.Context, userID int64) ([]param.BusinessProfileParam, error) {
+	ret := _mock.Called(ctx, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRecentlyBookedBusinesses")
+	}
+
+	var r0 []param.BusinessProfileParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) ([]param.BusinessProfileParam, error)); ok {
+		return returnFunc(ctx, userID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) []param.BusinessProfileParam); ok {
+		r0 = returnFunc(ctx, userID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]param.BusinessProfileParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBookingService_GetRecentlyBookedBusinesses_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRecentlyBookedBusinesses'
+type MockIBookingService_GetRecentlyBookedBusinesses_Call struct {
+	*mock.Call
+}
+
+// GetRecentlyBookedBusinesses is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID int64
+func (_e *MockIBookingService_Expecter) GetRecentlyBookedBusinesses(ctx interface{}, userID interface{}) *MockIBookingService_GetRecentlyBookedBusinesses_Call {
+	return &MockIBookingService_GetRecentlyBookedBusinesses_Call{Call: _e.mock.On("GetRecentlyBookedBusinesses", ctx, userID)}
+}
+
+func (_c *MockIBookingService_GetRecentlyBookedBusinesses_Call) Run(run func(ctx context.Context, userID int64)) *MockIBookingService_GetRecentlyBookedBusinesses_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingService_GetRecentlyBookedBusinesses_Call) Return(businessProfileParams []param.BusinessProfileParam, err error) *MockIBookingService_GetRecentlyBookedBusinesses_Call {
+	_c.Call.Return(businessProfileParams, err)
+	return _c
+}
+
+func (_c *MockIBookingService_GetRecentlyBookedBusinesses_Call) RunAndReturn(run func(ctx context.Context, userID int64) ([]param.BusinessProfileParam, error)) *MockIBookingService_GetRecentlyBookedBusinesses_Call {
+	_c.Call.Return(run)
+	return _c
+}

@@ -46,10 +46,11 @@ var _ = Describe("ServiceService", func() {
 		)
 
 		BeforeEach(func() {
-			// A service is always saved with an extra default package (named
-			// after the service) and every package always gets a default item
-			// (also named after the service) — see ensureDefaultPackage /
-			// ensureDefaultServiceOptionItems in serviceService.go.
+			// A service is saved with its options as provided. ensureDefaultOption
+			// only supplies a fallback name for the first option when it is empty
+			// (and adds a single option when none are given) — see
+			// ensureDefaultOption in serviceService.go. No extra default option or
+			// per-option default item is injected.
 			serviceParam = param.ServiceParam{
 				BusinessID:  1,
 				ServiceName: "Massage",
@@ -67,15 +68,8 @@ var _ = Describe("ServiceService", func() {
 				ServiceName: "Massage",
 				ServiceOptions: []param.ServiceOptionParam{
 					{
-						ServiceOptionName: "Massage",
-						ServiceOptionItems: []param.ServiceOptionItemParam{
-							{ServiceOptionItemName: "Massage"},
-						},
-					},
-					{
 						ServiceOptionName: "Deep Tissue",
 						ServiceOptionItems: []param.ServiceOptionItemParam{
-							{ServiceOptionItemName: "Massage"},
 							{ServiceOptionItemName: "Oil"},
 						},
 					},
@@ -96,32 +90,12 @@ var _ = Describe("ServiceService", func() {
 				Return(createdSvc, nil).
 				Once()
 
-			createdDefaultPkg := &param.ServiceOptionParam{ServiceOptionID: 20, ServiceID: 10, ServiceOptionName: "Massage"}
-			serviceRepo.EXPECT().
-				InsertServiceOption(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServiceOptionParam) bool {
-					return p.ServiceID == 10 && p.ServiceOptionName == "Massage"
-				})).
-				Return(createdDefaultPkg, nil).
-				Once()
-			serviceRepo.EXPECT().
-				InsertServiceOptionItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServiceOptionItemParam) bool {
-					return p.ServiceOptionID == 20 && p.ServiceOptionItemName == "Massage"
-				})).
-				Return(nil).
-				Once()
-
 			createdPkg := &param.ServiceOptionParam{ServiceOptionID: 21, ServiceID: 10, ServiceOptionName: "Deep Tissue"}
 			serviceRepo.EXPECT().
 				InsertServiceOption(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServiceOptionParam) bool {
 					return p.ServiceID == 10 && p.ServiceOptionName == "Deep Tissue"
 				})).
 				Return(createdPkg, nil).
-				Once()
-			serviceRepo.EXPECT().
-				InsertServiceOptionItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServiceOptionItemParam) bool {
-					return p.ServiceOptionID == 21 && p.ServiceOptionItemName == "Massage"
-				})).
-				Return(nil).
 				Once()
 			serviceRepo.EXPECT().
 				InsertServiceOptionItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServiceOptionItemParam) bool {
@@ -136,9 +110,8 @@ var _ = Describe("ServiceService", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.ServiceID).To(Equal(int64(10)))
-			Expect(result.ServiceOptions).To(HaveLen(2))
-			Expect(result.ServiceOptions[0].ServiceOptionID).To(Equal(int64(20)))
-			Expect(result.ServiceOptions[1].ServiceOptionID).To(Equal(int64(21)))
+			Expect(result.ServiceOptions).To(HaveLen(1))
+			Expect(result.ServiceOptions[0].ServiceOptionID).To(Equal(int64(21)))
 		})
 
 		It("returns validation error", func() {
@@ -206,15 +179,8 @@ var _ = Describe("ServiceService", func() {
 				ServiceName: "Updated Massage",
 				ServiceOptions: []param.ServiceOptionParam{
 					{
-						ServiceOptionName: "Updated Massage",
-						ServiceOptionItems: []param.ServiceOptionItemParam{
-							{ServiceOptionItemName: "Updated Massage"},
-						},
-					},
-					{
 						ServiceOptionName: "Swedish",
 						ServiceOptionItems: []param.ServiceOptionItemParam{
-							{ServiceOptionItemName: "Updated Massage"},
 							{ServiceOptionItemName: "Lotion"},
 						},
 					},
@@ -239,32 +205,12 @@ var _ = Describe("ServiceService", func() {
 				Return(nil).
 				Once()
 
-			createdDefaultPkg := &param.ServiceOptionParam{ServiceOptionID: 30, ServiceID: 10, ServiceOptionName: "Updated Massage"}
-			serviceRepo.EXPECT().
-				InsertServiceOption(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServiceOptionParam) bool {
-					return p.ServiceID == 10 && p.ServiceOptionName == "Updated Massage"
-				})).
-				Return(createdDefaultPkg, nil).
-				Once()
-			serviceRepo.EXPECT().
-				InsertServiceOptionItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServiceOptionItemParam) bool {
-					return p.ServiceOptionID == 30 && p.ServiceOptionItemName == "Updated Massage"
-				})).
-				Return(nil).
-				Once()
-
 			createdPkg := &param.ServiceOptionParam{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish"}
 			serviceRepo.EXPECT().
 				InsertServiceOption(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServiceOptionParam) bool {
 					return p.ServiceID == 10 && p.ServiceOptionName == "Swedish"
 				})).
 				Return(createdPkg, nil).
-				Once()
-			serviceRepo.EXPECT().
-				InsertServiceOptionItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServiceOptionItemParam) bool {
-					return p.ServiceOptionID == 31 && p.ServiceOptionItemName == "Updated Massage"
-				})).
-				Return(nil).
 				Once()
 			serviceRepo.EXPECT().
 				InsertServiceOptionItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServiceOptionItemParam) bool {
@@ -279,7 +225,7 @@ var _ = Describe("ServiceService", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.ServiceName).To(Equal("Updated Massage"))
-			Expect(result.ServiceOptions).To(HaveLen(2))
+			Expect(result.ServiceOptions).To(HaveLen(1))
 		})
 
 		It("rolls back when DeleteServiceOptionsByServiceID fails", func() {

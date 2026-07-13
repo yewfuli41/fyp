@@ -20,6 +20,10 @@ func (s *bookingService) GetAvailableSlots(ctx context.Context, businessID int64
 	return s.bookingRepo.GetAvailableSlots(ctx, businessID, serviceOptionID, date, staffID)
 }
 
+func (s *bookingService) GetRecentlyBookedBusinesses(ctx context.Context, userID int64) ([]param.BusinessProfileParam, error) {
+	return s.bookingRepo.GetRecentlyBookedBusinesses(ctx, userID)
+}
+
 func (s *bookingService) CreateBooking(ctx context.Context, userID int64, slotOptionID int64) (*param.BookingParam, error) {
 	if slotOptionID <= 0 {
 		return nil, errs.ValidationErrors{{Field: "slotOptionId", Message: "Please select a time slot"}}

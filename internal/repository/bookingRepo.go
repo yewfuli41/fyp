@@ -103,6 +103,36 @@ func (r *bookingRepo) getSlotOption(ctx context.Context, serviceSlotID int64, se
 	return pkgs, rows.Err()
 }
 
+func (r *bookingRepo) GetRecentlyBookedBusinesses(ctx context.Context, userID int64) ([]param.BusinessProfileParam, error) {
+	rows, err := r.DB.QueryContext(ctx, `
+		SELECT bp.business_id, bp.owner_user_id, bp.business_name, bp.description, bp.address,
+		       bp.image_url, bp.business_contact_number, bp.business_email
+		FROM bookings b
+		JOIN service_slot_options sso ON sso.slot_option_id = b.slot_option_id
+		JOIN service_options so ON so.service_option_id = sso.service_option_id
+		JOIN services s ON s.service_id = so.service_id
+		JOIN business_profiles bp ON bp.business_id = s.business_id
+		WHERE b.user_id = $1 AND b.deleted_at IS NULL
+		GROUP BY bp.business_id
+		ORDER BY MAX(b.created_at) DESC
+		LIMIT 6
+	`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []param.BusinessProfileParam
+	for rows.Next() {
+		bp, err := ScanBusinessProfile(rows)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, *bp)
+	}
+	return results, rows.Err()
+}
+
 func (r *bookingRepo) InsertBooking(ctx context.Context, userID int64, slotOptionID int64) (*param.BookingParam, error) {
 	var b param.BookingParam
 	err := r.DB.QueryRowContext(ctx, `

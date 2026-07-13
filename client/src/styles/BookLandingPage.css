@@ -1,0 +1,134 @@
+.book-hero {
+    text-align: center;
+    padding: 3.5rem 1rem 2.5rem;
+}
+
+.book-hero h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    margin-bottom: 1rem;
+}
+
+.book-hero .book-tagline {
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 2.25rem;
+}
+
+.book-search {
+    max-width: 640px;
+    margin: 0 auto;
+    display: flex;
+    gap: 0.75rem;
+}
+
+.book-search .form-control {
+    height: 52px;
+    font-size: 1rem;
+}
+
+.book-search .btn {
+    height: 52px;
+    padding-inline: 2rem;
+    font-weight: 600;
+}
+
+.book-search-field {
+    position: relative;
+    flex: 1;
+}
+
+.book-autocomplete {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+    max-height: 300px;
+    overflow-y: auto;
+    text-align: left;
+}
+
+.book-autocomplete li {
+    padding: 0.55rem 0.95rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.book-autocomplete li:hover {
+    background: #f1f5f9;
+}
+
+.book-section-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.book-results {
+    background: #f6f8fa;
+    border-radius: 18px;
+    padding: 1.5rem;
+}
+
+.biz-card {
+    background: #fff;
+    border: 1px solid #eef0f2;
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.biz-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.09);
+    transform: translateY(-2px);
+}
+
+.biz-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #5aa9e6, #2f7cc0);
+    flex-shrink: 0;
+    object-fit: cover;
+    overflow: hidden;
+}
+
+.biz-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 0.1rem;
+}
+
+.biz-address {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.biz-book {
+    color: #2f7cc0;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.biz-book:hover {
+    text-decoration: underline;
+}

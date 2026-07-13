@@ -55,6 +55,23 @@ export const getPublicBusinesses = () => {
     return doGraphQL<{ publicBusinesses: PublicBusiness[] }>(query);
 };
 
+export const getRecentlyBookedBusinesses = (token: string) => {
+    const query = `
+        query {
+            recentlyBookedBusinesses {
+                businessId
+                businessName
+                description
+                address
+                imageUrl
+                businessContactNumber
+                businessEmail
+            }
+        }
+    `;
+    return doGraphQL<{ recentlyBookedBusinesses: PublicBusiness[] }>(query, token);
+};
+
 export const getPublicServices = (businessId: string) => {
     const query = `
         query {

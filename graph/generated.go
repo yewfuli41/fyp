@@ -119,15 +119,16 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AvailableSlots        func(childComplexity int, businessID string, serviceOptionID string, date string, staffID *string) int
-		AvailableStaffForSlot func(childComplexity int, serviceSlotID string) int
-		DisplayServiceSlots   func(childComplexity int, date string, staffID *string, serviceID *string, unassignedOnly *bool) int
-		DisplayServices       func(childComplexity int) int
-		DisplayStaff          func(childComplexity int) int
-		PublicBusinesses      func(childComplexity int) int
-		PublicServices        func(childComplexity int, businessID string) int
-		PublicStaff           func(childComplexity int, businessID string) int
-		UserProfile           func(childComplexity int) int
+		AvailableSlots           func(childComplexity int, businessID string, serviceOptionID string, date string, staffID *string) int
+		AvailableStaffForSlot    func(childComplexity int, serviceSlotID string) int
+		DisplayServiceSlots      func(childComplexity int, date string, staffID *string, serviceID *string, unassignedOnly *bool) int
+		DisplayServices          func(childComplexity int) int
+		DisplayStaff             func(childComplexity int) int
+		PublicBusinesses         func(childComplexity int) int
+		PublicServices           func(childComplexity int, businessID string) int
+		PublicStaff              func(childComplexity int, businessID string) int
+		RecentlyBookedBusinesses func(childComplexity int) int
+		UserProfile              func(childComplexity int) int
 	}
 
 	RecurringSchedule struct {
@@ -266,6 +267,7 @@ type QueryResolver interface {
 	PublicServices(ctx context.Context, businessID string) ([]*model.Service, error)
 	PublicStaff(ctx context.Context, businessID string) ([]*model.Staff, error)
 	AvailableSlots(ctx context.Context, businessID string, serviceOptionID string, date string, staffID *string) ([]*model.ServiceSlot, error)
+	RecentlyBookedBusinesses(ctx context.Context) ([]*model.BusinessProfile, error)
 	DisplayServices(ctx context.Context) ([]*model.Service, error)
 	DisplayServiceSlots(ctx context.Context, date string, staffID *string, serviceID *string, unassignedOnly *bool) ([]*model.ServiceSlot, error)
 	AvailableStaffForSlot(ctx context.Context, serviceSlotID string) ([]*model.Staff, error)
@@ -824,6 +826,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.PublicStaff(childComplexity, args["businessId"].(string)), true
+	case "Query.recentlyBookedBusinesses":
+		if e.ComplexityRoot.Query.RecentlyBookedBusinesses == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.RecentlyBookedBusinesses(childComplexity), true
 	case "Query.userProfile":
 		if e.ComplexityRoot.Query.UserProfile == nil {
 			break
@@ -4436,6 +4444,38 @@ func (ec *executionContext) fieldContext_Query_availableSlots(ctx context.Contex
 	if fc.Args, err = ec.field_Query_availableSlots_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_recentlyBookedBusinesses(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_recentlyBookedBusinesses(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().RecentlyBookedBusinesses(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.BusinessProfile) graphql.Marshaler {
+			return ec.marshalNBusinessProfile2ᚕᚖfypᚋgraphᚋmodelᚐBusinessProfileᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_recentlyBookedBusinesses(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BusinessProfile(ctx, field)
+		},
 	}
 	return fc, nil
 }
@@ -9085,6 +9125,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_availableSlots(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "recentlyBookedBusinesses":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_recentlyBookedBusinesses(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

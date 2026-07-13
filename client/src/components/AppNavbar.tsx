@@ -32,9 +32,9 @@ export default function AppNavbar() {
     };
 
     const availableModes: { value: ViewMode; label: string }[] = [
-        ...(isOwner ? [{ value: "business" as ViewMode, label: "Business" }] : []),
-        ...(isStaff ? [{ value: "staff" as ViewMode, label: "Staff" }] : []),
-        { value: "customer", label: "Customer" },
+        ...(isOwner ? [{ value: "business" as ViewMode, label: "Business Mode" }] : []),
+        ...(isStaff ? [{ value: "staff" as ViewMode, label: "Staff Mode" }] : []),
+        { value: "customer", label: "Customer Mode" },
     ];
 
     const showModeSwitcher = isLoggedIn && availableModes.length > 1;
@@ -45,7 +45,7 @@ export default function AppNavbar() {
                 {/* Logo */}
                 <Navbar.Brand
                     as={NavLink}
-                    to="/"
+                    to={isLoggedIn?"/book":"/"}
                     className="fw-bold fs-4 px-3 py-1 border border-2 border-dark rounded text-dark me-4"
                     style={{ letterSpacing: "-0.5px" }}
                 >

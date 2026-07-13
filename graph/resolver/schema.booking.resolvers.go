@@ -116,6 +116,23 @@ func (r *queryResolver) AvailableSlots(ctx context.Context, businessID string, s
 	return result, nil
 }
 
+// RecentlyBookedBusinesses returns the businesses the current user recently booked.
+func (r *queryResolver) RecentlyBookedBusinesses(ctx context.Context) ([]*model.BusinessProfile, error) {
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	businesses, err := r.App.BookingService.GetRecentlyBookedBusinesses(ctx, currentUser.UserID)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	result := make([]*model.BusinessProfile, len(businesses))
+	for i := range businesses {
+		result[i] = graph.MapBusinessProfile(&businesses[i], nil)
+	}
+	return result, nil
+}
+
 // Mutation returns graph.MutationResolver implementation.
 func (r *Resolver) Mutation() graph.MutationResolver { return &mutationResolver{r} }
 

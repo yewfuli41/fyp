@@ -11,6 +11,7 @@ import CalendarPage from "./pages/CalendarPage"
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import BusinessListPage from "./pages/BusinessListPage";
+import BookLandingPage from "./pages/BookLandingPage";
 import BusinessServicesPage from "./pages/BusinessServicesPage";
 import AppNavbar from "./components/AppNavbar";
 import HomePage from "./pages/HomePage";
@@ -31,6 +32,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LogInPage />} />
         <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/book" element={<BookLandingPage />} />
         <Route path="/businesses" element={<BusinessListPage />} />
         <Route path="/businesses/:businessId/services" element={<BusinessServicesPage />} />
         <Route element={<ProtectedRoute />}>

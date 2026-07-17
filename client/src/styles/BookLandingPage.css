@@ -93,6 +93,11 @@
 
 .biz-contact {
     line-height: 1.5;
+    min-width: 0;
+}
+
+.biz-contact span {
+    overflow-wrap: anywhere;
 }
 
 .biz-card:hover {
@@ -120,6 +125,12 @@
     font-weight: 700;
     font-size: 1.05rem;
     margin-bottom: 0.1rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .biz-address {

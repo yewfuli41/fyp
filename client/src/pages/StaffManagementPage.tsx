@@ -131,6 +131,11 @@ export default function StaffManagementPage() {
     // ── Delete helpers ──────────────────────────────────────────────────────────
 
     const openDelete = (member: Staff) => {
+        if (member.hasBooking) {
+            setPageError("Deletion disabled - booking exists.");
+            return;
+        }
+        setPageError("");
         setDeletingStaff(member);
         setDeleteError("");
         setShowDeleteConfirm(true);
@@ -191,16 +196,8 @@ export default function StaffManagementPage() {
 
     return (
         <Container className="py-5">
-            <Button
-                variant="link"
-                className="px-0 mb-2 text-decoration-none"
-                onClick={() => navigate("/profile")}
-            >
-                &larr; Back
-            </Button>
-
             <h1 className="mb-4 fs-1 text-start">
-                Staff Management{businessName ? ` (${businessName})` : ""}
+                Staff Management
             </h1>
 
             <Form.Group className="mb-4" style={{ maxWidth: 400 }}>
@@ -216,12 +213,11 @@ export default function StaffManagementPage() {
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2 className="h4 fw-bold mb-0 text-start">Staff Table</h2>
                 <Button variant="primary" onClick={() => navigate("/register-staff")}>
-                    Add Staff
+                    + Add Staff
                 </Button>
             </div>
 
             {pageError && <Alert variant="danger">{pageError}</Alert>}
-            {rowFormError && <Alert variant="danger">{rowFormError}</Alert>}
 
             {filteredStaff.length === 0 ? (
                 <Alert variant="info" style={{ maxWidth: 1200 }}>
@@ -346,23 +342,28 @@ export default function StaffManagementPage() {
                                     </td>
                                     <td>
                                         {isEditing ? (
-                                            <div className="d-flex gap-2">
-                                                <Button
-                                                    variant="primary"
-                                                    size="sm"
-                                                    onClick={() => handleSave(member.staffId)}
-                                                    disabled={isSaving}
-                                                >
-                                                    {isSaving ? "Saving..." : "Save"}
-                                                </Button>
-                                                <Button
-                                                    variant="outline-secondary"
-                                                    size="sm"
-                                                    onClick={cancelEdit}
-                                                    disabled={isSaving}
-                                                >
-                                                    Cancel
-                                                </Button>
+                                            <div>
+                                                {rowFormError && (
+                                                    <div className="text-danger small mb-1">{rowFormError}</div>
+                                                )}
+                                                <div className="d-flex gap-2">
+                                                    <Button
+                                                        variant="primary"
+                                                        size="sm"
+                                                        onClick={() => handleSave(member.staffId)}
+                                                        disabled={isSaving}
+                                                    >
+                                                        {isSaving ? "Saving..." : "Save"}
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline-secondary"
+                                                        size="sm"
+                                                        onClick={cancelEdit}
+                                                        disabled={isSaving}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                </div>
                                             </div>
                                         ) : (
                                             <div className="d-flex gap-2">
@@ -375,7 +376,7 @@ export default function StaffManagementPage() {
                                                     Edit
                                                 </Button>
                                                 <Button
-                                                    variant="danger"
+                                                    variant={member.hasBooking ? "secondary" : "danger"}
                                                     size="sm"
                                                     onClick={() => openDelete(member)}
                                                     disabled={editingId !== null}

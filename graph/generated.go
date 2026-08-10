@@ -51,11 +51,46 @@ type ComplexityRoot struct {
 		DecidedBy     func(childComplexity int) int
 		DecidedByUser func(childComplexity int) int
 		DeletedAt     func(childComplexity int) int
+		Description   func(childComplexity int) int
 		SlotOption    func(childComplexity int) int
 		SlotOptionID  func(childComplexity int) int
 		Status        func(childComplexity int) int
 		User          func(childComplexity int) int
 		UserID        func(childComplexity int) int
+	}
+
+	BookingDetail struct {
+		BookingID       func(childComplexity int) int
+		BookingType     func(childComplexity int) int
+		BusinessID      func(childComplexity int) int
+		BusinessName    func(childComplexity int) int
+		CreatedAt       func(childComplexity int) int
+		CustomerEmail   func(childComplexity int) int
+		CustomerName    func(childComplexity int) int
+		Date            func(childComplexity int) int
+		Description     func(childComplexity int) int
+		EndTime         func(childComplexity int) int
+		OptionName      func(childComplexity int) int
+		ServiceName     func(childComplexity int) int
+		ServiceOptionID func(childComplexity int) int
+		ServiceSlotID   func(childComplexity int) int
+		SlotOptionID    func(childComplexity int) int
+		StaffName       func(childComplexity int) int
+		StartTime       func(childComplexity int) int
+		Status          func(childComplexity int) int
+	}
+
+	BookingSummary struct {
+		ByStatus           func(childComplexity int) int
+		ByType             func(childComplexity int) int
+		PendingCount       func(childComplexity int) int
+		TodayAcceptedCount func(childComplexity int) int
+		TotalBookings      func(childComplexity int) int
+	}
+
+	BookingTrendPoint struct {
+		Count func(childComplexity int) int
+		Date  func(childComplexity int) int
 	}
 
 	BusinessProfile struct {
@@ -83,52 +118,99 @@ type ComplexityRoot struct {
 		StartTime          func(childComplexity int) int
 	}
 
+	CancellationAnalysis struct {
+		ByService                func(childComplexity int) int
+		ByStaff                  func(childComplexity int) int
+		CancelledOrRejectedRate  func(childComplexity int) int
+		TotalCancelled           func(childComplexity int) int
+		TotalCancelledOrRejected func(childComplexity int) int
+		TotalRejected            func(childComplexity int) int
+	}
+
+	CustomerRetention struct {
+		NewCustomers       func(childComplexity int) int
+		ReturningCustomers func(childComplexity int) int
+		TotalCustomers     func(childComplexity int) int
+	}
+
 	LeaveApplication struct {
-		CreatedAt     func(childComplexity int) int
-		DecidedAt     func(childComplexity int) int
-		DeletedAt     func(childComplexity int) int
-		EndDate       func(childComplexity int) int
-		FileURL       func(childComplexity int) int
-		Justification func(childComplexity int) int
-		LeaveID       func(childComplexity int) int
-		Remark        func(childComplexity int) int
-		Staff         func(childComplexity int) int
-		StaffID       func(childComplexity int) int
-		StartDate     func(childComplexity int) int
-		Status        func(childComplexity int) int
+		AffectedBookings func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
+		DecidedAt        func(childComplexity int) int
+		DeletedAt        func(childComplexity int) int
+		EndDate          func(childComplexity int) int
+		FileURL          func(childComplexity int) int
+		Justification    func(childComplexity int) int
+		LeaveID          func(childComplexity int) int
+		Position         func(childComplexity int) int
+		Remark           func(childComplexity int) int
+		Staff            func(childComplexity int) int
+		StaffID          func(childComplexity int) int
+		StaffName        func(childComplexity int) int
+		StartDate        func(childComplexity int) int
+		Status           func(childComplexity int) int
 	}
 
 	Mutation struct {
-		CreateBooking            func(childComplexity int, slotOptionID string) int
+		AcceptBooking            func(childComplexity int, bookingID string) int
+		AcceptReschedule         func(childComplexity int, bookingID string) int
+		ApplyLeave               func(childComplexity int, input model.ApplyLeaveInput) int
+		ApproveLeaveApplication  func(childComplexity int, leaveID string) int
+		CancelBooking            func(childComplexity int, bookingID string) int
+		ChangePassword           func(childComplexity int, currentPassword string, newPassword string) int
+		CreateBooking            func(childComplexity int, slotOptionID string, description *string) int
 		CreateService            func(childComplexity int, service model.ServiceInput) int
 		CreateServiceSlot        func(childComplexity int, input model.ServiceSlotInput) int
+		DeleteLeaveApplication   func(childComplexity int, leaveID string) int
 		DeleteService            func(childComplexity int, serviceID string) int
 		DeleteServiceSlot        func(childComplexity int, serviceSlotID string, deleteFutureRecurring bool) int
 		DeleteStaff              func(childComplexity int, staffID string) int
 		LogIn                    func(childComplexity int, user model.LogInInput) int
 		ReassignServiceSlotStaff func(childComplexity int, serviceSlotID string, staffID *string) int
+		RecordWalkIn             func(childComplexity int, input model.WalkInInput) int
 		RegisterBusinessProfile  func(childComplexity int, business model.BusinessProfileInput) int
 		RegisterStaff            func(childComplexity int, staff *model.StaffInput) int
+		RejectBooking            func(childComplexity int, bookingID string) int
+		RejectLeaveApplication   func(childComplexity int, leaveID string, remark string) int
+		RescheduleBooking        func(childComplexity int, bookingID string, newSlotOptionID string) int
 		ResetPassword            func(childComplexity int, newPassword string) int
 		SignUp                   func(childComplexity int, user model.SignUpInput) int
+		UpdateBookingDescription func(childComplexity int, bookingID string, description *string) int
 		UpdateBusinessProfile    func(childComplexity int, business model.BusinessProfileInput) int
+		UpdateLeaveApplication   func(childComplexity int, leaveID string, justification *string) int
 		UpdateProfile            func(childComplexity int, user model.UpdateProfileInput) int
 		UpdateService            func(childComplexity int, serviceID string, service model.ServiceInput) int
-		UpdateServiceSlot        func(childComplexity int, serviceSlotID string, input model.ServiceSlotInput, applyToFutureRecurring bool) int
+		UpdateServiceSlot        func(childComplexity int, serviceSlotID string, input model.ServiceSlotInput) int
 		UpdateStaff              func(childComplexity int, staffID string, staff model.UpdateStaffInput) int
+		UpdateStaffWorkingHours  func(childComplexity int, staffID string, workingHours []*model.WorkingHourInput, reassignments []*model.SlotReassignmentInput) int
 	}
 
 	Query struct {
-		AvailableSlots           func(childComplexity int, businessID string, serviceOptionID string, date string, staffID *string) int
-		AvailableStaffForSlot    func(childComplexity int, serviceSlotID string) int
-		DisplayServiceSlots      func(childComplexity int, date string, staffID *string, serviceID *string, unassignedOnly *bool) int
-		DisplayServices          func(childComplexity int) int
-		DisplayStaff             func(childComplexity int) int
-		PublicBusinesses         func(childComplexity int) int
-		PublicServices           func(childComplexity int, businessID string) int
-		PublicStaff              func(childComplexity int, businessID string) int
-		RecentlyBookedBusinesses func(childComplexity int) int
-		UserProfile              func(childComplexity int) int
+		AvailableDates             func(childComplexity int, businessID string, serviceID *string, serviceOptionID *string, staffID *string, unassignedOnly *bool, from string, until string) int
+		AvailableSlots             func(childComplexity int, businessID string, serviceOptionID string, date string, staffID *string, unassignedOnly *bool) int
+		AvailableStaffForSlot      func(childComplexity int, serviceSlotID string) int
+		BookingSummary             func(childComplexity int, from string, until string) int
+		BookingTrend               func(childComplexity int, from string, until string, granularity *model.TrendGranularity) int
+		BusinessBookings           func(childComplexity int) int
+		BusinessCreatedAt          func(childComplexity int) int
+		BusinessLeaveApplications  func(childComplexity int) int
+		CancellationAnalysis       func(childComplexity int, from string, until string, staffIds []string, serviceIds []string) int
+		CancellationServiceOptions func(childComplexity int) int
+		CustomerRetention          func(childComplexity int, from string, until string) int
+		DisplayServiceSlots        func(childComplexity int, date string, staffID *string, serviceID *string, unassignedOnly *bool) int
+		DisplayServices            func(childComplexity int) int
+		DisplayStaff               func(childComplexity int) int
+		MyAppointments             func(childComplexity int) int
+		MyLeaveApplications        func(childComplexity int) int
+		PublicBusinesses           func(childComplexity int) int
+		PublicServices             func(childComplexity int, businessID string) int
+		PublicStaff                func(childComplexity int, businessID string) int
+		RecentlyBookedBusinesses   func(childComplexity int) int
+		ServicePopularity          func(childComplexity int, from string, until string) int
+		SlotUtilization            func(childComplexity int, from string, until string, groupBy *model.SlotUtilizationGroupBy) int
+		StaffHoursConflicts        func(childComplexity int, staffID string, workingHours []*model.WorkingHourInput) int
+		StaffUtilization           func(childComplexity int, from string, until string) int
+		UserProfile                func(childComplexity int) int
 	}
 
 	RecurringSchedule struct {
@@ -156,10 +238,26 @@ type ComplexityRoot struct {
 		ServiceOptions func(childComplexity int) int
 	}
 
+	ServiceCancellation struct {
+		Count       func(childComplexity int) int
+		ServiceID   func(childComplexity int) int
+		ServiceName func(childComplexity int) int
+	}
+
+	ServiceFilterOption struct {
+		Deleted     func(childComplexity int) int
+		ServiceIds  func(childComplexity int) int
+		ServiceName func(childComplexity int) int
+	}
+
 	ServiceOption struct {
 		DeletedAt          func(childComplexity int) int
 		Description        func(childComplexity int) int
+		EffectiveFrom      func(childComplexity int) int
+		EffectiveUntil     func(childComplexity int) int
+		HasBooking         func(childComplexity int) int
 		RecurringSchedules func(childComplexity int) int
+		Removed            func(childComplexity int) int
 		Service            func(childComplexity int) int
 		ServiceID          func(childComplexity int) int
 		ServiceOptionID    func(childComplexity int) int
@@ -174,6 +272,12 @@ type ComplexityRoot struct {
 		ServiceOptionItemID   func(childComplexity int) int
 		ServiceOptionItemName func(childComplexity int) int
 		ServicePackage        func(childComplexity int) int
+	}
+
+	ServicePopularity struct {
+		BookingCount func(childComplexity int) int
+		ServiceID    func(childComplexity int) int
+		ServiceName  func(childComplexity int) int
 	}
 
 	ServiceSlot struct {
@@ -201,12 +305,20 @@ type ComplexityRoot struct {
 		SlotOptionID    func(childComplexity int) int
 	}
 
+	SlotUtilization struct {
+		BookedSlots     func(childComplexity int) int
+		Sections        func(childComplexity int) int
+		TotalSlots      func(childComplexity int) int
+		UtilizationRate func(childComplexity int) int
+	}
+
 	Staff struct {
 		Business           func(childComplexity int) int
 		BusinessID         func(childComplexity int) int
 		ContactNumber      func(childComplexity int) int
 		DeletedAt          func(childComplexity int) int
 		Email              func(childComplexity int) int
+		HasBooking         func(childComplexity int) int
 		LeaveApplications  func(childComplexity int) int
 		MustResetPassword  func(childComplexity int) int
 		Name               func(childComplexity int) int
@@ -219,6 +331,20 @@ type ComplexityRoot struct {
 		WorkingHours       func(childComplexity int) int
 	}
 
+	StaffCancellation struct {
+		CustomerCount func(childComplexity int) int
+		StaffCount    func(childComplexity int) int
+		StaffID       func(childComplexity int) int
+		StaffName     func(childComplexity int) int
+	}
+
+	StaffUtilization struct {
+		Bookings    func(childComplexity int) int
+		HoursBooked func(childComplexity int) int
+		StaffID     func(childComplexity int) int
+		StaffName   func(childComplexity int) int
+	}
+
 	StaffWorkingHour struct {
 		Day             func(childComplexity int) int
 		DeletedAt       func(childComplexity int) int
@@ -227,6 +353,16 @@ type ComplexityRoot struct {
 		StaffID         func(childComplexity int) int
 		StaffWorkHourID func(childComplexity int) int
 		StartTime       func(childComplexity int) int
+	}
+
+	StatusCount struct {
+		Count  func(childComplexity int) int
+		Status func(childComplexity int) int
+	}
+
+	TypeCount struct {
+		BookingType func(childComplexity int) int
+		Count       func(childComplexity int) int
 	}
 
 	User struct {
@@ -241,17 +377,41 @@ type ComplexityRoot struct {
 		UserID              func(childComplexity int) int
 		Username            func(childComplexity int) int
 	}
+
+	UtilizationBreakdownPoint struct {
+		BookedSlots func(childComplexity int) int
+		Label       func(childComplexity int) int
+		TotalSlots  func(childComplexity int) int
+	}
+
+	UtilizationSection struct {
+		Points   func(childComplexity int) int
+		Subtitle func(childComplexity int) int
+	}
 }
 
 type MutationResolver interface {
-	CreateBooking(ctx context.Context, slotOptionID string) (*model.Booking, error)
+	CreateBooking(ctx context.Context, slotOptionID string, description *string) (*model.Booking, error)
+	AcceptBooking(ctx context.Context, bookingID string) (*model.BookingDetail, error)
+	RejectBooking(ctx context.Context, bookingID string) (*model.BookingDetail, error)
+	CancelBooking(ctx context.Context, bookingID string) (*model.BookingDetail, error)
+	RescheduleBooking(ctx context.Context, bookingID string, newSlotOptionID string) (*model.BookingDetail, error)
+	AcceptReschedule(ctx context.Context, bookingID string) (*model.BookingDetail, error)
+	UpdateBookingDescription(ctx context.Context, bookingID string, description *string) (*model.BookingDetail, error)
+	RecordWalkIn(ctx context.Context, input model.WalkInInput) (*model.BookingDetail, error)
 	RegisterBusinessProfile(ctx context.Context, business model.BusinessProfileInput) (*model.BusinessProfile, error)
 	UpdateBusinessProfile(ctx context.Context, business model.BusinessProfileInput) (*model.BusinessProfile, error)
+	ApplyLeave(ctx context.Context, input model.ApplyLeaveInput) (*model.LeaveApplication, error)
+	UpdateLeaveApplication(ctx context.Context, leaveID string, justification *string) (*model.LeaveApplication, error)
+	DeleteLeaveApplication(ctx context.Context, leaveID string) (bool, error)
+	ApproveLeaveApplication(ctx context.Context, leaveID string) (*model.LeaveApplication, error)
+	RejectLeaveApplication(ctx context.Context, leaveID string, remark string) (*model.LeaveApplication, error)
+	UpdateStaffWorkingHours(ctx context.Context, staffID string, workingHours []*model.WorkingHourInput, reassignments []*model.SlotReassignmentInput) (*model.Staff, error)
 	CreateService(ctx context.Context, service model.ServiceInput) (*model.Service, error)
 	UpdateService(ctx context.Context, serviceID string, service model.ServiceInput) (*model.Service, error)
 	DeleteService(ctx context.Context, serviceID string) (bool, error)
 	CreateServiceSlot(ctx context.Context, input model.ServiceSlotInput) (*model.ServiceSlot, error)
-	UpdateServiceSlot(ctx context.Context, serviceSlotID string, input model.ServiceSlotInput, applyToFutureRecurring bool) (*model.ServiceSlot, error)
+	UpdateServiceSlot(ctx context.Context, serviceSlotID string, input model.ServiceSlotInput) (*model.ServiceSlot, error)
 	ReassignServiceSlotStaff(ctx context.Context, serviceSlotID string, staffID *string) (*model.ServiceSlot, error)
 	DeleteServiceSlot(ctx context.Context, serviceSlotID string, deleteFutureRecurring bool) (bool, error)
 	RegisterStaff(ctx context.Context, staff *model.StaffInput) (bool, error)
@@ -260,14 +420,30 @@ type MutationResolver interface {
 	SignUp(ctx context.Context, user model.SignUpInput) (*model.AuthPayload, error)
 	LogIn(ctx context.Context, user model.LogInInput) (*model.AuthPayload, error)
 	ResetPassword(ctx context.Context, newPassword string) (bool, error)
+	ChangePassword(ctx context.Context, currentPassword string, newPassword string) (bool, error)
 	UpdateProfile(ctx context.Context, user model.UpdateProfileInput) (*model.User, error)
 }
 type QueryResolver interface {
+	BookingSummary(ctx context.Context, from string, until string) (*model.BookingSummary, error)
+	BookingTrend(ctx context.Context, from string, until string, granularity *model.TrendGranularity) ([]*model.BookingTrendPoint, error)
+	ServicePopularity(ctx context.Context, from string, until string) ([]*model.ServicePopularity, error)
+	SlotUtilization(ctx context.Context, from string, until string, groupBy *model.SlotUtilizationGroupBy) (*model.SlotUtilization, error)
+	StaffUtilization(ctx context.Context, from string, until string) ([]*model.StaffUtilization, error)
+	CustomerRetention(ctx context.Context, from string, until string) (*model.CustomerRetention, error)
+	CancellationServiceOptions(ctx context.Context) ([]*model.ServiceFilterOption, error)
+	BusinessCreatedAt(ctx context.Context) (string, error)
+	CancellationAnalysis(ctx context.Context, from string, until string, staffIds []string, serviceIds []string) (*model.CancellationAnalysis, error)
 	PublicBusinesses(ctx context.Context) ([]*model.BusinessProfile, error)
 	PublicServices(ctx context.Context, businessID string) ([]*model.Service, error)
 	PublicStaff(ctx context.Context, businessID string) ([]*model.Staff, error)
-	AvailableSlots(ctx context.Context, businessID string, serviceOptionID string, date string, staffID *string) ([]*model.ServiceSlot, error)
+	AvailableSlots(ctx context.Context, businessID string, serviceOptionID string, date string, staffID *string, unassignedOnly *bool) ([]*model.ServiceSlot, error)
+	AvailableDates(ctx context.Context, businessID string, serviceID *string, serviceOptionID *string, staffID *string, unassignedOnly *bool, from string, until string) ([]string, error)
 	RecentlyBookedBusinesses(ctx context.Context) ([]*model.BusinessProfile, error)
+	BusinessBookings(ctx context.Context) ([]*model.BookingDetail, error)
+	MyAppointments(ctx context.Context) ([]*model.BookingDetail, error)
+	MyLeaveApplications(ctx context.Context) ([]*model.LeaveApplication, error)
+	BusinessLeaveApplications(ctx context.Context) ([]*model.LeaveApplication, error)
+	StaffHoursConflicts(ctx context.Context, staffID string, workingHours []*model.WorkingHourInput) ([]*model.ServiceSlot, error)
 	DisplayServices(ctx context.Context) ([]*model.Service, error)
 	DisplayServiceSlots(ctx context.Context, date string, staffID *string, serviceID *string, unassignedOnly *bool) ([]*model.ServiceSlot, error)
 	AvailableStaffForSlot(ctx context.Context, serviceSlotID string) ([]*model.Staff, error)
@@ -344,6 +520,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Booking.DeletedAt(childComplexity), true
+	case "Booking.description":
+		if e.ComplexityRoot.Booking.Description == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Booking.Description(childComplexity), true
 	case "Booking.slotOption":
 		if e.ComplexityRoot.Booking.SlotOption == nil {
 			break
@@ -374,6 +556,159 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Booking.UserID(childComplexity), true
+
+	case "BookingDetail.bookingId":
+		if e.ComplexityRoot.BookingDetail.BookingID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.BookingID(childComplexity), true
+	case "BookingDetail.bookingType":
+		if e.ComplexityRoot.BookingDetail.BookingType == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.BookingType(childComplexity), true
+	case "BookingDetail.businessId":
+		if e.ComplexityRoot.BookingDetail.BusinessID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.BusinessID(childComplexity), true
+	case "BookingDetail.businessName":
+		if e.ComplexityRoot.BookingDetail.BusinessName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.BusinessName(childComplexity), true
+	case "BookingDetail.createdAt":
+		if e.ComplexityRoot.BookingDetail.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.CreatedAt(childComplexity), true
+	case "BookingDetail.customerEmail":
+		if e.ComplexityRoot.BookingDetail.CustomerEmail == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.CustomerEmail(childComplexity), true
+	case "BookingDetail.customerName":
+		if e.ComplexityRoot.BookingDetail.CustomerName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.CustomerName(childComplexity), true
+	case "BookingDetail.date":
+		if e.ComplexityRoot.BookingDetail.Date == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.Date(childComplexity), true
+	case "BookingDetail.description":
+		if e.ComplexityRoot.BookingDetail.Description == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.Description(childComplexity), true
+	case "BookingDetail.endTime":
+		if e.ComplexityRoot.BookingDetail.EndTime == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.EndTime(childComplexity), true
+	case "BookingDetail.optionName":
+		if e.ComplexityRoot.BookingDetail.OptionName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.OptionName(childComplexity), true
+	case "BookingDetail.serviceName":
+		if e.ComplexityRoot.BookingDetail.ServiceName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.ServiceName(childComplexity), true
+	case "BookingDetail.serviceOptionId":
+		if e.ComplexityRoot.BookingDetail.ServiceOptionID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.ServiceOptionID(childComplexity), true
+	case "BookingDetail.serviceSlotId":
+		if e.ComplexityRoot.BookingDetail.ServiceSlotID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.ServiceSlotID(childComplexity), true
+	case "BookingDetail.slotOptionId":
+		if e.ComplexityRoot.BookingDetail.SlotOptionID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.SlotOptionID(childComplexity), true
+	case "BookingDetail.staffName":
+		if e.ComplexityRoot.BookingDetail.StaffName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.StaffName(childComplexity), true
+	case "BookingDetail.startTime":
+		if e.ComplexityRoot.BookingDetail.StartTime == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.StartTime(childComplexity), true
+	case "BookingDetail.status":
+		if e.ComplexityRoot.BookingDetail.Status == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingDetail.Status(childComplexity), true
+
+	case "BookingSummary.byStatus":
+		if e.ComplexityRoot.BookingSummary.ByStatus == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingSummary.ByStatus(childComplexity), true
+	case "BookingSummary.byType":
+		if e.ComplexityRoot.BookingSummary.ByType == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingSummary.ByType(childComplexity), true
+	case "BookingSummary.pendingCount":
+		if e.ComplexityRoot.BookingSummary.PendingCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingSummary.PendingCount(childComplexity), true
+	case "BookingSummary.todayAcceptedCount":
+		if e.ComplexityRoot.BookingSummary.TodayAcceptedCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingSummary.TodayAcceptedCount(childComplexity), true
+	case "BookingSummary.totalBookings":
+		if e.ComplexityRoot.BookingSummary.TotalBookings == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingSummary.TotalBookings(childComplexity), true
+
+	case "BookingTrendPoint.count":
+		if e.ComplexityRoot.BookingTrendPoint.Count == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingTrendPoint.Count(childComplexity), true
+	case "BookingTrendPoint.date":
+		if e.ComplexityRoot.BookingTrendPoint.Date == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BookingTrendPoint.Date(childComplexity), true
 
 	case "BusinessProfile.address":
 		if e.ComplexityRoot.BusinessProfile.Address == nil {
@@ -491,6 +826,68 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.BusinessWorkingHour.StartTime(childComplexity), true
 
+	case "CancellationAnalysis.byService":
+		if e.ComplexityRoot.CancellationAnalysis.ByService == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CancellationAnalysis.ByService(childComplexity), true
+	case "CancellationAnalysis.byStaff":
+		if e.ComplexityRoot.CancellationAnalysis.ByStaff == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CancellationAnalysis.ByStaff(childComplexity), true
+	case "CancellationAnalysis.cancelledOrRejectedRate":
+		if e.ComplexityRoot.CancellationAnalysis.CancelledOrRejectedRate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CancellationAnalysis.CancelledOrRejectedRate(childComplexity), true
+	case "CancellationAnalysis.totalCancelled":
+		if e.ComplexityRoot.CancellationAnalysis.TotalCancelled == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CancellationAnalysis.TotalCancelled(childComplexity), true
+	case "CancellationAnalysis.totalCancelledOrRejected":
+		if e.ComplexityRoot.CancellationAnalysis.TotalCancelledOrRejected == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CancellationAnalysis.TotalCancelledOrRejected(childComplexity), true
+	case "CancellationAnalysis.totalRejected":
+		if e.ComplexityRoot.CancellationAnalysis.TotalRejected == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CancellationAnalysis.TotalRejected(childComplexity), true
+
+	case "CustomerRetention.newCustomers":
+		if e.ComplexityRoot.CustomerRetention.NewCustomers == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CustomerRetention.NewCustomers(childComplexity), true
+	case "CustomerRetention.returningCustomers":
+		if e.ComplexityRoot.CustomerRetention.ReturningCustomers == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CustomerRetention.ReturningCustomers(childComplexity), true
+	case "CustomerRetention.totalCustomers":
+		if e.ComplexityRoot.CustomerRetention.TotalCustomers == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CustomerRetention.TotalCustomers(childComplexity), true
+
+	case "LeaveApplication.affectedBookings":
+		if e.ComplexityRoot.LeaveApplication.AffectedBookings == nil {
+			break
+		}
+
+		return e.ComplexityRoot.LeaveApplication.AffectedBookings(childComplexity), true
 	case "LeaveApplication.createdAt":
 		if e.ComplexityRoot.LeaveApplication.CreatedAt == nil {
 			break
@@ -533,6 +930,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.LeaveApplication.LeaveID(childComplexity), true
+	case "LeaveApplication.position":
+		if e.ComplexityRoot.LeaveApplication.Position == nil {
+			break
+		}
+
+		return e.ComplexityRoot.LeaveApplication.Position(childComplexity), true
 	case "LeaveApplication.remark":
 		if e.ComplexityRoot.LeaveApplication.Remark == nil {
 			break
@@ -551,6 +954,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.LeaveApplication.StaffID(childComplexity), true
+	case "LeaveApplication.staffName":
+		if e.ComplexityRoot.LeaveApplication.StaffName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.LeaveApplication.StaffName(childComplexity), true
 	case "LeaveApplication.startDate":
 		if e.ComplexityRoot.LeaveApplication.StartDate == nil {
 			break
@@ -564,6 +973,72 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.LeaveApplication.Status(childComplexity), true
 
+	case "Mutation.acceptBooking":
+		if e.ComplexityRoot.Mutation.AcceptBooking == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_acceptBooking_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.AcceptBooking(childComplexity, args["bookingId"].(string)), true
+	case "Mutation.acceptReschedule":
+		if e.ComplexityRoot.Mutation.AcceptReschedule == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_acceptReschedule_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.AcceptReschedule(childComplexity, args["bookingId"].(string)), true
+	case "Mutation.applyLeave":
+		if e.ComplexityRoot.Mutation.ApplyLeave == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_applyLeave_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.ApplyLeave(childComplexity, args["input"].(model.ApplyLeaveInput)), true
+	case "Mutation.approveLeaveApplication":
+		if e.ComplexityRoot.Mutation.ApproveLeaveApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_approveLeaveApplication_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.ApproveLeaveApplication(childComplexity, args["leaveId"].(string)), true
+	case "Mutation.cancelBooking":
+		if e.ComplexityRoot.Mutation.CancelBooking == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_cancelBooking_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CancelBooking(childComplexity, args["bookingId"].(string)), true
+	case "Mutation.changePassword":
+		if e.ComplexityRoot.Mutation.ChangePassword == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_changePassword_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.ChangePassword(childComplexity, args["currentPassword"].(string), args["newPassword"].(string)), true
 	case "Mutation.createBooking":
 		if e.ComplexityRoot.Mutation.CreateBooking == nil {
 			break
@@ -574,7 +1049,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Mutation.CreateBooking(childComplexity, args["slotOptionId"].(string)), true
+		return e.ComplexityRoot.Mutation.CreateBooking(childComplexity, args["slotOptionId"].(string), args["description"].(*string)), true
 	case "Mutation.createService":
 		if e.ComplexityRoot.Mutation.CreateService == nil {
 			break
@@ -597,6 +1072,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateServiceSlot(childComplexity, args["input"].(model.ServiceSlotInput)), true
+	case "Mutation.deleteLeaveApplication":
+		if e.ComplexityRoot.Mutation.DeleteLeaveApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteLeaveApplication_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteLeaveApplication(childComplexity, args["leaveId"].(string)), true
 	case "Mutation.deleteService":
 		if e.ComplexityRoot.Mutation.DeleteService == nil {
 			break
@@ -652,6 +1138,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.ReassignServiceSlotStaff(childComplexity, args["serviceSlotId"].(string), args["staffId"].(*string)), true
+	case "Mutation.recordWalkIn":
+		if e.ComplexityRoot.Mutation.RecordWalkIn == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_recordWalkIn_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RecordWalkIn(childComplexity, args["input"].(model.WalkInInput)), true
 	case "Mutation.registerBusinessProfile":
 		if e.ComplexityRoot.Mutation.RegisterBusinessProfile == nil {
 			break
@@ -674,6 +1171,39 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.RegisterStaff(childComplexity, args["staff"].(*model.StaffInput)), true
+	case "Mutation.rejectBooking":
+		if e.ComplexityRoot.Mutation.RejectBooking == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_rejectBooking_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RejectBooking(childComplexity, args["bookingId"].(string)), true
+	case "Mutation.rejectLeaveApplication":
+		if e.ComplexityRoot.Mutation.RejectLeaveApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_rejectLeaveApplication_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RejectLeaveApplication(childComplexity, args["leaveId"].(string), args["remark"].(string)), true
+	case "Mutation.rescheduleBooking":
+		if e.ComplexityRoot.Mutation.RescheduleBooking == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_rescheduleBooking_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RescheduleBooking(childComplexity, args["bookingId"].(string), args["newSlotOptionId"].(string)), true
 	case "Mutation.resetPassword":
 		if e.ComplexityRoot.Mutation.ResetPassword == nil {
 			break
@@ -696,6 +1226,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SignUp(childComplexity, args["user"].(model.SignUpInput)), true
+	case "Mutation.updateBookingDescription":
+		if e.ComplexityRoot.Mutation.UpdateBookingDescription == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateBookingDescription_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateBookingDescription(childComplexity, args["bookingId"].(string), args["description"].(*string)), true
 	case "Mutation.updateBusinessProfile":
 		if e.ComplexityRoot.Mutation.UpdateBusinessProfile == nil {
 			break
@@ -707,6 +1248,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateBusinessProfile(childComplexity, args["business"].(model.BusinessProfileInput)), true
+	case "Mutation.updateLeaveApplication":
+		if e.ComplexityRoot.Mutation.UpdateLeaveApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateLeaveApplication_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateLeaveApplication(childComplexity, args["leaveId"].(string), args["justification"].(*string)), true
 	case "Mutation.updateProfile":
 		if e.ComplexityRoot.Mutation.UpdateProfile == nil {
 			break
@@ -739,7 +1291,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Mutation.UpdateServiceSlot(childComplexity, args["serviceSlotId"].(string), args["input"].(model.ServiceSlotInput), args["applyToFutureRecurring"].(bool)), true
+		return e.ComplexityRoot.Mutation.UpdateServiceSlot(childComplexity, args["serviceSlotId"].(string), args["input"].(model.ServiceSlotInput)), true
 	case "Mutation.updateStaff":
 		if e.ComplexityRoot.Mutation.UpdateStaff == nil {
 			break
@@ -751,7 +1303,29 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateStaff(childComplexity, args["staffId"].(string), args["staff"].(model.UpdateStaffInput)), true
+	case "Mutation.updateStaffWorkingHours":
+		if e.ComplexityRoot.Mutation.UpdateStaffWorkingHours == nil {
+			break
+		}
 
+		args, err := ec.field_Mutation_updateStaffWorkingHours_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateStaffWorkingHours(childComplexity, args["staffId"].(string), args["workingHours"].([]*model.WorkingHourInput), args["reassignments"].([]*model.SlotReassignmentInput)), true
+
+	case "Query.availableDates":
+		if e.ComplexityRoot.Query.AvailableDates == nil {
+			break
+		}
+
+		args, err := ec.field_Query_availableDates_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.AvailableDates(childComplexity, args["businessId"].(string), args["serviceId"].(*string), args["serviceOptionId"].(*string), args["staffId"].(*string), args["unassignedOnly"].(*bool), args["from"].(string), args["until"].(string)), true
 	case "Query.availableSlots":
 		if e.ComplexityRoot.Query.AvailableSlots == nil {
 			break
@@ -762,7 +1336,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Query.AvailableSlots(childComplexity, args["businessId"].(string), args["serviceOptionId"].(string), args["date"].(string), args["staffId"].(*string)), true
+		return e.ComplexityRoot.Query.AvailableSlots(childComplexity, args["businessId"].(string), args["serviceOptionId"].(string), args["date"].(string), args["staffId"].(*string), args["unassignedOnly"].(*bool)), true
 	case "Query.availableStaffForSlot":
 		if e.ComplexityRoot.Query.AvailableStaffForSlot == nil {
 			break
@@ -774,6 +1348,74 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.AvailableStaffForSlot(childComplexity, args["serviceSlotId"].(string)), true
+	case "Query.bookingSummary":
+		if e.ComplexityRoot.Query.BookingSummary == nil {
+			break
+		}
+
+		args, err := ec.field_Query_bookingSummary_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.BookingSummary(childComplexity, args["from"].(string), args["until"].(string)), true
+	case "Query.bookingTrend":
+		if e.ComplexityRoot.Query.BookingTrend == nil {
+			break
+		}
+
+		args, err := ec.field_Query_bookingTrend_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.BookingTrend(childComplexity, args["from"].(string), args["until"].(string), args["granularity"].(*model.TrendGranularity)), true
+	case "Query.businessBookings":
+		if e.ComplexityRoot.Query.BusinessBookings == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.BusinessBookings(childComplexity), true
+	case "Query.businessCreatedAt":
+		if e.ComplexityRoot.Query.BusinessCreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.BusinessCreatedAt(childComplexity), true
+	case "Query.businessLeaveApplications":
+		if e.ComplexityRoot.Query.BusinessLeaveApplications == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.BusinessLeaveApplications(childComplexity), true
+	case "Query.cancellationAnalysis":
+		if e.ComplexityRoot.Query.CancellationAnalysis == nil {
+			break
+		}
+
+		args, err := ec.field_Query_cancellationAnalysis_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.CancellationAnalysis(childComplexity, args["from"].(string), args["until"].(string), args["staffIds"].([]string), args["serviceIds"].([]string)), true
+	case "Query.cancellationServiceOptions":
+		if e.ComplexityRoot.Query.CancellationServiceOptions == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.CancellationServiceOptions(childComplexity), true
+	case "Query.customerRetention":
+		if e.ComplexityRoot.Query.CustomerRetention == nil {
+			break
+		}
+
+		args, err := ec.field_Query_customerRetention_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.CustomerRetention(childComplexity, args["from"].(string), args["until"].(string)), true
 	case "Query.displayServiceSlots":
 		if e.ComplexityRoot.Query.DisplayServiceSlots == nil {
 			break
@@ -798,6 +1440,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.DisplayStaff(childComplexity), true
 
+	case "Query.myAppointments":
+		if e.ComplexityRoot.Query.MyAppointments == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.MyAppointments(childComplexity), true
+	case "Query.myLeaveApplications":
+		if e.ComplexityRoot.Query.MyLeaveApplications == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.MyLeaveApplications(childComplexity), true
 	case "Query.publicBusinesses":
 		if e.ComplexityRoot.Query.PublicBusinesses == nil {
 			break
@@ -832,6 +1486,50 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.RecentlyBookedBusinesses(childComplexity), true
+	case "Query.servicePopularity":
+		if e.ComplexityRoot.Query.ServicePopularity == nil {
+			break
+		}
+
+		args, err := ec.field_Query_servicePopularity_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.ServicePopularity(childComplexity, args["from"].(string), args["until"].(string)), true
+	case "Query.slotUtilization":
+		if e.ComplexityRoot.Query.SlotUtilization == nil {
+			break
+		}
+
+		args, err := ec.field_Query_slotUtilization_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.SlotUtilization(childComplexity, args["from"].(string), args["until"].(string), args["groupBy"].(*model.SlotUtilizationGroupBy)), true
+	case "Query.staffHoursConflicts":
+		if e.ComplexityRoot.Query.StaffHoursConflicts == nil {
+			break
+		}
+
+		args, err := ec.field_Query_staffHoursConflicts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.StaffHoursConflicts(childComplexity, args["staffId"].(string), args["workingHours"].([]*model.WorkingHourInput)), true
+	case "Query.staffUtilization":
+		if e.ComplexityRoot.Query.StaffUtilization == nil {
+			break
+		}
+
+		args, err := ec.field_Query_staffUtilization_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.StaffUtilization(childComplexity, args["from"].(string), args["until"].(string)), true
 	case "Query.userProfile":
 		if e.ComplexityRoot.Query.UserProfile == nil {
 			break
@@ -955,6 +1653,44 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Service.ServiceOptions(childComplexity), true
 
+	case "ServiceCancellation.count":
+		if e.ComplexityRoot.ServiceCancellation.Count == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceCancellation.Count(childComplexity), true
+	case "ServiceCancellation.serviceId":
+		if e.ComplexityRoot.ServiceCancellation.ServiceID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceCancellation.ServiceID(childComplexity), true
+	case "ServiceCancellation.serviceName":
+		if e.ComplexityRoot.ServiceCancellation.ServiceName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceCancellation.ServiceName(childComplexity), true
+
+	case "ServiceFilterOption.deleted":
+		if e.ComplexityRoot.ServiceFilterOption.Deleted == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceFilterOption.Deleted(childComplexity), true
+	case "ServiceFilterOption.serviceIds":
+		if e.ComplexityRoot.ServiceFilterOption.ServiceIds == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceFilterOption.ServiceIds(childComplexity), true
+	case "ServiceFilterOption.serviceName":
+		if e.ComplexityRoot.ServiceFilterOption.ServiceName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceFilterOption.ServiceName(childComplexity), true
+
 	case "ServiceOption.deletedAt":
 		if e.ComplexityRoot.ServiceOption.DeletedAt == nil {
 			break
@@ -967,12 +1703,36 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.ServiceOption.Description(childComplexity), true
+	case "ServiceOption.effectiveFrom":
+		if e.ComplexityRoot.ServiceOption.EffectiveFrom == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.EffectiveFrom(childComplexity), true
+	case "ServiceOption.effectiveUntil":
+		if e.ComplexityRoot.ServiceOption.EffectiveUntil == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.EffectiveUntil(childComplexity), true
+	case "ServiceOption.hasBooking":
+		if e.ComplexityRoot.ServiceOption.HasBooking == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.HasBooking(childComplexity), true
 	case "ServiceOption.recurringSchedules":
 		if e.ComplexityRoot.ServiceOption.RecurringSchedules == nil {
 			break
 		}
 
 		return e.ComplexityRoot.ServiceOption.RecurringSchedules(childComplexity), true
+	case "ServiceOption.removed":
+		if e.ComplexityRoot.ServiceOption.Removed == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceOption.Removed(childComplexity), true
 	case "ServiceOption.service":
 		if e.ComplexityRoot.ServiceOption.Service == nil {
 			break
@@ -1040,6 +1800,25 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.ServiceOptionItem.ServicePackage(childComplexity), true
+
+	case "ServicePopularity.bookingCount":
+		if e.ComplexityRoot.ServicePopularity.BookingCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServicePopularity.BookingCount(childComplexity), true
+	case "ServicePopularity.serviceId":
+		if e.ComplexityRoot.ServicePopularity.ServiceID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServicePopularity.ServiceID(childComplexity), true
+	case "ServicePopularity.serviceName":
+		if e.ComplexityRoot.ServicePopularity.ServiceName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServicePopularity.ServiceName(childComplexity), true
 
 	case "ServiceSlot.createdAt":
 		if e.ComplexityRoot.ServiceSlot.CreatedAt == nil {
@@ -1157,6 +1936,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.ServiceSlotOption.SlotOptionID(childComplexity), true
 
+	case "SlotUtilization.bookedSlots":
+		if e.ComplexityRoot.SlotUtilization.BookedSlots == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlotUtilization.BookedSlots(childComplexity), true
+	case "SlotUtilization.sections":
+		if e.ComplexityRoot.SlotUtilization.Sections == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlotUtilization.Sections(childComplexity), true
+	case "SlotUtilization.totalSlots":
+		if e.ComplexityRoot.SlotUtilization.TotalSlots == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlotUtilization.TotalSlots(childComplexity), true
+	case "SlotUtilization.utilizationRate":
+		if e.ComplexityRoot.SlotUtilization.UtilizationRate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlotUtilization.UtilizationRate(childComplexity), true
+
 	case "Staff.business":
 		if e.ComplexityRoot.Staff.Business == nil {
 			break
@@ -1187,6 +1991,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Staff.Email(childComplexity), true
+	case "Staff.hasBooking":
+		if e.ComplexityRoot.Staff.HasBooking == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Staff.HasBooking(childComplexity), true
 	case "Staff.leaveApplications":
 		if e.ComplexityRoot.Staff.LeaveApplications == nil {
 			break
@@ -1248,6 +2058,56 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Staff.WorkingHours(childComplexity), true
 
+	case "StaffCancellation.customerCount":
+		if e.ComplexityRoot.StaffCancellation.CustomerCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StaffCancellation.CustomerCount(childComplexity), true
+	case "StaffCancellation.staffCount":
+		if e.ComplexityRoot.StaffCancellation.StaffCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StaffCancellation.StaffCount(childComplexity), true
+	case "StaffCancellation.staffId":
+		if e.ComplexityRoot.StaffCancellation.StaffID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StaffCancellation.StaffID(childComplexity), true
+	case "StaffCancellation.staffName":
+		if e.ComplexityRoot.StaffCancellation.StaffName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StaffCancellation.StaffName(childComplexity), true
+
+	case "StaffUtilization.bookings":
+		if e.ComplexityRoot.StaffUtilization.Bookings == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StaffUtilization.Bookings(childComplexity), true
+	case "StaffUtilization.hoursBooked":
+		if e.ComplexityRoot.StaffUtilization.HoursBooked == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StaffUtilization.HoursBooked(childComplexity), true
+	case "StaffUtilization.staffId":
+		if e.ComplexityRoot.StaffUtilization.StaffID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StaffUtilization.StaffID(childComplexity), true
+	case "StaffUtilization.staffName":
+		if e.ComplexityRoot.StaffUtilization.StaffName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StaffUtilization.StaffName(childComplexity), true
+
 	case "StaffWorkingHour.day":
 		if e.ComplexityRoot.StaffWorkingHour.Day == nil {
 			break
@@ -1290,6 +2150,32 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.StaffWorkingHour.StartTime(childComplexity), true
+
+	case "StatusCount.count":
+		if e.ComplexityRoot.StatusCount.Count == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusCount.Count(childComplexity), true
+	case "StatusCount.status":
+		if e.ComplexityRoot.StatusCount.Status == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusCount.Status(childComplexity), true
+
+	case "TypeCount.bookingType":
+		if e.ComplexityRoot.TypeCount.BookingType == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TypeCount.BookingType(childComplexity), true
+	case "TypeCount.count":
+		if e.ComplexityRoot.TypeCount.Count == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TypeCount.Count(childComplexity), true
 
 	case "User.bookings":
 		if e.ComplexityRoot.User.Bookings == nil {
@@ -1352,6 +2238,38 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.User.Username(childComplexity), true
 
+	case "UtilizationBreakdownPoint.bookedSlots":
+		if e.ComplexityRoot.UtilizationBreakdownPoint.BookedSlots == nil {
+			break
+		}
+
+		return e.ComplexityRoot.UtilizationBreakdownPoint.BookedSlots(childComplexity), true
+	case "UtilizationBreakdownPoint.label":
+		if e.ComplexityRoot.UtilizationBreakdownPoint.Label == nil {
+			break
+		}
+
+		return e.ComplexityRoot.UtilizationBreakdownPoint.Label(childComplexity), true
+	case "UtilizationBreakdownPoint.totalSlots":
+		if e.ComplexityRoot.UtilizationBreakdownPoint.TotalSlots == nil {
+			break
+		}
+
+		return e.ComplexityRoot.UtilizationBreakdownPoint.TotalSlots(childComplexity), true
+
+	case "UtilizationSection.points":
+		if e.ComplexityRoot.UtilizationSection.Points == nil {
+			break
+		}
+
+		return e.ComplexityRoot.UtilizationSection.Points(childComplexity), true
+	case "UtilizationSection.subtitle":
+		if e.ComplexityRoot.UtilizationSection.Subtitle == nil {
+			break
+		}
+
+		return e.ComplexityRoot.UtilizationSection.Subtitle(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -1360,6 +2278,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := newExecutionContext(opCtx, e, make(chan graphql.DeferredResult))
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputApplyLeaveInput,
 		ec.unmarshalInputBusinessProfileInput,
 		ec.unmarshalInputLogInInput,
 		ec.unmarshalInputServiceInput,
@@ -1367,9 +2286,11 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputServiceOptionItemInput,
 		ec.unmarshalInputServiceSlotInput,
 		ec.unmarshalInputSignUpInput,
+		ec.unmarshalInputSlotReassignmentInput,
 		ec.unmarshalInputStaffInput,
 		ec.unmarshalInputUpdateProfileInput,
 		ec.unmarshalInputUpdateStaffInput,
+		ec.unmarshalInputWalkInInput,
 		ec.unmarshalInputWorkingHourInput,
 	)
 	first := true
@@ -1445,7 +2366,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "schema.booking.graphqls" "schema.business.graphqls" "schema.graphqls" "schema.service.graphqls" "schema.serviceSlot.graphqls" "schema.staff.graphqls" "schema.user.graphqls"
+//go:embed "schema.analytics.graphqls" "schema.booking.graphqls" "schema.business.graphqls" "schema.graphqls" "schema.leave.graphqls" "schema.service.graphqls" "schema.serviceSlot.graphqls" "schema.staff.graphqls" "schema.user.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -1457,9 +2378,11 @@ func sourceData(filename string) string {
 }
 
 var sources = []*ast.Source{
+	{Name: "schema.analytics.graphqls", Input: sourceData("schema.analytics.graphqls"), BuiltIn: false},
 	{Name: "schema.booking.graphqls", Input: sourceData("schema.booking.graphqls"), BuiltIn: false},
 	{Name: "schema.business.graphqls", Input: sourceData("schema.business.graphqls"), BuiltIn: false},
 	{Name: "schema.graphqls", Input: sourceData("schema.graphqls"), BuiltIn: false},
+	{Name: "schema.leave.graphqls", Input: sourceData("schema.leave.graphqls"), BuiltIn: false},
 	{Name: "schema.service.graphqls", Input: sourceData("schema.service.graphqls"), BuiltIn: false},
 	{Name: "schema.serviceSlot.graphqls", Input: sourceData("schema.serviceSlot.graphqls"), BuiltIn: false},
 	{Name: "schema.staff.graphqls", Input: sourceData("schema.staff.graphqls"), BuiltIn: false},
@@ -1497,6 +2420,8 @@ func (ec *executionContext) childFields_Booking(ctx context.Context, field graph
 		return ec.fieldContext_Booking_status(ctx, field)
 	case "bookingType":
 		return ec.fieldContext_Booking_bookingType(ctx, field)
+	case "description":
+		return ec.fieldContext_Booking_description(ctx, field)
 	case "deletedAt":
 		return ec.fieldContext_Booking_deletedAt(ctx, field)
 	case "createdAt":
@@ -1509,6 +2434,74 @@ func (ec *executionContext) childFields_Booking(ctx context.Context, field graph
 		return ec.fieldContext_Booking_decidedByUser(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Booking", field.Name)
+}
+
+func (ec *executionContext) childFields_BookingDetail(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "bookingId":
+		return ec.fieldContext_BookingDetail_bookingId(ctx, field)
+	case "status":
+		return ec.fieldContext_BookingDetail_status(ctx, field)
+	case "bookingType":
+		return ec.fieldContext_BookingDetail_bookingType(ctx, field)
+	case "serviceSlotId":
+		return ec.fieldContext_BookingDetail_serviceSlotId(ctx, field)
+	case "slotOptionId":
+		return ec.fieldContext_BookingDetail_slotOptionId(ctx, field)
+	case "serviceOptionId":
+		return ec.fieldContext_BookingDetail_serviceOptionId(ctx, field)
+	case "date":
+		return ec.fieldContext_BookingDetail_date(ctx, field)
+	case "startTime":
+		return ec.fieldContext_BookingDetail_startTime(ctx, field)
+	case "endTime":
+		return ec.fieldContext_BookingDetail_endTime(ctx, field)
+	case "serviceName":
+		return ec.fieldContext_BookingDetail_serviceName(ctx, field)
+	case "optionName":
+		return ec.fieldContext_BookingDetail_optionName(ctx, field)
+	case "staffName":
+		return ec.fieldContext_BookingDetail_staffName(ctx, field)
+	case "customerName":
+		return ec.fieldContext_BookingDetail_customerName(ctx, field)
+	case "customerEmail":
+		return ec.fieldContext_BookingDetail_customerEmail(ctx, field)
+	case "businessId":
+		return ec.fieldContext_BookingDetail_businessId(ctx, field)
+	case "businessName":
+		return ec.fieldContext_BookingDetail_businessName(ctx, field)
+	case "description":
+		return ec.fieldContext_BookingDetail_description(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_BookingDetail_createdAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type BookingDetail", field.Name)
+}
+
+func (ec *executionContext) childFields_BookingSummary(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "totalBookings":
+		return ec.fieldContext_BookingSummary_totalBookings(ctx, field)
+	case "byStatus":
+		return ec.fieldContext_BookingSummary_byStatus(ctx, field)
+	case "byType":
+		return ec.fieldContext_BookingSummary_byType(ctx, field)
+	case "todayAcceptedCount":
+		return ec.fieldContext_BookingSummary_todayAcceptedCount(ctx, field)
+	case "pendingCount":
+		return ec.fieldContext_BookingSummary_pendingCount(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type BookingSummary", field.Name)
+}
+
+func (ec *executionContext) childFields_BookingTrendPoint(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "date":
+		return ec.fieldContext_BookingTrendPoint_date(ctx, field)
+	case "count":
+		return ec.fieldContext_BookingTrendPoint_count(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type BookingTrendPoint", field.Name)
 }
 
 func (ec *executionContext) childFields_BusinessProfile(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1561,6 +2554,36 @@ func (ec *executionContext) childFields_BusinessWorkingHour(ctx context.Context,
 	return nil, fmt.Errorf("no field named %q was found under type BusinessWorkingHour", field.Name)
 }
 
+func (ec *executionContext) childFields_CancellationAnalysis(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "totalCancelled":
+		return ec.fieldContext_CancellationAnalysis_totalCancelled(ctx, field)
+	case "totalRejected":
+		return ec.fieldContext_CancellationAnalysis_totalRejected(ctx, field)
+	case "totalCancelledOrRejected":
+		return ec.fieldContext_CancellationAnalysis_totalCancelledOrRejected(ctx, field)
+	case "cancelledOrRejectedRate":
+		return ec.fieldContext_CancellationAnalysis_cancelledOrRejectedRate(ctx, field)
+	case "byService":
+		return ec.fieldContext_CancellationAnalysis_byService(ctx, field)
+	case "byStaff":
+		return ec.fieldContext_CancellationAnalysis_byStaff(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type CancellationAnalysis", field.Name)
+}
+
+func (ec *executionContext) childFields_CustomerRetention(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "newCustomers":
+		return ec.fieldContext_CustomerRetention_newCustomers(ctx, field)
+	case "returningCustomers":
+		return ec.fieldContext_CustomerRetention_returningCustomers(ctx, field)
+	case "totalCustomers":
+		return ec.fieldContext_CustomerRetention_totalCustomers(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type CustomerRetention", field.Name)
+}
+
 func (ec *executionContext) childFields_LeaveApplication(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "leaveId":
@@ -1569,6 +2592,10 @@ func (ec *executionContext) childFields_LeaveApplication(ctx context.Context, fi
 		return ec.fieldContext_LeaveApplication_staffId(ctx, field)
 	case "staff":
 		return ec.fieldContext_LeaveApplication_staff(ctx, field)
+	case "staffName":
+		return ec.fieldContext_LeaveApplication_staffName(ctx, field)
+	case "position":
+		return ec.fieldContext_LeaveApplication_position(ctx, field)
 	case "startDate":
 		return ec.fieldContext_LeaveApplication_startDate(ctx, field)
 	case "endDate":
@@ -1587,6 +2614,8 @@ func (ec *executionContext) childFields_LeaveApplication(ctx context.Context, fi
 		return ec.fieldContext_LeaveApplication_deletedAt(ctx, field)
 	case "createdAt":
 		return ec.fieldContext_LeaveApplication_createdAt(ctx, field)
+	case "affectedBookings":
+		return ec.fieldContext_LeaveApplication_affectedBookings(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type LeaveApplication", field.Name)
 }
@@ -1641,6 +2670,30 @@ func (ec *executionContext) childFields_Service(ctx context.Context, field graph
 	return nil, fmt.Errorf("no field named %q was found under type Service", field.Name)
 }
 
+func (ec *executionContext) childFields_ServiceCancellation(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "serviceId":
+		return ec.fieldContext_ServiceCancellation_serviceId(ctx, field)
+	case "serviceName":
+		return ec.fieldContext_ServiceCancellation_serviceName(ctx, field)
+	case "count":
+		return ec.fieldContext_ServiceCancellation_count(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type ServiceCancellation", field.Name)
+}
+
+func (ec *executionContext) childFields_ServiceFilterOption(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "serviceIds":
+		return ec.fieldContext_ServiceFilterOption_serviceIds(ctx, field)
+	case "serviceName":
+		return ec.fieldContext_ServiceFilterOption_serviceName(ctx, field)
+	case "deleted":
+		return ec.fieldContext_ServiceFilterOption_deleted(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type ServiceFilterOption", field.Name)
+}
+
 func (ec *executionContext) childFields_ServiceOption(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "serviceOptionId":
@@ -1659,6 +2712,14 @@ func (ec *executionContext) childFields_ServiceOption(ctx context.Context, field
 		return ec.fieldContext_ServiceOption_serviceSlotOptions(ctx, field)
 	case "recurringSchedules":
 		return ec.fieldContext_ServiceOption_recurringSchedules(ctx, field)
+	case "removed":
+		return ec.fieldContext_ServiceOption_removed(ctx, field)
+	case "effectiveFrom":
+		return ec.fieldContext_ServiceOption_effectiveFrom(ctx, field)
+	case "effectiveUntil":
+		return ec.fieldContext_ServiceOption_effectiveUntil(ctx, field)
+	case "hasBooking":
+		return ec.fieldContext_ServiceOption_hasBooking(ctx, field)
 	case "deletedAt":
 		return ec.fieldContext_ServiceOption_deletedAt(ctx, field)
 	}
@@ -1679,6 +2740,18 @@ func (ec *executionContext) childFields_ServiceOptionItem(ctx context.Context, f
 		return ec.fieldContext_ServiceOptionItem_deletedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type ServiceOptionItem", field.Name)
+}
+
+func (ec *executionContext) childFields_ServicePopularity(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "serviceId":
+		return ec.fieldContext_ServicePopularity_serviceId(ctx, field)
+	case "serviceName":
+		return ec.fieldContext_ServicePopularity_serviceName(ctx, field)
+	case "bookingCount":
+		return ec.fieldContext_ServicePopularity_bookingCount(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type ServicePopularity", field.Name)
 }
 
 func (ec *executionContext) childFields_ServiceSlot(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1731,6 +2804,20 @@ func (ec *executionContext) childFields_ServiceSlotOption(ctx context.Context, f
 	return nil, fmt.Errorf("no field named %q was found under type ServiceSlotOption", field.Name)
 }
 
+func (ec *executionContext) childFields_SlotUtilization(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "totalSlots":
+		return ec.fieldContext_SlotUtilization_totalSlots(ctx, field)
+	case "bookedSlots":
+		return ec.fieldContext_SlotUtilization_bookedSlots(ctx, field)
+	case "utilizationRate":
+		return ec.fieldContext_SlotUtilization_utilizationRate(ctx, field)
+	case "sections":
+		return ec.fieldContext_SlotUtilization_sections(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type SlotUtilization", field.Name)
+}
+
 func (ec *executionContext) childFields_Staff(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "staffId":
@@ -1761,10 +2848,40 @@ func (ec *executionContext) childFields_Staff(ctx context.Context, field graphql
 		return ec.fieldContext_Staff_serviceSlots(ctx, field)
 	case "recurringSchedules":
 		return ec.fieldContext_Staff_recurringSchedules(ctx, field)
+	case "hasBooking":
+		return ec.fieldContext_Staff_hasBooking(ctx, field)
 	case "deletedAt":
 		return ec.fieldContext_Staff_deletedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Staff", field.Name)
+}
+
+func (ec *executionContext) childFields_StaffCancellation(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "staffId":
+		return ec.fieldContext_StaffCancellation_staffId(ctx, field)
+	case "staffName":
+		return ec.fieldContext_StaffCancellation_staffName(ctx, field)
+	case "customerCount":
+		return ec.fieldContext_StaffCancellation_customerCount(ctx, field)
+	case "staffCount":
+		return ec.fieldContext_StaffCancellation_staffCount(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type StaffCancellation", field.Name)
+}
+
+func (ec *executionContext) childFields_StaffUtilization(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "staffId":
+		return ec.fieldContext_StaffUtilization_staffId(ctx, field)
+	case "staffName":
+		return ec.fieldContext_StaffUtilization_staffName(ctx, field)
+	case "bookings":
+		return ec.fieldContext_StaffUtilization_bookings(ctx, field)
+	case "hoursBooked":
+		return ec.fieldContext_StaffUtilization_hoursBooked(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type StaffUtilization", field.Name)
 }
 
 func (ec *executionContext) childFields_StaffWorkingHour(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1785,6 +2902,26 @@ func (ec *executionContext) childFields_StaffWorkingHour(ctx context.Context, fi
 		return ec.fieldContext_StaffWorkingHour_deletedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type StaffWorkingHour", field.Name)
+}
+
+func (ec *executionContext) childFields_StatusCount(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "status":
+		return ec.fieldContext_StatusCount_status(ctx, field)
+	case "count":
+		return ec.fieldContext_StatusCount_count(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type StatusCount", field.Name)
+}
+
+func (ec *executionContext) childFields_TypeCount(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "bookingType":
+		return ec.fieldContext_TypeCount_bookingType(ctx, field)
+	case "count":
+		return ec.fieldContext_TypeCount_count(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type TypeCount", field.Name)
 }
 
 func (ec *executionContext) childFields_User(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1811,6 +2948,28 @@ func (ec *executionContext) childFields_User(ctx context.Context, field graphql.
 		return ec.fieldContext_User_bookings(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+}
+
+func (ec *executionContext) childFields_UtilizationBreakdownPoint(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "label":
+		return ec.fieldContext_UtilizationBreakdownPoint_label(ctx, field)
+	case "totalSlots":
+		return ec.fieldContext_UtilizationBreakdownPoint_totalSlots(ctx, field)
+	case "bookedSlots":
+		return ec.fieldContext_UtilizationBreakdownPoint_bookedSlots(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type UtilizationBreakdownPoint", field.Name)
+}
+
+func (ec *executionContext) childFields_UtilizationSection(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "subtitle":
+		return ec.fieldContext_UtilizationSection_subtitle(ctx, field)
+	case "points":
+		return ec.fieldContext_UtilizationSection_points(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type UtilizationSection", field.Name)
 }
 
 func (ec *executionContext) childFields___Directive(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1929,6 +3088,98 @@ func (ec *executionContext) childFields___Type(ctx context.Context, field graphq
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) field_Mutation_acceptBooking_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "bookingId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["bookingId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_acceptReschedule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "bookingId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["bookingId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_applyLeave_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.ApplyLeaveInput, error) {
+			return ec.unmarshalNApplyLeaveInput2fypᚋgraphᚋmodelᚐApplyLeaveInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_approveLeaveApplication_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "leaveId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["leaveId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_cancelBooking_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "bookingId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["bookingId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_changePassword_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "currentPassword",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["currentPassword"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "newPassword",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["newPassword"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createBooking_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1940,6 +3191,14 @@ func (ec *executionContext) field_Mutation_createBooking_args(ctx context.Contex
 		return nil, err
 	}
 	args["slotOptionId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "description",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["description"] = arg1
 	return args, nil
 }
 
@@ -1968,6 +3227,20 @@ func (ec *executionContext) field_Mutation_createService_args(ctx context.Contex
 		return nil, err
 	}
 	args["service"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteLeaveApplication_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "leaveId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["leaveId"] = arg0
 	return args, nil
 }
 
@@ -2057,6 +3330,20 @@ func (ec *executionContext) field_Mutation_reassignServiceSlotStaff_args(ctx con
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_recordWalkIn_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.WalkInInput, error) {
+			return ec.unmarshalNWalkInInput2fypᚋgraphᚋmodelᚐWalkInInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_registerBusinessProfile_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2082,6 +3369,64 @@ func (ec *executionContext) field_Mutation_registerStaff_args(ctx context.Contex
 		return nil, err
 	}
 	args["staff"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_rejectBooking_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "bookingId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["bookingId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_rejectLeaveApplication_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "leaveId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["leaveId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "remark",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["remark"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_rescheduleBooking_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "bookingId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["bookingId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "newSlotOptionId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["newSlotOptionId"] = arg1
 	return args, nil
 }
 
@@ -2113,6 +3458,28 @@ func (ec *executionContext) field_Mutation_signUp_args(ctx context.Context, rawA
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_updateBookingDescription_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "bookingId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["bookingId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "description",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["description"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_updateBusinessProfile_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2124,6 +3491,28 @@ func (ec *executionContext) field_Mutation_updateBusinessProfile_args(ctx contex
 		return nil, err
 	}
 	args["business"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateLeaveApplication_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "leaveId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["leaveId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "justification",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["justification"] = arg1
 	return args, nil
 }
 
@@ -2160,14 +3549,6 @@ func (ec *executionContext) field_Mutation_updateServiceSlot_args(ctx context.Co
 		return nil, err
 	}
 	args["input"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "applyToFutureRecurring",
-		func(ctx context.Context, v any) (bool, error) {
-			return ec.unmarshalNBoolean2bool(ctx, v)
-		})
-	if err != nil {
-		return nil, err
-	}
-	args["applyToFutureRecurring"] = arg2
 	return args, nil
 }
 
@@ -2190,6 +3571,36 @@ func (ec *executionContext) field_Mutation_updateService_args(ctx context.Contex
 		return nil, err
 	}
 	args["service"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateStaffWorkingHours_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "staffId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["staffId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "workingHours",
+		func(ctx context.Context, v any) ([]*model.WorkingHourInput, error) {
+			return ec.unmarshalNWorkingHourInput2ᚕᚖfypᚋgraphᚋmodelᚐWorkingHourInputᚄ(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["workingHours"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "reassignments",
+		func(ctx context.Context, v any) ([]*model.SlotReassignmentInput, error) {
+			return ec.unmarshalNSlotReassignmentInput2ᚕᚖfypᚋgraphᚋmodelᚐSlotReassignmentInputᚄ(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["reassignments"] = arg2
 	return args, nil
 }
 
@@ -2229,6 +3640,68 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_availableDates_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "serviceId",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOID2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["serviceId"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "serviceOptionId",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOID2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["serviceOptionId"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "staffId",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOID2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["staffId"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "unassignedOnly",
+		func(ctx context.Context, v any) (*bool, error) {
+			return ec.unmarshalOBoolean2ᚖbool(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["unassignedOnly"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "from",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["from"] = arg5
+	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "until",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["until"] = arg6
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_availableSlots_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2264,6 +3737,14 @@ func (ec *executionContext) field_Query_availableSlots_args(ctx context.Context,
 		return nil, err
 	}
 	args["staffId"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "unassignedOnly",
+		func(ctx context.Context, v any) (*bool, error) {
+			return ec.unmarshalOBoolean2ᚖbool(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["unassignedOnly"] = arg4
 	return args, nil
 }
 
@@ -2278,6 +3759,118 @@ func (ec *executionContext) field_Query_availableStaffForSlot_args(ctx context.C
 		return nil, err
 	}
 	args["serviceSlotId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_bookingSummary_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "from",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["from"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "until",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["until"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_bookingTrend_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "from",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["from"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "until",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["until"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "granularity",
+		func(ctx context.Context, v any) (*model.TrendGranularity, error) {
+			return ec.unmarshalOTrendGranularity2ᚖfypᚋgraphᚋmodelᚐTrendGranularity(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["granularity"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_cancellationAnalysis_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "from",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["from"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "until",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["until"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "staffIds",
+		func(ctx context.Context, v any) ([]string, error) {
+			return ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["staffIds"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "serviceIds",
+		func(ctx context.Context, v any) ([]string, error) {
+			return ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["serviceIds"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_customerRetention_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "from",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["from"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "until",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["until"] = arg1
 	return args, nil
 }
 
@@ -2344,6 +3937,102 @@ func (ec *executionContext) field_Query_publicStaff_args(ctx context.Context, ra
 		return nil, err
 	}
 	args["businessId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_servicePopularity_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "from",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["from"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "until",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["until"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_slotUtilization_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "from",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["from"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "until",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["until"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "groupBy",
+		func(ctx context.Context, v any) (*model.SlotUtilizationGroupBy, error) {
+			return ec.unmarshalOSlotUtilizationGroupBy2ᚖfypᚋgraphᚋmodelᚐSlotUtilizationGroupBy(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["groupBy"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_staffHoursConflicts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "staffId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["staffId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "workingHours",
+		func(ctx context.Context, v any) ([]*model.WorkingHourInput, error) {
+			return ec.unmarshalNWorkingHourInput2ᚕᚖfypᚋgraphᚋmodelᚐWorkingHourInputᚄ(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["workingHours"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_staffUtilization_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "from",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["from"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "until",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNDate2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["until"] = arg1
 	return args, nil
 }
 
@@ -2645,6 +4334,29 @@ func (ec *executionContext) fieldContext_Booking_bookingType(_ context.Context, 
 	return graphql.NewScalarFieldContext("Booking", field, false, false, errors.New("field of type BookingType does not have child fields"))
 }
 
+func (ec *executionContext) _Booking_description(ctx context.Context, field graphql.CollectedField, obj *model.Booking) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Booking_description(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Description, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Booking_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Booking", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _Booking_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.Booking) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2767,6 +4479,599 @@ func (ec *executionContext) fieldContext_Booking_decidedByUser(_ context.Context
 		},
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _BookingDetail_bookingId(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_bookingId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.BookingID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_bookingId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_status(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_status(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v model.BookingStatus) graphql.Marshaler {
+			return ec.marshalNBookingStatus2fypᚋgraphᚋmodelᚐBookingStatus(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type BookingStatus does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_bookingType(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_bookingType(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.BookingType, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v model.BookingType) graphql.Marshaler {
+			return ec.marshalNBookingType2fypᚋgraphᚋmodelᚐBookingType(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_bookingType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type BookingType does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_serviceSlotId(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_serviceSlotId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceSlotID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_serviceSlotId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_slotOptionId(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_slotOptionId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.SlotOptionID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_slotOptionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_serviceOptionId(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_serviceOptionId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceOptionID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_serviceOptionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_date(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_date(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Date, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNDate2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_date(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type Date does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_startTime(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_startTime(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.StartTime, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_startTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_endTime(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_endTime(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.EndTime, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_endTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_serviceName(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_serviceName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_serviceName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_optionName(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_optionName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OptionName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_optionName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_staffName(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_staffName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.StaffName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_staffName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_customerName(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_customerName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_customerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_customerEmail(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_customerEmail(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerEmail, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_customerEmail(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_businessId(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_businessId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.BusinessID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_businessId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_businessName(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_businessName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.BusinessName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_businessName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_description(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_description(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Description, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BookingDetail_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.BookingDetail) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingDetail_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNDateTime2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingDetail_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingDetail", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _BookingSummary_totalBookings(ctx context.Context, field graphql.CollectedField, obj *model.BookingSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingSummary_totalBookings(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalBookings, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingSummary_totalBookings(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingSummary", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _BookingSummary_byStatus(ctx context.Context, field graphql.CollectedField, obj *model.BookingSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingSummary_byStatus(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ByStatus, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.StatusCount) graphql.Marshaler {
+			return ec.marshalNStatusCount2ᚕᚖfypᚋgraphᚋmodelᚐStatusCountᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingSummary_byStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BookingSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_StatusCount(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BookingSummary_byType(ctx context.Context, field graphql.CollectedField, obj *model.BookingSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingSummary_byType(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ByType, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.TypeCount) graphql.Marshaler {
+			return ec.marshalNTypeCount2ᚕᚖfypᚋgraphᚋmodelᚐTypeCountᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingSummary_byType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BookingSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_TypeCount(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BookingSummary_todayAcceptedCount(ctx context.Context, field graphql.CollectedField, obj *model.BookingSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingSummary_todayAcceptedCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TodayAcceptedCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingSummary_todayAcceptedCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingSummary", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _BookingSummary_pendingCount(ctx context.Context, field graphql.CollectedField, obj *model.BookingSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingSummary_pendingCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PendingCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingSummary_pendingCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingSummary", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _BookingTrendPoint_date(ctx context.Context, field graphql.CollectedField, obj *model.BookingTrendPoint) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingTrendPoint_date(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Date, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNDate2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingTrendPoint_date(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingTrendPoint", field, false, false, errors.New("field of type Date does not have child fields"))
+}
+
+func (ec *executionContext) _BookingTrendPoint_count(ctx context.Context, field graphql.CollectedField, obj *model.BookingTrendPoint) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BookingTrendPoint_count(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BookingTrendPoint_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BookingTrendPoint", field, false, false, errors.New("field of type Int does not have child fields"))
 }
 
 func (ec *executionContext) _BusinessProfile_businessId(ctx context.Context, field graphql.CollectedField, obj *model.BusinessProfile) (ret graphql.Marshaler) {
@@ -3251,6 +5556,231 @@ func (ec *executionContext) fieldContext_BusinessWorkingHour_deletedAt(_ context
 	return graphql.NewScalarFieldContext("BusinessWorkingHour", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
+func (ec *executionContext) _CancellationAnalysis_totalCancelled(ctx context.Context, field graphql.CollectedField, obj *model.CancellationAnalysis) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CancellationAnalysis_totalCancelled(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCancelled, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CancellationAnalysis_totalCancelled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CancellationAnalysis", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _CancellationAnalysis_totalRejected(ctx context.Context, field graphql.CollectedField, obj *model.CancellationAnalysis) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CancellationAnalysis_totalRejected(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalRejected, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CancellationAnalysis_totalRejected(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CancellationAnalysis", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _CancellationAnalysis_totalCancelledOrRejected(ctx context.Context, field graphql.CollectedField, obj *model.CancellationAnalysis) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CancellationAnalysis_totalCancelledOrRejected(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCancelledOrRejected, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CancellationAnalysis_totalCancelledOrRejected(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CancellationAnalysis", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _CancellationAnalysis_cancelledOrRejectedRate(ctx context.Context, field graphql.CollectedField, obj *model.CancellationAnalysis) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CancellationAnalysis_cancelledOrRejectedRate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CancelledOrRejectedRate, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CancellationAnalysis_cancelledOrRejectedRate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CancellationAnalysis", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _CancellationAnalysis_byService(ctx context.Context, field graphql.CollectedField, obj *model.CancellationAnalysis) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CancellationAnalysis_byService(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ByService, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceCancellation) graphql.Marshaler {
+			return ec.marshalNServiceCancellation2ᚕᚖfypᚋgraphᚋmodelᚐServiceCancellationᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CancellationAnalysis_byService(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CancellationAnalysis",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ServiceCancellation(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CancellationAnalysis_byStaff(ctx context.Context, field graphql.CollectedField, obj *model.CancellationAnalysis) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CancellationAnalysis_byStaff(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ByStaff, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.StaffCancellation) graphql.Marshaler {
+			return ec.marshalNStaffCancellation2ᚕᚖfypᚋgraphᚋmodelᚐStaffCancellationᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CancellationAnalysis_byStaff(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CancellationAnalysis",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_StaffCancellation(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CustomerRetention_newCustomers(ctx context.Context, field graphql.CollectedField, obj *model.CustomerRetention) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CustomerRetention_newCustomers(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.NewCustomers, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CustomerRetention_newCustomers(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CustomerRetention", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _CustomerRetention_returningCustomers(ctx context.Context, field graphql.CollectedField, obj *model.CustomerRetention) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CustomerRetention_returningCustomers(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ReturningCustomers, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CustomerRetention_returningCustomers(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CustomerRetention", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _CustomerRetention_totalCustomers(ctx context.Context, field graphql.CollectedField, obj *model.CustomerRetention) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CustomerRetention_totalCustomers(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCustomers, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CustomerRetention_totalCustomers(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CustomerRetention", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
 func (ec *executionContext) _LeaveApplication_leaveId(ctx context.Context, field graphql.CollectedField, obj *model.LeaveApplication) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3327,6 +5857,52 @@ func (ec *executionContext) fieldContext_LeaveApplication_staff(_ context.Contex
 		},
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _LeaveApplication_staffName(ctx context.Context, field graphql.CollectedField, obj *model.LeaveApplication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_LeaveApplication_staffName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.StaffName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_LeaveApplication_staffName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("LeaveApplication", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _LeaveApplication_position(ctx context.Context, field graphql.CollectedField, obj *model.LeaveApplication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_LeaveApplication_position(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Position, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_LeaveApplication_position(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("LeaveApplication", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _LeaveApplication_startDate(ctx context.Context, field graphql.CollectedField, obj *model.LeaveApplication) (ret graphql.Marshaler) {
@@ -3536,6 +6112,38 @@ func (ec *executionContext) fieldContext_LeaveApplication_createdAt(_ context.Co
 	return graphql.NewScalarFieldContext("LeaveApplication", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
+func (ec *executionContext) _LeaveApplication_affectedBookings(ctx context.Context, field graphql.CollectedField, obj *model.LeaveApplication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_LeaveApplication_affectedBookings(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.AffectedBookings, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.BookingDetail) graphql.Marshaler {
+			return ec.marshalNBookingDetail2ᚕᚖfypᚋgraphᚋmodelᚐBookingDetailᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_LeaveApplication_affectedBookings(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LeaveApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BookingDetail(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createBooking(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3546,7 +6154,7 @@ func (ec *executionContext) _Mutation_createBooking(ctx context.Context, field g
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().CreateBooking(ctx, fc.Args["slotOptionId"].(string))
+			return ec.Resolvers.Mutation().CreateBooking(ctx, fc.Args["slotOptionId"].(string), fc.Args["description"].(*string))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *model.Booking) graphql.Marshaler {
@@ -3574,6 +6182,314 @@ func (ec *executionContext) fieldContext_Mutation_createBooking(ctx context.Cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createBooking_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_acceptBooking(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_acceptBooking(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().AcceptBooking(ctx, fc.Args["bookingId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.BookingDetail) graphql.Marshaler {
+			return ec.marshalNBookingDetail2ᚖfypᚋgraphᚋmodelᚐBookingDetail(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_acceptBooking(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BookingDetail(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_acceptBooking_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_rejectBooking(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_rejectBooking(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RejectBooking(ctx, fc.Args["bookingId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.BookingDetail) graphql.Marshaler {
+			return ec.marshalNBookingDetail2ᚖfypᚋgraphᚋmodelᚐBookingDetail(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_rejectBooking(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BookingDetail(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_rejectBooking_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_cancelBooking(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_cancelBooking(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CancelBooking(ctx, fc.Args["bookingId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.BookingDetail) graphql.Marshaler {
+			return ec.marshalNBookingDetail2ᚖfypᚋgraphᚋmodelᚐBookingDetail(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_cancelBooking(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BookingDetail(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_cancelBooking_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_rescheduleBooking(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_rescheduleBooking(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RescheduleBooking(ctx, fc.Args["bookingId"].(string), fc.Args["newSlotOptionId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.BookingDetail) graphql.Marshaler {
+			return ec.marshalNBookingDetail2ᚖfypᚋgraphᚋmodelᚐBookingDetail(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_rescheduleBooking(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BookingDetail(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_rescheduleBooking_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_acceptReschedule(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_acceptReschedule(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().AcceptReschedule(ctx, fc.Args["bookingId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.BookingDetail) graphql.Marshaler {
+			return ec.marshalNBookingDetail2ᚖfypᚋgraphᚋmodelᚐBookingDetail(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_acceptReschedule(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BookingDetail(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_acceptReschedule_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateBookingDescription(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateBookingDescription(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateBookingDescription(ctx, fc.Args["bookingId"].(string), fc.Args["description"].(*string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.BookingDetail) graphql.Marshaler {
+			return ec.marshalNBookingDetail2ᚖfypᚋgraphᚋmodelᚐBookingDetail(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateBookingDescription(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BookingDetail(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateBookingDescription_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_recordWalkIn(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_recordWalkIn(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RecordWalkIn(ctx, fc.Args["input"].(model.WalkInInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.BookingDetail) graphql.Marshaler {
+			return ec.marshalNBookingDetail2ᚖfypᚋgraphᚋmodelᚐBookingDetail(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_recordWalkIn(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BookingDetail(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_recordWalkIn_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3662,6 +6578,270 @@ func (ec *executionContext) fieldContext_Mutation_updateBusinessProfile(ctx cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateBusinessProfile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_applyLeave(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_applyLeave(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().ApplyLeave(ctx, fc.Args["input"].(model.ApplyLeaveInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.LeaveApplication) graphql.Marshaler {
+			return ec.marshalNLeaveApplication2ᚖfypᚋgraphᚋmodelᚐLeaveApplication(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_applyLeave(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_LeaveApplication(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_applyLeave_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateLeaveApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateLeaveApplication(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateLeaveApplication(ctx, fc.Args["leaveId"].(string), fc.Args["justification"].(*string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.LeaveApplication) graphql.Marshaler {
+			return ec.marshalNLeaveApplication2ᚖfypᚋgraphᚋmodelᚐLeaveApplication(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateLeaveApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_LeaveApplication(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateLeaveApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteLeaveApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteLeaveApplication(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteLeaveApplication(ctx, fc.Args["leaveId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteLeaveApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteLeaveApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_approveLeaveApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_approveLeaveApplication(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().ApproveLeaveApplication(ctx, fc.Args["leaveId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.LeaveApplication) graphql.Marshaler {
+			return ec.marshalNLeaveApplication2ᚖfypᚋgraphᚋmodelᚐLeaveApplication(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_approveLeaveApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_LeaveApplication(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_approveLeaveApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_rejectLeaveApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_rejectLeaveApplication(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RejectLeaveApplication(ctx, fc.Args["leaveId"].(string), fc.Args["remark"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.LeaveApplication) graphql.Marshaler {
+			return ec.marshalNLeaveApplication2ᚖfypᚋgraphᚋmodelᚐLeaveApplication(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_rejectLeaveApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_LeaveApplication(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_rejectLeaveApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateStaffWorkingHours(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateStaffWorkingHours(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateStaffWorkingHours(ctx, fc.Args["staffId"].(string), fc.Args["workingHours"].([]*model.WorkingHourInput), fc.Args["reassignments"].([]*model.SlotReassignmentInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Staff) graphql.Marshaler {
+			return ec.marshalNStaff2ᚖfypᚋgraphᚋmodelᚐStaff(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateStaffWorkingHours(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Staff(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateStaffWorkingHours_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3854,7 +7034,7 @@ func (ec *executionContext) _Mutation_updateServiceSlot(ctx context.Context, fie
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().UpdateServiceSlot(ctx, fc.Args["serviceSlotId"].(string), fc.Args["input"].(model.ServiceSlotInput), fc.Args["applyToFutureRecurring"].(bool))
+			return ec.Resolvers.Mutation().UpdateServiceSlot(ctx, fc.Args["serviceSlotId"].(string), fc.Args["input"].(model.ServiceSlotInput))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *model.ServiceSlot) graphql.Marshaler {
@@ -4240,6 +7420,50 @@ func (ec *executionContext) fieldContext_Mutation_resetPassword(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_changePassword(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_changePassword(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().ChangePassword(ctx, fc.Args["currentPassword"].(string), fc.Args["newPassword"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_changePassword(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_changePassword_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_updateProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4278,6 +7502,369 @@ func (ec *executionContext) fieldContext_Mutation_updateProfile(ctx context.Cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateProfile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_bookingSummary(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_bookingSummary(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().BookingSummary(ctx, fc.Args["from"].(string), fc.Args["until"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.BookingSummary) graphql.Marshaler {
+			return ec.marshalNBookingSummary2ᚖfypᚋgraphᚋmodelᚐBookingSummary(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_bookingSummary(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BookingSummary(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_bookingSummary_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_bookingTrend(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_bookingTrend(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().BookingTrend(ctx, fc.Args["from"].(string), fc.Args["until"].(string), fc.Args["granularity"].(*model.TrendGranularity))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.BookingTrendPoint) graphql.Marshaler {
+			return ec.marshalNBookingTrendPoint2ᚕᚖfypᚋgraphᚋmodelᚐBookingTrendPointᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_bookingTrend(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BookingTrendPoint(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_bookingTrend_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_servicePopularity(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_servicePopularity(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().ServicePopularity(ctx, fc.Args["from"].(string), fc.Args["until"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServicePopularity) graphql.Marshaler {
+			return ec.marshalNServicePopularity2ᚕᚖfypᚋgraphᚋmodelᚐServicePopularityᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_servicePopularity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ServicePopularity(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_servicePopularity_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_slotUtilization(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_slotUtilization(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().SlotUtilization(ctx, fc.Args["from"].(string), fc.Args["until"].(string), fc.Args["groupBy"].(*model.SlotUtilizationGroupBy))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.SlotUtilization) graphql.Marshaler {
+			return ec.marshalNSlotUtilization2ᚖfypᚋgraphᚋmodelᚐSlotUtilization(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_slotUtilization(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_SlotUtilization(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_slotUtilization_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_staffUtilization(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_staffUtilization(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().StaffUtilization(ctx, fc.Args["from"].(string), fc.Args["until"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.StaffUtilization) graphql.Marshaler {
+			return ec.marshalNStaffUtilization2ᚕᚖfypᚋgraphᚋmodelᚐStaffUtilizationᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_staffUtilization(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_StaffUtilization(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_staffUtilization_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_customerRetention(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_customerRetention(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().CustomerRetention(ctx, fc.Args["from"].(string), fc.Args["until"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.CustomerRetention) graphql.Marshaler {
+			return ec.marshalNCustomerRetention2ᚖfypᚋgraphᚋmodelᚐCustomerRetention(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_customerRetention(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_CustomerRetention(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_customerRetention_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_cancellationServiceOptions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_cancellationServiceOptions(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().CancellationServiceOptions(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceFilterOption) graphql.Marshaler {
+			return ec.marshalNServiceFilterOption2ᚕᚖfypᚋgraphᚋmodelᚐServiceFilterOptionᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_cancellationServiceOptions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ServiceFilterOption(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_businessCreatedAt(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_businessCreatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().BusinessCreatedAt(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNDate2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_businessCreatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Query", field, true, true, errors.New("field of type Date does not have child fields"))
+}
+
+func (ec *executionContext) _Query_cancellationAnalysis(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_cancellationAnalysis(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().CancellationAnalysis(ctx, fc.Args["from"].(string), fc.Args["until"].(string), fc.Args["staffIds"].([]string), fc.Args["serviceIds"].([]string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.CancellationAnalysis) graphql.Marshaler {
+			return ec.marshalNCancellationAnalysis2ᚖfypᚋgraphᚋmodelᚐCancellationAnalysis(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_cancellationAnalysis(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_CancellationAnalysis(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_cancellationAnalysis_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4414,7 +8001,7 @@ func (ec *executionContext) _Query_availableSlots(ctx context.Context, field gra
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().AvailableSlots(ctx, fc.Args["businessId"].(string), fc.Args["serviceOptionId"].(string), fc.Args["date"].(string), fc.Args["staffId"].(*string))
+			return ec.Resolvers.Query().AvailableSlots(ctx, fc.Args["businessId"].(string), fc.Args["serviceOptionId"].(string), fc.Args["date"].(string), fc.Args["staffId"].(*string), fc.Args["unassignedOnly"].(*bool))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceSlot) graphql.Marshaler {
@@ -4442,6 +8029,50 @@ func (ec *executionContext) fieldContext_Query_availableSlots(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_availableSlots_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_availableDates(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_availableDates(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().AvailableDates(ctx, fc.Args["businessId"].(string), fc.Args["serviceId"].(*string), fc.Args["serviceOptionId"].(*string), fc.Args["staffId"].(*string), fc.Args["unassignedOnly"].(*bool), fc.Args["from"].(string), fc.Args["until"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []string) graphql.Marshaler {
+			return ec.marshalNDate2ᚕstringᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_availableDates(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Date does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_availableDates_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4476,6 +8107,178 @@ func (ec *executionContext) fieldContext_Query_recentlyBookedBusinesses(_ contex
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_BusinessProfile(ctx, field)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_businessBookings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_businessBookings(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().BusinessBookings(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.BookingDetail) graphql.Marshaler {
+			return ec.marshalNBookingDetail2ᚕᚖfypᚋgraphᚋmodelᚐBookingDetailᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_businessBookings(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BookingDetail(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_myAppointments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_myAppointments(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().MyAppointments(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.BookingDetail) graphql.Marshaler {
+			return ec.marshalNBookingDetail2ᚕᚖfypᚋgraphᚋmodelᚐBookingDetailᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_myAppointments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BookingDetail(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_myLeaveApplications(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_myLeaveApplications(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().MyLeaveApplications(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.LeaveApplication) graphql.Marshaler {
+			return ec.marshalNLeaveApplication2ᚕᚖfypᚋgraphᚋmodelᚐLeaveApplicationᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_myLeaveApplications(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_LeaveApplication(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_businessLeaveApplications(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_businessLeaveApplications(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().BusinessLeaveApplications(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.LeaveApplication) graphql.Marshaler {
+			return ec.marshalNLeaveApplication2ᚕᚖfypᚋgraphᚋmodelᚐLeaveApplicationᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_businessLeaveApplications(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_LeaveApplication(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_staffHoursConflicts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_staffHoursConflicts(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().StaffHoursConflicts(ctx, fc.Args["staffId"].(string), fc.Args["workingHours"].([]*model.WorkingHourInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceSlot) graphql.Marshaler {
+			return ec.marshalNServiceSlot2ᚕᚖfypᚋgraphᚋmodelᚐServiceSlotᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_staffHoursConflicts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ServiceSlot(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_staffHoursConflicts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -5222,6 +9025,144 @@ func (ec *executionContext) fieldContext_Service_deletedAt(_ context.Context, fi
 	return graphql.NewScalarFieldContext("Service", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
+func (ec *executionContext) _ServiceCancellation_serviceId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceCancellation) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceCancellation_serviceId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceCancellation_serviceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceCancellation", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceCancellation_serviceName(ctx context.Context, field graphql.CollectedField, obj *model.ServiceCancellation) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceCancellation_serviceName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceCancellation_serviceName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceCancellation", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceCancellation_count(ctx context.Context, field graphql.CollectedField, obj *model.ServiceCancellation) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceCancellation_count(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceCancellation_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceCancellation", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceFilterOption_serviceIds(ctx context.Context, field graphql.CollectedField, obj *model.ServiceFilterOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceFilterOption_serviceIds(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceIds, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []string) graphql.Marshaler {
+			return ec.marshalNID2ᚕstringᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceFilterOption_serviceIds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceFilterOption", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceFilterOption_serviceName(ctx context.Context, field graphql.CollectedField, obj *model.ServiceFilterOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceFilterOption_serviceName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceFilterOption_serviceName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceFilterOption", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceFilterOption_deleted(ctx context.Context, field graphql.CollectedField, obj *model.ServiceFilterOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceFilterOption_deleted(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Deleted, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceFilterOption_deleted(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceFilterOption", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
 func (ec *executionContext) _ServiceOption_serviceOptionId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5442,6 +9383,98 @@ func (ec *executionContext) fieldContext_ServiceOption_recurringSchedules(_ cont
 	return fc, nil
 }
 
+func (ec *executionContext) _ServiceOption_removed(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_removed(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Removed, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_removed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceOption_effectiveFrom(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_effectiveFrom(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.EffectiveFrom, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalODate2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_effectiveFrom(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type Date does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceOption_effectiveUntil(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_effectiveUntil(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.EffectiveUntil, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalODate2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_effectiveUntil(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type Date does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceOption_hasBooking(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceOption_hasBooking(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.HasBooking, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceOption_hasBooking(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceOption", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
 func (ec *executionContext) _ServiceOption_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.ServiceOption) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5587,6 +9620,75 @@ func (ec *executionContext) _ServiceOptionItem_deletedAt(ctx context.Context, fi
 }
 func (ec *executionContext) fieldContext_ServiceOptionItem_deletedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("ServiceOptionItem", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _ServicePopularity_serviceId(ctx context.Context, field graphql.CollectedField, obj *model.ServicePopularity) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServicePopularity_serviceId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServicePopularity_serviceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServicePopularity", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _ServicePopularity_serviceName(ctx context.Context, field graphql.CollectedField, obj *model.ServicePopularity) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServicePopularity_serviceName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServicePopularity_serviceName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServicePopularity", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _ServicePopularity_bookingCount(ctx context.Context, field graphql.CollectedField, obj *model.ServicePopularity) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServicePopularity_bookingCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.BookingCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServicePopularity_bookingCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServicePopularity", field, false, false, errors.New("field of type Int does not have child fields"))
 }
 
 func (ec *executionContext) _ServiceSlot_serviceSlotId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceSlot) (ret graphql.Marshaler) {
@@ -6080,6 +10182,107 @@ func (ec *executionContext) fieldContext_ServiceSlotOption_deletedAt(_ context.C
 	return graphql.NewScalarFieldContext("ServiceSlotOption", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
+func (ec *executionContext) _SlotUtilization_totalSlots(ctx context.Context, field graphql.CollectedField, obj *model.SlotUtilization) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlotUtilization_totalSlots(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalSlots, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlotUtilization_totalSlots(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlotUtilization", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _SlotUtilization_bookedSlots(ctx context.Context, field graphql.CollectedField, obj *model.SlotUtilization) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlotUtilization_bookedSlots(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.BookedSlots, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlotUtilization_bookedSlots(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlotUtilization", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _SlotUtilization_utilizationRate(ctx context.Context, field graphql.CollectedField, obj *model.SlotUtilization) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlotUtilization_utilizationRate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UtilizationRate, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlotUtilization_utilizationRate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlotUtilization", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _SlotUtilization_sections(ctx context.Context, field graphql.CollectedField, obj *model.SlotUtilization) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlotUtilization_sections(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Sections, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.UtilizationSection) graphql.Marshaler {
+			return ec.marshalNUtilizationSection2ᚕᚖfypᚋgraphᚋmodelᚐUtilizationSectionᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlotUtilization_sections(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SlotUtilization",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_UtilizationSection(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Staff_staffId(ctx context.Context, field graphql.CollectedField, obj *model.Staff) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6456,6 +10659,29 @@ func (ec *executionContext) fieldContext_Staff_recurringSchedules(_ context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Staff_hasBooking(ctx context.Context, field graphql.CollectedField, obj *model.Staff) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Staff_hasBooking(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.HasBooking, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Staff_hasBooking(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Staff", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
 func (ec *executionContext) _Staff_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.Staff) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6477,6 +10703,190 @@ func (ec *executionContext) _Staff_deletedAt(ctx context.Context, field graphql.
 }
 func (ec *executionContext) fieldContext_Staff_deletedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Staff", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _StaffCancellation_staffId(ctx context.Context, field graphql.CollectedField, obj *model.StaffCancellation) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StaffCancellation_staffId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.StaffID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOID2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_StaffCancellation_staffId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StaffCancellation", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _StaffCancellation_staffName(ctx context.Context, field graphql.CollectedField, obj *model.StaffCancellation) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StaffCancellation_staffName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.StaffName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StaffCancellation_staffName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StaffCancellation", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _StaffCancellation_customerCount(ctx context.Context, field graphql.CollectedField, obj *model.StaffCancellation) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StaffCancellation_customerCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StaffCancellation_customerCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StaffCancellation", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _StaffCancellation_staffCount(ctx context.Context, field graphql.CollectedField, obj *model.StaffCancellation) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StaffCancellation_staffCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.StaffCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StaffCancellation_staffCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StaffCancellation", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _StaffUtilization_staffId(ctx context.Context, field graphql.CollectedField, obj *model.StaffUtilization) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StaffUtilization_staffId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.StaffID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOID2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_StaffUtilization_staffId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StaffUtilization", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _StaffUtilization_staffName(ctx context.Context, field graphql.CollectedField, obj *model.StaffUtilization) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StaffUtilization_staffName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.StaffName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StaffUtilization_staffName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StaffUtilization", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _StaffUtilization_bookings(ctx context.Context, field graphql.CollectedField, obj *model.StaffUtilization) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StaffUtilization_bookings(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Bookings, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StaffUtilization_bookings(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StaffUtilization", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _StaffUtilization_hoursBooked(ctx context.Context, field graphql.CollectedField, obj *model.StaffUtilization) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StaffUtilization_hoursBooked(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.HoursBooked, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StaffUtilization_hoursBooked(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StaffUtilization", field, false, false, errors.New("field of type Float does not have child fields"))
 }
 
 func (ec *executionContext) _StaffWorkingHour_staffWorkHourId(ctx context.Context, field graphql.CollectedField, obj *model.StaffWorkingHour) (ret graphql.Marshaler) {
@@ -6647,6 +11057,98 @@ func (ec *executionContext) _StaffWorkingHour_deletedAt(ctx context.Context, fie
 }
 func (ec *executionContext) fieldContext_StaffWorkingHour_deletedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("StaffWorkingHour", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _StatusCount_status(ctx context.Context, field graphql.CollectedField, obj *model.StatusCount) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusCount_status(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v model.BookingStatus) graphql.Marshaler {
+			return ec.marshalNBookingStatus2fypᚋgraphᚋmodelᚐBookingStatus(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusCount_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusCount", field, false, false, errors.New("field of type BookingStatus does not have child fields"))
+}
+
+func (ec *executionContext) _StatusCount_count(ctx context.Context, field graphql.CollectedField, obj *model.StatusCount) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusCount_count(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusCount_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusCount", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _TypeCount_bookingType(ctx context.Context, field graphql.CollectedField, obj *model.TypeCount) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TypeCount_bookingType(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.BookingType, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v model.BookingType) graphql.Marshaler {
+			return ec.marshalNBookingType2fypᚋgraphᚋmodelᚐBookingType(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TypeCount_bookingType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TypeCount", field, false, false, errors.New("field of type BookingType does not have child fields"))
+}
+
+func (ec *executionContext) _TypeCount_count(ctx context.Context, field graphql.CollectedField, obj *model.TypeCount) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TypeCount_count(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TypeCount_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TypeCount", field, false, false, errors.New("field of type Int does not have child fields"))
 }
 
 func (ec *executionContext) _User_userId(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
@@ -6901,6 +11403,130 @@ func (ec *executionContext) fieldContext_User_bookings(_ context.Context, field 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_Booking(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UtilizationBreakdownPoint_label(ctx context.Context, field graphql.CollectedField, obj *model.UtilizationBreakdownPoint) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_UtilizationBreakdownPoint_label(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Label, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_UtilizationBreakdownPoint_label(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("UtilizationBreakdownPoint", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _UtilizationBreakdownPoint_totalSlots(ctx context.Context, field graphql.CollectedField, obj *model.UtilizationBreakdownPoint) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_UtilizationBreakdownPoint_totalSlots(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalSlots, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_UtilizationBreakdownPoint_totalSlots(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("UtilizationBreakdownPoint", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _UtilizationBreakdownPoint_bookedSlots(ctx context.Context, field graphql.CollectedField, obj *model.UtilizationBreakdownPoint) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_UtilizationBreakdownPoint_bookedSlots(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.BookedSlots, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_UtilizationBreakdownPoint_bookedSlots(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("UtilizationBreakdownPoint", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _UtilizationSection_subtitle(ctx context.Context, field graphql.CollectedField, obj *model.UtilizationSection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_UtilizationSection_subtitle(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Subtitle, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_UtilizationSection_subtitle(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("UtilizationSection", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _UtilizationSection_points(ctx context.Context, field graphql.CollectedField, obj *model.UtilizationSection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_UtilizationSection_points(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Points, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.UtilizationBreakdownPoint) graphql.Marshaler {
+			return ec.marshalNUtilizationBreakdownPoint2ᚕᚖfypᚋgraphᚋmodelᚐUtilizationBreakdownPointᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_UtilizationSection_points(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UtilizationSection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_UtilizationBreakdownPoint(ctx, field)
 		},
 	}
 	return fc, nil
@@ -7965,6 +12591,50 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputApplyLeaveInput(ctx context.Context, obj any) (model.ApplyLeaveInput, error) {
+	var it model.ApplyLeaveInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"startDate", "endDate", "justification"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "startDate":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startDate"))
+			data, err := ec.unmarshalNDate2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartDate = data
+		case "endDate":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endDate"))
+			data, err := ec.unmarshalNDate2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EndDate = data
+		case "justification":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("justification"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Justification = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputBusinessProfileInput(ctx context.Context, obj any) (model.BusinessProfileInput, error) {
 	var it model.BusinessProfileInput
 	if obj == nil {
@@ -8129,13 +12799,20 @@ func (ec *executionContext) unmarshalInputServiceOptionInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"serviceOptionName", "description", "serviceOptionItems"}
+	fieldsInOrder := [...]string{"serviceOptionId", "serviceOptionName", "description", "serviceOptionItems", "effectiveFrom", "effectiveUntil", "clearEffectiveUntil"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "serviceOptionId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceOptionId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceOptionID = data
 		case "serviceOptionName":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceOptionName"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -8157,6 +12834,27 @@ func (ec *executionContext) unmarshalInputServiceOptionInput(ctx context.Context
 				return it, err
 			}
 			it.ServiceOptionItems = data
+		case "effectiveFrom":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("effectiveFrom"))
+			data, err := ec.unmarshalODate2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EffectiveFrom = data
+		case "effectiveUntil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("effectiveUntil"))
+			data, err := ec.unmarshalODate2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EffectiveUntil = data
+		case "clearEffectiveUntil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearEffectiveUntil"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClearEffectiveUntil = data
 		}
 	}
 	return it, nil
@@ -8308,6 +13006,43 @@ func (ec *executionContext) unmarshalInputSignUpInput(ctx context.Context, obj a
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputSlotReassignmentInput(ctx context.Context, obj any) (model.SlotReassignmentInput, error) {
+	var it model.SlotReassignmentInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"serviceSlotId", "staffId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "serviceSlotId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceSlotId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceSlotID = data
+		case "staffId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("staffId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StaffID = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputStaffInput(ctx context.Context, obj any) (model.StaffInput, error) {
 	var it model.StaffInput
 	if obj == nil {
@@ -8319,7 +13054,7 @@ func (ec *executionContext) unmarshalInputStaffInput(ctx context.Context, obj an
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "email", "contactNumber", "position", "workingHours"}
+	fieldsInOrder := [...]string{"name", "email", "contactNumber", "position", "password", "workingHours"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8354,6 +13089,13 @@ func (ec *executionContext) unmarshalInputStaffInput(ctx context.Context, obj an
 				return it, err
 			}
 			it.Position = data
+		case "password":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Password = data
 		case "workingHours":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workingHours"))
 			data, err := ec.unmarshalNWorkingHourInput2ᚕᚖfypᚋgraphᚋmodelᚐWorkingHourInputᚄ(ctx, v)
@@ -8456,6 +13198,64 @@ func (ec *executionContext) unmarshalInputUpdateStaffInput(ctx context.Context, 
 				return it, err
 			}
 			it.Position = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputWalkInInput(ctx context.Context, obj any) (model.WalkInInput, error) {
+	var it model.WalkInInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"serviceOptionId", "staffId", "date", "startTime", "endTime"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "serviceOptionId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceOptionId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceOptionID = data
+		case "staffId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("staffId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StaffID = data
+		case "date":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("date"))
+			data, err := ec.unmarshalNDate2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Date = data
+		case "startTime":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTime"))
+			data, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartTime = data
+		case "endTime":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endTime"))
+			data, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EndTime = data
 		}
 	}
 	return it, nil
@@ -8600,6 +13400,8 @@ func (ec *executionContext) _Booking(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "description":
+			out.Values[i] = ec._Booking_description(ctx, field, obj)
 		case "deletedAt":
 			out.Values[i] = ec._Booking_deletedAt(ctx, field, obj)
 		case "createdAt":
@@ -8613,6 +13415,227 @@ func (ec *executionContext) _Booking(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Booking_decidedBy(ctx, field, obj)
 		case "decidedByUser":
 			out.Values[i] = ec._Booking_decidedByUser(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var bookingDetailImplementors = []string{"BookingDetail"}
+
+func (ec *executionContext) _BookingDetail(ctx context.Context, sel ast.SelectionSet, obj *model.BookingDetail) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, bookingDetailImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BookingDetail")
+		case "bookingId":
+			out.Values[i] = ec._BookingDetail_bookingId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._BookingDetail_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "bookingType":
+			out.Values[i] = ec._BookingDetail_bookingType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceSlotId":
+			out.Values[i] = ec._BookingDetail_serviceSlotId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "slotOptionId":
+			out.Values[i] = ec._BookingDetail_slotOptionId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceOptionId":
+			out.Values[i] = ec._BookingDetail_serviceOptionId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "date":
+			out.Values[i] = ec._BookingDetail_date(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "startTime":
+			out.Values[i] = ec._BookingDetail_startTime(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "endTime":
+			out.Values[i] = ec._BookingDetail_endTime(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceName":
+			out.Values[i] = ec._BookingDetail_serviceName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "optionName":
+			out.Values[i] = ec._BookingDetail_optionName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "staffName":
+			out.Values[i] = ec._BookingDetail_staffName(ctx, field, obj)
+		case "customerName":
+			out.Values[i] = ec._BookingDetail_customerName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "customerEmail":
+			out.Values[i] = ec._BookingDetail_customerEmail(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "businessId":
+			out.Values[i] = ec._BookingDetail_businessId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "businessName":
+			out.Values[i] = ec._BookingDetail_businessName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._BookingDetail_description(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._BookingDetail_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var bookingSummaryImplementors = []string{"BookingSummary"}
+
+func (ec *executionContext) _BookingSummary(ctx context.Context, sel ast.SelectionSet, obj *model.BookingSummary) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, bookingSummaryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BookingSummary")
+		case "totalBookings":
+			out.Values[i] = ec._BookingSummary_totalBookings(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "byStatus":
+			out.Values[i] = ec._BookingSummary_byStatus(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "byType":
+			out.Values[i] = ec._BookingSummary_byType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "todayAcceptedCount":
+			out.Values[i] = ec._BookingSummary_todayAcceptedCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pendingCount":
+			out.Values[i] = ec._BookingSummary_pendingCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var bookingTrendPointImplementors = []string{"BookingTrendPoint"}
+
+func (ec *executionContext) _BookingTrendPoint(ctx context.Context, sel ast.SelectionSet, obj *model.BookingTrendPoint) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, bookingTrendPointImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BookingTrendPoint")
+		case "date":
+			out.Values[i] = ec._BookingTrendPoint_date(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._BookingTrendPoint_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8790,6 +13813,119 @@ func (ec *executionContext) _BusinessWorkingHour(ctx context.Context, sel ast.Se
 	return out
 }
 
+var cancellationAnalysisImplementors = []string{"CancellationAnalysis"}
+
+func (ec *executionContext) _CancellationAnalysis(ctx context.Context, sel ast.SelectionSet, obj *model.CancellationAnalysis) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, cancellationAnalysisImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CancellationAnalysis")
+		case "totalCancelled":
+			out.Values[i] = ec._CancellationAnalysis_totalCancelled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalRejected":
+			out.Values[i] = ec._CancellationAnalysis_totalRejected(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCancelledOrRejected":
+			out.Values[i] = ec._CancellationAnalysis_totalCancelledOrRejected(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "cancelledOrRejectedRate":
+			out.Values[i] = ec._CancellationAnalysis_cancelledOrRejectedRate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "byService":
+			out.Values[i] = ec._CancellationAnalysis_byService(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "byStaff":
+			out.Values[i] = ec._CancellationAnalysis_byStaff(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var customerRetentionImplementors = []string{"CustomerRetention"}
+
+func (ec *executionContext) _CustomerRetention(ctx context.Context, sel ast.SelectionSet, obj *model.CustomerRetention) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, customerRetentionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CustomerRetention")
+		case "newCustomers":
+			out.Values[i] = ec._CustomerRetention_newCustomers(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "returningCustomers":
+			out.Values[i] = ec._CustomerRetention_returningCustomers(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCustomers":
+			out.Values[i] = ec._CustomerRetention_totalCustomers(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var leaveApplicationImplementors = []string{"LeaveApplication"}
 
 func (ec *executionContext) _LeaveApplication(ctx context.Context, sel ast.SelectionSet, obj *model.LeaveApplication) graphql.Marshaler {
@@ -8816,6 +13952,13 @@ func (ec *executionContext) _LeaveApplication(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "staffName":
+			out.Values[i] = ec._LeaveApplication_staffName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "position":
+			out.Values[i] = ec._LeaveApplication_position(ctx, field, obj)
 		case "startDate":
 			out.Values[i] = ec._LeaveApplication_startDate(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -8843,6 +13986,11 @@ func (ec *executionContext) _LeaveApplication(ctx context.Context, sel ast.Selec
 			out.Values[i] = ec._LeaveApplication_deletedAt(ctx, field, obj)
 		case "createdAt":
 			out.Values[i] = ec._LeaveApplication_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "affectedBookings":
+			out.Values[i] = ec._LeaveApplication_affectedBookings(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8895,6 +14043,55 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "acceptBooking":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_acceptBooking(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rejectBooking":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_rejectBooking(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "cancelBooking":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_cancelBooking(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rescheduleBooking":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_rescheduleBooking(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "acceptReschedule":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_acceptReschedule(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateBookingDescription":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateBookingDescription(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "recordWalkIn":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_recordWalkIn(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "registerBusinessProfile":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_registerBusinessProfile(ctx, field)
@@ -8905,6 +14102,48 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateBusinessProfile":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateBusinessProfile(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "applyLeave":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_applyLeave(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateLeaveApplication":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateLeaveApplication(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteLeaveApplication":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteLeaveApplication(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "approveLeaveApplication":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_approveLeaveApplication(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rejectLeaveApplication":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_rejectLeaveApplication(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateStaffWorkingHours":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateStaffWorkingHours(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -9000,6 +14239,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "changePassword":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_changePassword(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "updateProfile":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateProfile(ctx, field)
@@ -9049,6 +14295,204 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "bookingSummary":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_bookingSummary(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "bookingTrend":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_bookingTrend(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "servicePopularity":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_servicePopularity(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "slotUtilization":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_slotUtilization(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "staffUtilization":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_staffUtilization(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "customerRetention":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_customerRetention(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "cancellationServiceOptions":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_cancellationServiceOptions(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "businessCreatedAt":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_businessCreatedAt(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "cancellationAnalysis":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_cancellationAnalysis(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "publicBusinesses":
 			field := field
 
@@ -9137,6 +14581,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "availableDates":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_availableDates(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "recentlyBookedBusinesses":
 			field := field
 
@@ -9147,6 +14613,116 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_recentlyBookedBusinesses(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "businessBookings":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_businessBookings(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "myAppointments":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_myAppointments(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "myLeaveApplications":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_myLeaveApplications(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "businessLeaveApplications":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_businessLeaveApplications(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "staffHoursConflicts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_staffHoursConflicts(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -9445,6 +15021,104 @@ func (ec *executionContext) _Service(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var serviceCancellationImplementors = []string{"ServiceCancellation"}
+
+func (ec *executionContext) _ServiceCancellation(ctx context.Context, sel ast.SelectionSet, obj *model.ServiceCancellation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, serviceCancellationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ServiceCancellation")
+		case "serviceId":
+			out.Values[i] = ec._ServiceCancellation_serviceId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceName":
+			out.Values[i] = ec._ServiceCancellation_serviceName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._ServiceCancellation_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var serviceFilterOptionImplementors = []string{"ServiceFilterOption"}
+
+func (ec *executionContext) _ServiceFilterOption(ctx context.Context, sel ast.SelectionSet, obj *model.ServiceFilterOption) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, serviceFilterOptionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ServiceFilterOption")
+		case "serviceIds":
+			out.Values[i] = ec._ServiceFilterOption_serviceIds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceName":
+			out.Values[i] = ec._ServiceFilterOption_serviceName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleted":
+			out.Values[i] = ec._ServiceFilterOption_deleted(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var serviceOptionImplementors = []string{"ServiceOption"}
 
 func (ec *executionContext) _ServiceOption(ctx context.Context, sel ast.SelectionSet, obj *model.ServiceOption) graphql.Marshaler {
@@ -9490,6 +15164,20 @@ func (ec *executionContext) _ServiceOption(ctx context.Context, sel ast.Selectio
 			}
 		case "recurringSchedules":
 			out.Values[i] = ec._ServiceOption_recurringSchedules(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "removed":
+			out.Values[i] = ec._ServiceOption_removed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "effectiveFrom":
+			out.Values[i] = ec._ServiceOption_effectiveFrom(ctx, field, obj)
+		case "effectiveUntil":
+			out.Values[i] = ec._ServiceOption_effectiveUntil(ctx, field, obj)
+		case "hasBooking":
+			out.Values[i] = ec._ServiceOption_hasBooking(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -9551,6 +15239,55 @@ func (ec *executionContext) _ServiceOptionItem(ctx context.Context, sel ast.Sele
 			}
 		case "deletedAt":
 			out.Values[i] = ec._ServiceOptionItem_deletedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var servicePopularityImplementors = []string{"ServicePopularity"}
+
+func (ec *executionContext) _ServicePopularity(ctx context.Context, sel ast.SelectionSet, obj *model.ServicePopularity) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, servicePopularityImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ServicePopularity")
+		case "serviceId":
+			out.Values[i] = ec._ServicePopularity_serviceId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceName":
+			out.Values[i] = ec._ServicePopularity_serviceName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "bookingCount":
+			out.Values[i] = ec._ServicePopularity_bookingCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9719,6 +15456,60 @@ func (ec *executionContext) _ServiceSlotOption(ctx context.Context, sel ast.Sele
 	return out
 }
 
+var slotUtilizationImplementors = []string{"SlotUtilization"}
+
+func (ec *executionContext) _SlotUtilization(ctx context.Context, sel ast.SelectionSet, obj *model.SlotUtilization) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, slotUtilizationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SlotUtilization")
+		case "totalSlots":
+			out.Values[i] = ec._SlotUtilization_totalSlots(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "bookedSlots":
+			out.Values[i] = ec._SlotUtilization_bookedSlots(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "utilizationRate":
+			out.Values[i] = ec._SlotUtilization_utilizationRate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sections":
+			out.Values[i] = ec._SlotUtilization_sections(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var staffImplementors = []string{"Staff"}
 
 func (ec *executionContext) _Staff(ctx context.Context, sel ast.SelectionSet, obj *model.Staff) graphql.Marshaler {
@@ -9797,8 +15588,115 @@ func (ec *executionContext) _Staff(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "hasBooking":
+			out.Values[i] = ec._Staff_hasBooking(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "deletedAt":
 			out.Values[i] = ec._Staff_deletedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var staffCancellationImplementors = []string{"StaffCancellation"}
+
+func (ec *executionContext) _StaffCancellation(ctx context.Context, sel ast.SelectionSet, obj *model.StaffCancellation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, staffCancellationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StaffCancellation")
+		case "staffId":
+			out.Values[i] = ec._StaffCancellation_staffId(ctx, field, obj)
+		case "staffName":
+			out.Values[i] = ec._StaffCancellation_staffName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "customerCount":
+			out.Values[i] = ec._StaffCancellation_customerCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "staffCount":
+			out.Values[i] = ec._StaffCancellation_staffCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var staffUtilizationImplementors = []string{"StaffUtilization"}
+
+func (ec *executionContext) _StaffUtilization(ctx context.Context, sel ast.SelectionSet, obj *model.StaffUtilization) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, staffUtilizationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StaffUtilization")
+		case "staffId":
+			out.Values[i] = ec._StaffUtilization_staffId(ctx, field, obj)
+		case "staffName":
+			out.Values[i] = ec._StaffUtilization_staffName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "bookings":
+			out.Values[i] = ec._StaffUtilization_bookings(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "hoursBooked":
+			out.Values[i] = ec._StaffUtilization_hoursBooked(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9888,6 +15786,94 @@ func (ec *executionContext) _StaffWorkingHour(ctx context.Context, sel ast.Selec
 	return out
 }
 
+var statusCountImplementors = []string{"StatusCount"}
+
+func (ec *executionContext) _StatusCount(ctx context.Context, sel ast.SelectionSet, obj *model.StatusCount) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, statusCountImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StatusCount")
+		case "status":
+			out.Values[i] = ec._StatusCount_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._StatusCount_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var typeCountImplementors = []string{"TypeCount"}
+
+func (ec *executionContext) _TypeCount(ctx context.Context, sel ast.SelectionSet, obj *model.TypeCount) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, typeCountImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TypeCount")
+		case "bookingType":
+			out.Values[i] = ec._TypeCount_bookingType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._TypeCount_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var userImplementors = []string{"User"}
 
 func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model.User) graphql.Marshaler {
@@ -9937,6 +15923,99 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._User_staffProfile(ctx, field, obj)
 		case "bookings":
 			out.Values[i] = ec._User_bookings(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var utilizationBreakdownPointImplementors = []string{"UtilizationBreakdownPoint"}
+
+func (ec *executionContext) _UtilizationBreakdownPoint(ctx context.Context, sel ast.SelectionSet, obj *model.UtilizationBreakdownPoint) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, utilizationBreakdownPointImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UtilizationBreakdownPoint")
+		case "label":
+			out.Values[i] = ec._UtilizationBreakdownPoint_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalSlots":
+			out.Values[i] = ec._UtilizationBreakdownPoint_totalSlots(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "bookedSlots":
+			out.Values[i] = ec._UtilizationBreakdownPoint_bookedSlots(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var utilizationSectionImplementors = []string{"UtilizationSection"}
+
+func (ec *executionContext) _UtilizationSection(ctx context.Context, sel ast.SelectionSet, obj *model.UtilizationSection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, utilizationSectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UtilizationSection")
+		case "subtitle":
+			out.Values[i] = ec._UtilizationSection_subtitle(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "points":
+			out.Values[i] = ec._UtilizationSection_points(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -10298,6 +16377,11 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) unmarshalNApplyLeaveInput2fypᚋgraphᚋmodelᚐApplyLeaveInput(ctx context.Context, v any) (model.ApplyLeaveInput, error) {
+	res, err := ec.unmarshalInputApplyLeaveInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNAuthPayload2fypᚋgraphᚋmodelᚐAuthPayload(ctx context.Context, sel ast.SelectionSet, v model.AuthPayload) graphql.Marshaler {
 	return ec._AuthPayload(ctx, sel, &v)
 }
@@ -10340,6 +16424,86 @@ func (ec *executionContext) marshalNBooking2ᚖfypᚋgraphᚋmodelᚐBooking(ctx
 		return graphql.Null
 	}
 	return ec._Booking(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNBookingDetail2fypᚋgraphᚋmodelᚐBookingDetail(ctx context.Context, sel ast.SelectionSet, v model.BookingDetail) graphql.Marshaler {
+	return ec._BookingDetail(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBookingDetail2ᚕᚖfypᚋgraphᚋmodelᚐBookingDetailᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.BookingDetail) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBookingDetail2ᚖfypᚋgraphᚋmodelᚐBookingDetail(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNBookingDetail2ᚖfypᚋgraphᚋmodelᚐBookingDetail(ctx context.Context, sel ast.SelectionSet, v *model.BookingDetail) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BookingDetail(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNBookingStatus2fypᚋgraphᚋmodelᚐBookingStatus(ctx context.Context, v any) (model.BookingStatus, error) {
+	var res model.BookingStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNBookingStatus2fypᚋgraphᚋmodelᚐBookingStatus(ctx context.Context, sel ast.SelectionSet, v model.BookingStatus) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNBookingSummary2fypᚋgraphᚋmodelᚐBookingSummary(ctx context.Context, sel ast.SelectionSet, v model.BookingSummary) graphql.Marshaler {
+	return ec._BookingSummary(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBookingSummary2ᚖfypᚋgraphᚋmodelᚐBookingSummary(ctx context.Context, sel ast.SelectionSet, v *model.BookingSummary) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BookingSummary(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNBookingTrendPoint2ᚕᚖfypᚋgraphᚋmodelᚐBookingTrendPointᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.BookingTrendPoint) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBookingTrendPoint2ᚖfypᚋgraphᚋmodelᚐBookingTrendPoint(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNBookingTrendPoint2ᚖfypᚋgraphᚋmodelᚐBookingTrendPoint(ctx context.Context, sel ast.SelectionSet, v *model.BookingTrendPoint) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BookingTrendPoint(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNBookingType2fypᚋgraphᚋmodelᚐBookingType(ctx context.Context, v any) (model.BookingType, error) {
@@ -10429,6 +16593,34 @@ func (ec *executionContext) marshalNBusinessWorkingHour2ᚖfypᚋgraphᚋmodel�
 	return ec._BusinessWorkingHour(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNCancellationAnalysis2fypᚋgraphᚋmodelᚐCancellationAnalysis(ctx context.Context, sel ast.SelectionSet, v model.CancellationAnalysis) graphql.Marshaler {
+	return ec._CancellationAnalysis(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCancellationAnalysis2ᚖfypᚋgraphᚋmodelᚐCancellationAnalysis(ctx context.Context, sel ast.SelectionSet, v *model.CancellationAnalysis) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CancellationAnalysis(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNCustomerRetention2fypᚋgraphᚋmodelᚐCustomerRetention(ctx context.Context, sel ast.SelectionSet, v model.CustomerRetention) graphql.Marshaler {
+	return ec._CustomerRetention(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCustomerRetention2ᚖfypᚋgraphᚋmodelᚐCustomerRetention(ctx context.Context, sel ast.SelectionSet, v *model.CustomerRetention) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CustomerRetention(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNDate2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -10443,6 +16635,36 @@ func (ec *executionContext) marshalNDate2string(ctx context.Context, sel ast.Sel
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNDate2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNDate2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNDate2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNDate2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNDateTime2string(ctx context.Context, v any) (string, error) {
@@ -10469,6 +16691,22 @@ func (ec *executionContext) unmarshalNDayOfWeek2fypᚋgraphᚋmodelᚐDayOfWeek(
 
 func (ec *executionContext) marshalNDayOfWeek2fypᚋgraphᚋmodelᚐDayOfWeek(ctx context.Context, sel ast.SelectionSet, v model.DayOfWeek) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) (float64, error) {
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalFloatContext(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
@@ -10531,6 +16769,10 @@ func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNLeaveApplication2fypᚋgraphᚋmodelᚐLeaveApplication(ctx context.Context, sel ast.SelectionSet, v model.LeaveApplication) graphql.Marshaler {
+	return ec._LeaveApplication(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNLeaveApplication2ᚕᚖfypᚋgraphᚋmodelᚐLeaveApplicationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LeaveApplication) graphql.Marshaler {
@@ -10630,6 +16872,58 @@ func (ec *executionContext) marshalNService2ᚖfypᚋgraphᚋmodelᚐService(ctx
 	return ec._Service(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNServiceCancellation2ᚕᚖfypᚋgraphᚋmodelᚐServiceCancellationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServiceCancellation) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNServiceCancellation2ᚖfypᚋgraphᚋmodelᚐServiceCancellation(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNServiceCancellation2ᚖfypᚋgraphᚋmodelᚐServiceCancellation(ctx context.Context, sel ast.SelectionSet, v *model.ServiceCancellation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ServiceCancellation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNServiceFilterOption2ᚕᚖfypᚋgraphᚋmodelᚐServiceFilterOptionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServiceFilterOption) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNServiceFilterOption2ᚖfypᚋgraphᚋmodelᚐServiceFilterOption(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNServiceFilterOption2ᚖfypᚋgraphᚋmodelᚐServiceFilterOption(ctx context.Context, sel ast.SelectionSet, v *model.ServiceFilterOption) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ServiceFilterOption(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNServiceInput2fypᚋgraphᚋmodelᚐServiceInput(ctx context.Context, v any) (model.ServiceInput, error) {
 	res, err := ec.unmarshalInputServiceInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -10727,6 +17021,32 @@ func (ec *executionContext) unmarshalNServiceOptionItemInput2ᚖfypᚋgraphᚋmo
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNServicePopularity2ᚕᚖfypᚋgraphᚋmodelᚐServicePopularityᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServicePopularity) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNServicePopularity2ᚖfypᚋgraphᚋmodelᚐServicePopularity(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNServicePopularity2ᚖfypᚋgraphᚋmodelᚐServicePopularity(ctx context.Context, sel ast.SelectionSet, v *model.ServicePopularity) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ServicePopularity(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNServiceSlot2fypᚋgraphᚋmodelᚐServiceSlot(ctx context.Context, sel ast.SelectionSet, v model.ServiceSlot) graphql.Marshaler {
 	return ec._ServiceSlot(ctx, sel, &v)
 }
@@ -10793,6 +17113,40 @@ func (ec *executionContext) unmarshalNSignUpInput2fypᚋgraphᚋmodelᚐSignUpIn
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNSlotReassignmentInput2ᚕᚖfypᚋgraphᚋmodelᚐSlotReassignmentInputᚄ(ctx context.Context, v any) ([]*model.SlotReassignmentInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.SlotReassignmentInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNSlotReassignmentInput2ᚖfypᚋgraphᚋmodelᚐSlotReassignmentInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNSlotReassignmentInput2ᚖfypᚋgraphᚋmodelᚐSlotReassignmentInput(ctx context.Context, v any) (*model.SlotReassignmentInput, error) {
+	res, err := ec.unmarshalInputSlotReassignmentInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNSlotUtilization2fypᚋgraphᚋmodelᚐSlotUtilization(ctx context.Context, sel ast.SelectionSet, v model.SlotUtilization) graphql.Marshaler {
+	return ec._SlotUtilization(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSlotUtilization2ᚖfypᚋgraphᚋmodelᚐSlotUtilization(ctx context.Context, sel ast.SelectionSet, v *model.SlotUtilization) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SlotUtilization(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNStaff2fypᚋgraphᚋmodelᚐStaff(ctx context.Context, sel ast.SelectionSet, v model.Staff) graphql.Marshaler {
 	return ec._Staff(ctx, sel, &v)
 }
@@ -10823,6 +17177,58 @@ func (ec *executionContext) marshalNStaff2ᚖfypᚋgraphᚋmodelᚐStaff(ctx con
 	return ec._Staff(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNStaffCancellation2ᚕᚖfypᚋgraphᚋmodelᚐStaffCancellationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.StaffCancellation) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNStaffCancellation2ᚖfypᚋgraphᚋmodelᚐStaffCancellation(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNStaffCancellation2ᚖfypᚋgraphᚋmodelᚐStaffCancellation(ctx context.Context, sel ast.SelectionSet, v *model.StaffCancellation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._StaffCancellation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNStaffUtilization2ᚕᚖfypᚋgraphᚋmodelᚐStaffUtilizationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.StaffUtilization) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNStaffUtilization2ᚖfypᚋgraphᚋmodelᚐStaffUtilization(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNStaffUtilization2ᚖfypᚋgraphᚋmodelᚐStaffUtilization(ctx context.Context, sel ast.SelectionSet, v *model.StaffUtilization) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._StaffUtilization(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNStaffWorkingHour2ᚕᚖfypᚋgraphᚋmodelᚐStaffWorkingHourᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.StaffWorkingHour) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -10847,6 +17253,32 @@ func (ec *executionContext) marshalNStaffWorkingHour2ᚖfypᚋgraphᚋmodelᚐSt
 		return graphql.Null
 	}
 	return ec._StaffWorkingHour(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNStatusCount2ᚕᚖfypᚋgraphᚋmodelᚐStatusCountᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.StatusCount) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNStatusCount2ᚖfypᚋgraphᚋmodelᚐStatusCount(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNStatusCount2ᚖfypᚋgraphᚋmodelᚐStatusCount(ctx context.Context, sel ast.SelectionSet, v *model.StatusCount) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._StatusCount(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
@@ -10881,6 +17313,32 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 	return res
 }
 
+func (ec *executionContext) marshalNTypeCount2ᚕᚖfypᚋgraphᚋmodelᚐTypeCountᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TypeCount) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNTypeCount2ᚖfypᚋgraphᚋmodelᚐTypeCount(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTypeCount2ᚖfypᚋgraphᚋmodelᚐTypeCount(ctx context.Context, sel ast.SelectionSet, v *model.TypeCount) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TypeCount(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNUpdateProfileInput2fypᚋgraphᚋmodelᚐUpdateProfileInput(ctx context.Context, v any) (model.UpdateProfileInput, error) {
 	res, err := ec.unmarshalInputUpdateProfileInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -10903,6 +17361,63 @@ func (ec *executionContext) marshalNUser2ᚖfypᚋgraphᚋmodelᚐUser(ctx conte
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNUtilizationBreakdownPoint2ᚕᚖfypᚋgraphᚋmodelᚐUtilizationBreakdownPointᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.UtilizationBreakdownPoint) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNUtilizationBreakdownPoint2ᚖfypᚋgraphᚋmodelᚐUtilizationBreakdownPoint(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNUtilizationBreakdownPoint2ᚖfypᚋgraphᚋmodelᚐUtilizationBreakdownPoint(ctx context.Context, sel ast.SelectionSet, v *model.UtilizationBreakdownPoint) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UtilizationBreakdownPoint(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNUtilizationSection2ᚕᚖfypᚋgraphᚋmodelᚐUtilizationSectionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.UtilizationSection) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNUtilizationSection2ᚖfypᚋgraphᚋmodelᚐUtilizationSection(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNUtilizationSection2ᚖfypᚋgraphᚋmodelᚐUtilizationSection(ctx context.Context, sel ast.SelectionSet, v *model.UtilizationSection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UtilizationSection(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNWalkInInput2fypᚋgraphᚋmodelᚐWalkInInput(ctx context.Context, v any) (model.WalkInInput, error) {
+	res, err := ec.unmarshalInputWalkInInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNWorkingHourInput2ᚕᚖfypᚋgraphᚋmodelᚐWorkingHourInputᚄ(ctx context.Context, v any) ([]*model.WorkingHourInput, error) {
@@ -11192,6 +17707,42 @@ func (ec *executionContext) marshalODayOfWeek2ᚕfypᚋgraphᚋmodelᚐDayOfWeek
 	return ret
 }
 
+func (ec *executionContext) unmarshalOID2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNID2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOID2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v any) (*string, error) {
 	if v == nil {
 		return nil, nil
@@ -11208,6 +17759,22 @@ func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.Se
 	_ = ctx
 	res := graphql.MarshalID(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOSlotUtilizationGroupBy2ᚖfypᚋgraphᚋmodelᚐSlotUtilizationGroupBy(ctx context.Context, v any) (*model.SlotUtilizationGroupBy, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.SlotUtilizationGroupBy)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOSlotUtilizationGroupBy2ᚖfypᚋgraphᚋmodelᚐSlotUtilizationGroupBy(ctx context.Context, sel ast.SelectionSet, v *model.SlotUtilizationGroupBy) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOStaff2ᚖfypᚋgraphᚋmodelᚐStaff(ctx context.Context, sel ast.SelectionSet, v *model.Staff) graphql.Marshaler {
@@ -11241,6 +17808,22 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	_ = ctx
 	res := graphql.MarshalString(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOTrendGranularity2ᚖfypᚋgraphᚋmodelᚐTrendGranularity(ctx context.Context, v any) (*model.TrendGranularity, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.TrendGranularity)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOTrendGranularity2ᚖfypᚋgraphᚋmodelᚐTrendGranularity(ctx context.Context, sel ast.SelectionSet, v *model.TrendGranularity) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOUser2ᚖfypᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {

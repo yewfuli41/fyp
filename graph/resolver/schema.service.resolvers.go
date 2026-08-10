@@ -38,6 +38,10 @@ func (r *mutationResolver) CreateService(ctx context.Context, service model.Serv
 			ServiceOptionName: pkg.ServiceOptionName,
 			Description:       pkg.Description,
 		}
+		if pkg.EffectiveFrom != nil {
+			pkgParam.EffectiveFrom = *pkg.EffectiveFrom
+		}
+		pkgParam.EffectiveUntil = pkg.EffectiveUntil
 		for _, item := range pkg.ServiceOptionItems {
 			pkgParam.ServiceOptionItems = append(pkgParam.ServiceOptionItems, param.ServiceOptionItemParam{
 				ServiceOptionItemName: item.ServiceOptionItemName,
@@ -81,6 +85,18 @@ func (r *mutationResolver) UpdateService(ctx context.Context, serviceID string, 
 			ServiceOptionName: pkg.ServiceOptionName,
 			Description:       pkg.Description,
 		}
+		if pkg.ServiceOptionID != nil {
+			optID, err := strconv.ParseInt(*pkg.ServiceOptionID, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid service option ID")
+			}
+			pkgParam.ServiceOptionID = optID
+		}
+		if pkg.EffectiveFrom != nil {
+			pkgParam.EffectiveFrom = *pkg.EffectiveFrom
+		}
+		pkgParam.EffectiveUntil = pkg.EffectiveUntil
+		pkgParam.ClearEffectiveUntil = pkg.ClearEffectiveUntil != nil && *pkg.ClearEffectiveUntil
 		for _, item := range pkg.ServiceOptionItems {
 			pkgParam.ServiceOptionItems = append(pkgParam.ServiceOptionItems, param.ServiceOptionItemParam{
 				ServiceOptionItemName: item.ServiceOptionItemName,

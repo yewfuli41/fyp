@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Alert, Button, Container, Form, Row, Col } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { userProfile } from "../services/ProfileService";
 import { registerBusinessProfile, type BusinessProfileInput, type WorkingHour } from "../services/BusinessService";
@@ -10,7 +10,7 @@ import { DAYS_OF_WEEK, startTimeSlice, endTimeSlice, toTimeInputValue} from "../
 
 export default function RegisterBusinessPage() {
     const navigate = useNavigate();
-    const { token, login } = useAuth();
+    const { token, login, isLoggedIn } = useAuth();
     const activeToken = token ?? localStorage.getItem("token");
 
     const [businessName, setBusinessName] = useState("");
@@ -117,10 +117,30 @@ export default function RegisterBusinessPage() {
         }
     };
 
+    // Reachable while logged out (from the home page's "Register Business"
+    // button) — no ProtectedRoute bounce to a generic /login here, since the
+    // visitor likely doesn't have an account yet at all.
+    if (!isLoggedIn) {
+        return (
+            <Container className="py-5 text-center" style={{ maxWidth: 480 }}>
+                <h1 className="fs-2 fw-bold mb-3">Register Your Business</h1>
+                <p className="text-muted mb-4">
+                    You'll need an account first — it only takes a moment, then you can
+                    come straight back here to set up your business.
+                </p>
+                <div className="d-flex flex-column align-items-center gap-2">
+                    <Link to="/signup" className="btn btn-primary px-4">Sign Up</Link>
+                    <span className="text-muted small">
+                        Already have an account? <Link to="/login">Log in</Link>
+                    </span>
+                </div>
+            </Container>
+        );
+    }
+
     return (
         <Container className="py-5">
             <h1>Register Business Profile</h1>
-            {formError && <Alert variant="danger">{formError}</Alert>}
 
             <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
@@ -267,6 +287,8 @@ export default function RegisterBusinessPage() {
                 <Button variant="link" onClick={handleAddWorkingHour} className="mb-4">
                     Add Working Hour
                 </Button>
+
+                {formError && <Alert variant="danger">{formError}</Alert>}
 
                 <div className="d-flex gap-2 justify-content-end">
                     <Button variant="outline-secondary" onClick={() => navigate("/profile")}>

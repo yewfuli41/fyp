@@ -25,4 +25,13 @@ type IStaffService interface {
 	GetStaffByBusinessID(ctx context.Context, businessID int64) ([]param.StaffParam, error)
 	UpdateStaff(ctx context.Context, p param.StaffParam) (*param.StaffParam, error)
 	DeleteStaff(ctx context.Context, staffID int64, businessID int64) error
+	// GetStaffHoursConflicts is a precheck for UpdateStaffWorkingHours — the
+	// staff's currently-booked slots that would fall outside the proposed
+	// hours, so the caller can be shown a replacement-staff picker before
+	// committing the change.
+	GetStaffHoursConflicts(ctx context.Context, businessID int64, staffID int64, workingHours []param.WorkingHourParam) ([]param.ServiceSlotParam, error)
+	// UpdateStaffWorkingHours requires a reassignment for every one of the
+	// staff's future BOOKED slots that would fall outside the new hours
+	// (see GetStaffHoursConflicts) and silently unassigns any non-booked one.
+	UpdateStaffWorkingHours(ctx context.Context, businessID int64, staffID int64, workingHours []param.WorkingHourParam, reassignments []param.SlotReassignmentParam) (*param.StaffParam, error)
 }

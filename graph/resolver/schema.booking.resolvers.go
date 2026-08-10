@@ -7,6 +7,10 @@ package resolver
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"fyp/domain/errs"
+	"fyp/domain/param"
 	"fyp/graph"
 	"fyp/graph/graphErrs"
 	"fyp/graph/model"
@@ -15,7 +19,7 @@ import (
 )
 
 // CreateBooking creates a pending online booking for the authenticated user.
-func (r *mutationResolver) CreateBooking(ctx context.Context, slotOptionID string) (*model.Booking, error) {
+func (r *mutationResolver) CreateBooking(ctx context.Context, slotOptionID string, description *string) (*model.Booking, error) {
 	currentUser, err := contexts.CurrentUser(ctx)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
@@ -24,7 +28,7 @@ func (r *mutationResolver) CreateBooking(ctx context.Context, slotOptionID strin
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
 	}
-	b, err := r.App.BookingService.CreateBooking(ctx, currentUser.UserID, optID)
+	b, err := r.App.BookingService.CreateBooking(ctx, currentUser.UserID, optID, description)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
 	}
@@ -35,9 +39,123 @@ func (r *mutationResolver) CreateBooking(ctx context.Context, slotOptionID strin
 		SlotOptionID: strconv.FormatInt(b.SlotOptionID, 10),
 		Status:       &status,
 		BookingType:  model.BookingType(b.BookingType),
+		Description:  b.Description,
 		SlotOption:   &model.ServiceSlotOption{},
 		User:         &model.User{},
 	}, nil
+}
+
+// AcceptBooking is the resolver for the acceptBooking field.
+func (r *mutationResolver) AcceptBooking(ctx context.Context, bookingID string) (*model.BookingDetail, error) {
+	return r.bookingAction(ctx, bookingID, func(userID, id int64) (*param.BookingDetailParam, error) {
+		return r.App.BookingService.AcceptBooking(ctx, userID, id)
+	})
+}
+
+// RejectBooking is the resolver for the rejectBooking field.
+func (r *mutationResolver) RejectBooking(ctx context.Context, bookingID string) (*model.BookingDetail, error) {
+	return r.bookingAction(ctx, bookingID, func(userID, id int64) (*param.BookingDetailParam, error) {
+		return r.App.BookingService.RejectBooking(ctx, userID, id)
+	})
+}
+
+// CancelBooking is the resolver for the cancelBooking field.
+func (r *mutationResolver) CancelBooking(ctx context.Context, bookingID string) (*model.BookingDetail, error) {
+	return r.bookingAction(ctx, bookingID, func(userID, id int64) (*param.BookingDetailParam, error) {
+		return r.App.BookingService.CancelBooking(ctx, userID, id)
+	})
+}
+
+// RescheduleBooking is the resolver for the rescheduleBooking field.
+func (r *mutationResolver) RescheduleBooking(ctx context.Context, bookingID string, newSlotOptionID string) (*model.BookingDetail, error) {
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	id, err := parseID(bookingID)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	newOptID, err := parseID(newSlotOptionID)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	result, err := r.App.BookingService.RescheduleBooking(ctx, currentUser.UserID, id, newOptID)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	return graph.MapBookingDetail(result), nil
+}
+
+// AcceptReschedule is the resolver for the acceptReschedule field.
+func (r *mutationResolver) AcceptReschedule(ctx context.Context, bookingID string) (*model.BookingDetail, error) {
+	return r.bookingAction(ctx, bookingID, func(userID, id int64) (*param.BookingDetailParam, error) {
+		return r.App.BookingService.AcceptReschedule(ctx, userID, id)
+	})
+}
+
+// UpdateBookingDescription lets the customer edit just their note.
+func (r *mutationResolver) UpdateBookingDescription(ctx context.Context, bookingID string, description *string) (*model.BookingDetail, error) {
+	return r.bookingAction(ctx, bookingID, func(userID, id int64) (*param.BookingDetailParam, error) {
+		return r.App.BookingService.UpdateBookingDescription(ctx, userID, id, description)
+	})
+}
+
+// RecordWalkIn is the resolver for the recordWalkIn field. It creates a
+// brand-new, single-occurrence service slot for the given service option and
+// time window, then immediately records an accepted walk-in booking on it —
+// owner-managed unless the caller is a staff member, in which case it's
+// forced onto their own staff id.
+func (r *mutationResolver) RecordWalkIn(ctx context.Context, input model.WalkInInput) (*model.BookingDetail, error) {
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	businessID, staffScope, err := resolveBusinessScope(ctx, r.Resolver, currentUser)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	optID, err := parseID(input.ServiceOptionID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid service option ID")
+	}
+
+	var staffID *int64
+	if input.StaffID != nil && *input.StaffID != "" {
+		sid, err := parseID(*input.StaffID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid staff ID")
+		}
+		staffID = &sid
+	}
+	if staffScope != nil {
+		// A staff member can only ever record a walk-in for themselves.
+		staffID = staffScope
+	}
+
+	slot, err := r.App.ServiceSlotService.CreateServiceSlot(ctx, param.ServiceSlotParam{
+		BusinessID:       businessID,
+		StaffID:          staffID,
+		Date:             input.Date,
+		StartTime:        input.StartTime,
+		EndTime:          input.EndTime,
+		ServiceOptionIDs: []int64{optID},
+		CreatedBy:        currentUser.UserID,
+	})
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	if len(slot.Packages) == 0 {
+		return nil, fmt.Errorf("failed to create walk-in slot")
+	}
+
+	detail, err := r.App.BookingService.RecordWalkIn(ctx, currentUser.UserID, slot.Packages[0].SlotOptionID)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	return graph.MapBookingDetail(detail), nil
 }
 
 // PublicBusinesses returns all businesses for public browsing.
@@ -53,7 +171,10 @@ func (r *queryResolver) PublicBusinesses(ctx context.Context) ([]*model.Business
 	return result, nil
 }
 
-// PublicServices returns services with options for a given business.
+// PublicServices returns services with options for a given business. Options
+// aren't filtered to "effective today" here — a customer may be booking a
+// future date, so effectiveFrom/effectiveUntil are returned as-is and the
+// caller (client, per selected date) decides which options are offerable.
 func (r *queryResolver) PublicServices(ctx context.Context, businessID string) ([]*model.Service, error) {
 	bid, err := parseID(businessID)
 	if err != nil {
@@ -88,7 +209,7 @@ func (r *queryResolver) PublicStaff(ctx context.Context, businessID string) ([]*
 }
 
 // AvailableSlots returns slots with no active booking for a given service option and date.
-func (r *queryResolver) AvailableSlots(ctx context.Context, businessID string, serviceOptionID string, date string, staffID *string) ([]*model.ServiceSlot, error) {
+func (r *queryResolver) AvailableSlots(ctx context.Context, businessID string, serviceOptionID string, date string, staffID *string, unassignedOnly *bool) ([]*model.ServiceSlot, error) {
 	bid, err := parseID(businessID)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
@@ -105,7 +226,7 @@ func (r *queryResolver) AvailableSlots(ctx context.Context, businessID string, s
 		}
 		sid = &v
 	}
-	slots, err := r.App.BookingService.GetAvailableSlots(ctx, bid, optID, date, sid)
+	slots, err := r.App.BookingService.GetAvailableSlots(ctx, bid, optID, date, sid, unassignedOnly != nil && *unassignedOnly)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
 	}
@@ -114,6 +235,46 @@ func (r *queryResolver) AvailableSlots(ctx context.Context, businessID string, s
 		result[i] = graph.MapServiceSlot(&slots[i])
 	}
 	return result, nil
+}
+
+// AvailableDates returns, within [from, until], every date that has at least
+// one bookable slot — used to colour a date picker. serviceId/serviceOptionId/
+// staffId narrow the check; any may be omitted to mean "any". unassignedOnly
+// narrows instead to owner-managed (unassigned) slots and wins over staffId.
+func (r *queryResolver) AvailableDates(ctx context.Context, businessID string, serviceID *string, serviceOptionID *string, staffID *string, unassignedOnly *bool, from string, until string) ([]string, error) {
+	bid, err := parseID(businessID)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	var svcID *int64
+	if serviceID != nil && *serviceID != "" {
+		v, err := parseID(*serviceID)
+		if err != nil {
+			return nil, graphErrs.ToGraphQLError(err)
+		}
+		svcID = &v
+	}
+	var optID *int64
+	if serviceOptionID != nil && *serviceOptionID != "" {
+		v, err := parseID(*serviceOptionID)
+		if err != nil {
+			return nil, graphErrs.ToGraphQLError(err)
+		}
+		optID = &v
+	}
+	var sid *int64
+	if staffID != nil && *staffID != "" {
+		v, err := parseID(*staffID)
+		if err != nil {
+			return nil, graphErrs.ToGraphQLError(err)
+		}
+		sid = &v
+	}
+	dates, err := r.App.BookingService.GetAvailableDates(ctx, bid, svcID, optID, sid, unassignedOnly != nil && *unassignedOnly, from, until)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	return dates, nil
 }
 
 // RecentlyBookedBusinesses returns the businesses the current user recently booked.
@@ -133,11 +294,51 @@ func (r *queryResolver) RecentlyBookedBusinesses(ctx context.Context) ([]*model.
 	return result, nil
 }
 
+// BusinessBookings returns bookings for the caller's business — the owner sees all,
+// a staff member sees only bookings on their own slots.
+func (r *queryResolver) BusinessBookings(ctx context.Context) ([]*model.BookingDetail, error) {
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	var businessID int64
+	var staffFilter *int64
+	business, err := r.App.BusinessService.GetBusinessProfileByOwnerID(ctx, currentUser.UserID)
+	if err == nil {
+		businessID = business.BusinessID
+	} else if errors.Is(err, errs.ErrBusinessProfileNotFound) {
+		staff, serr := r.App.StaffService.GetStaffProfileByUserID(ctx, currentUser.UserID)
+		if serr != nil {
+			return nil, graphErrs.ToGraphQLError(serr)
+		}
+		businessID = staff.BusinessID
+		staffFilter = &staff.StaffID
+	} else {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+
+	bookings, err := r.App.BookingService.GetBusinessBookings(ctx, businessID, staffFilter)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	return mapBookingDetails(bookings), nil
+}
+
+// MyAppointments returns the authenticated customer's own bookings.
+func (r *queryResolver) MyAppointments(ctx context.Context) ([]*model.BookingDetail, error) {
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	bookings, err := r.App.BookingService.GetCustomerBookings(ctx, currentUser.UserID)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	return mapBookingDetails(bookings), nil
+}
+
 // Mutation returns graph.MutationResolver implementation.
 func (r *Resolver) Mutation() graph.MutationResolver { return &mutationResolver{r} }
 
-// Query returns graph.QueryResolver implementation.
-func (r *Resolver) Query() graph.QueryResolver { return &queryResolver{r} }
-
 type mutationResolver struct{ *Resolver }
-type queryResolver struct{ *Resolver }

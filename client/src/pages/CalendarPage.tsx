@@ -12,13 +12,23 @@ import {
 } from "../services/ServiceSlotService";
 import { applyGraphQLErrors, parseGraphQLErrors } from "../utils/graphqlErrors";
 import {
-    DEFAULT_START, DEFAULT_END, NONE_COL, addDays, displayDate, emptyForm, timeLines, toISO,
-    type WorkingHour,
+    DEFAULT_START, DEFAULT_END, NONE_COL, addDays, displayDate, emptyForm, openIntervals, timeLines, toISO,
+    weekdayName, type WorkingHour,
 } from "../utils/serviceSlotHelpers";
-import AddServiceSlotModal from "../modals/AddServiceSlotModal";
+import AddServiceSlotModal, { type TimeRange } from "../modals/AddServiceSlotModal";
 import ManageServiceSlotModal from "../modals/ManageServiceSlotModal";
+import RescheduleBookingModal from "../modals/RescheduleBookingModal";
+import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
+import RecordWalkInModal, { type WalkInSubmission } from "../modals/RecordWalkInModal";
 import CalendarToolbar from "../components/CalendarToolbar";
 import CalendarGrid from "../components/CalendarGrid";
+import CalendarLegend from "../components/CalendarLegend";
+import BookingRequestsPanel from "../components/BookingRequestsPanel";
+import {
+    getBusinessBookings, acceptBooking, rejectBooking, cancelBooking, recordWalkIn, type BookingDetail,
+} from "../services/BookingService";
+import { businessLeaveApplications, myLeaveApplications, type LeaveApplication } from "../services/LeaveService";
+import { notifyPendingCountsChanged } from "../utils/pendingCounts";
 import "../styles/CalendarPage.css";
 
 type CalendarRole = "owner" | "staff" | null;
@@ -42,21 +52,36 @@ export default function CalendarPage() {
     const [staff, setStaff] = useState<Staff[]>([]);
     const [services, setServices] = useState<Service[]>([]);
     const [slots, setSlots] = useState<ServiceSlot[]>([]);
+    const [bookings, setBookings] = useState<BookingDetail[]>([]);
+    const [leaves, setLeaves] = useState<LeaveApplication[]>([]);
+    const [bookingBusyId, setBookingBusyId] = useState<string | null>(null);
+    const [reschedulingBooking, setReschedulingBooking] = useState<BookingDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [pageError, setPageError] = useState("");
 
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-    const [staffFilter, setStaffFilter] = useState("");
-    const [serviceFilter, setServiceFilter] = useState("");
+    // Multi-select checkbox filters (empty = show all). Staff uses NONE_COL for
+    // owner-managed (unassigned) slots.
+    const [staffFilters, setStaffFilters] = useState<string[]>([]);
+    const [serviceFilters, setServiceFilters] = useState<string[]>([]);
     const dateInputRef = useRef<HTMLInputElement>(null);
 
     // Add modal
     const [showAdd, setShowAdd] = useState(false);
     const [form, setForm] = useState<ServiceSlotInput>(emptyForm(toISO(new Date())));
+    // Specific dates to create slots for — see AddServiceSlotModal.
+    const [addDates, setAddDates] = useState<string[]>([]);
+    // Every time range to create a slot for — see AddServiceSlotModal.
+    const [addRanges, setAddRanges] = useState<TimeRange[]>([]);
     const [formServiceId, setFormServiceId] = useState("");
     const [formError, setFormError] = useState("");
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [isSaving, setIsSaving] = useState(false);
+
+    // Record Walk-In modal
+    const [showWalkIn, setShowWalkIn] = useState(false);
+    const [walkInFormError, setWalkInFormError] = useState("");
+    const [isSavingWalkIn, setIsSavingWalkIn] = useState(false);
 
     // Manage modal
     const [managing, setManaging] = useState<ServiceSlot | null>(null);
@@ -65,31 +90,81 @@ export default function CalendarPage() {
     const [deleteFuture, setDeleteFuture] = useState(false);
     const [manageError, setManageError] = useState("");
     const [manageBusy, setManageBusy] = useState(false);
-
-    // Manage modal — full edit (date/time/staff/packages), only available
-    // while the slot has no booking yet; once booked, only reassign/delete above apply.
+    const [confirmingDeleteSlot, setConfirmingDeleteSlot] = useState(false);
+    const [deleteSlotError, setDeleteSlotError] = useState("");
     const [editForm, setEditForm] = useState<ServiceSlotInput>(emptyForm(toISO(new Date())));
     const [editFormServiceId, setEditFormServiceId] = useState("");
-    const [editApplyFuture, setEditApplyFuture] = useState(false);
     const [editFormError, setEditFormError] = useState("");
     const [editFieldErrors, setEditFieldErrors] = useState<Record<string, string>>({});
     const [isEditSaving, setIsEditSaving] = useState(false);
 
     const isoDate = toISO(selectedDate);
 
+    // Fetch every slot for the day; staff/service filtering is done client-side
+    // so the checkbox filters can be multi-select.
     const fetchSlots = useCallback(async () => {
         if (!activeToken) return;
-        const unassignedOnly = staffFilter === NONE_COL;
-        const result = await getServiceSlots(
-            activeToken,
-            toISO(selectedDate),
-            unassignedOnly ? undefined : (staffFilter || undefined),
-            serviceFilter || undefined,
-            unassignedOnly || undefined,
-        );
+        const result = await getServiceSlots(activeToken, toISO(selectedDate));
         if (result.errors?.length) setPageError(result.errors[0].message);
         else setSlots(result.data?.displayServiceSlots ?? []);
-    }, [activeToken, selectedDate, staffFilter, serviceFilter]);
+    }, [activeToken, selectedDate]);
+
+    const fetchBookings = useCallback(async () => {
+        if (!activeToken) return;
+        const result = await getBusinessBookings(activeToken);
+        if (!result.errors?.length) setBookings(result.data?.businessBookings ?? []);
+    }, [activeToken]);
+
+    // businessLeaveApplications is owner-only (it resolves the caller's own
+    // business profile) — a staff caller instead fetches just their own
+    // applications, which is all their single column needs anyway.
+    const fetchLeaves = useCallback(async () => {
+        if (!activeToken || !role) return;
+        if (isStaff) {
+            const result = await myLeaveApplications(activeToken);
+            if (!result.errors?.length) setLeaves(result.data?.myLeaveApplications ?? []);
+        } else {
+            const result = await businessLeaveApplications(activeToken);
+            if (!result.errors?.length) setLeaves(result.data?.businessLeaveApplications ?? []);
+        }
+    }, [activeToken, role, isStaff]);
+
+    // Requests panel: PENDING (awaiting the business's own decision) plus
+    // RESCHEDULED (the business's own reschedule proposal, awaiting the
+    // customer) — a rescheduled booking still needs to stay visible here so it
+    // doesn't vanish just because it's no longer the business's turn to Accept
+    // (BookingRequestsPanel hides Accept for it, but Reject/Reschedule remain).
+    const pendingBookings = bookings.filter(b => b.status === "PENDING" || b.status === "RESCHEDULED");
+    const bookingBySlot = useMemo(() => {
+        const map: Record<string, BookingDetail> = {};
+        for (const b of bookings) {
+            if (b.status === "PENDING" || b.status === "ACCEPTED" || b.status === "RESCHEDULED") map[b.serviceSlotId] = b;
+        }
+        return map;
+    }, [bookings]);
+
+    const runBookingAction = async (
+        b: BookingDetail,
+        fn: (token: string, id: string) => Promise<{ errors?: { message: string }[] }>,
+    ) => {
+        if (!activeToken) return;
+        setBookingBusyId(b.bookingId);
+        setPageError("");
+        try {
+            const result = await fn(activeToken, b.bookingId);
+            if (result.errors?.length) {
+                setPageError(result.errors[0].message);
+                return;
+            }
+            setManaging(null);
+            await Promise.all([fetchBookings(), fetchSlots()]);
+            notifyPendingCountsChanged();
+        } catch {
+            setPageError("Something went wrong. Please try again.");
+        } finally {
+            setBookingBusyId(null);
+        }
+    };
 
     useEffect(() => {
         if (!activeToken) return;
@@ -139,6 +214,14 @@ export default function CalendarPage() {
         if (role) fetchSlots();
     }, [role, fetchSlots]);
 
+    useEffect(() => {
+        if (role) fetchBookings();
+    }, [role, fetchBookings]);
+
+    useEffect(() => {
+        if (role) fetchLeaves();
+    }, [role, fetchLeaves]);
+
     // Business-hours (or, for a staff member, their own) envelope across all
     // days → calendar time range + picker bounds.
     const [rangeStart, rangeEnd] = useMemo(() => {
@@ -155,24 +238,60 @@ export default function CalendarPage() {
     const lines = useMemo(() => timeLines(rangeStart, rangeEnd), [rangeStart, rangeEnd]);
     const intervals = Math.max(lines.length - 1, 1);
 
-    // Calendar columns: a staff member always sees just their own single
-    // column (no filter, no Unassigned column). The owner sees filtered
-    // staff, only the Unassigned column, or all staff + an Unassigned column
-    // (owner-managed slots) when viewing everyone.
-    const staffColumns: { staffId: string; name: string }[] = isStaff
+    // Every possible column for the owner (all staff + Owner-managed); a staff
+    // member always sees just their own single column.
+    const allColumns: { staffId: string; name: string }[] = isStaff
         ? staff.map(s => ({ staffId: s.staffId, name: s.name }))
-        : staffFilter === NONE_COL
-            ? [{ staffId: NONE_COL, name: "Owner-managed" }]
-            : staffFilter
-                ? staff.filter(s => s.staffId === staffFilter).map(s => ({ staffId: s.staffId, name: s.name }))
-                : [...staff.map(s => ({ staffId: s.staffId, name: s.name })), { staffId: NONE_COL, name: "Owner-managed" }];
+        : [...staff.map(s => ({ staffId: s.staffId, name: s.name })), { staffId: NONE_COL, name: "Owner-managed" }];
+
+    // Checked staff filters narrow which columns show (none checked = all).
+    const staffColumns = (!isStaff && staffFilters.length > 0)
+        ? allColumns.filter(c => staffFilters.includes(c.staffId))
+        : allColumns;
+
+    // Client-side service filter: keep slots offering at least one selected service.
+    const filteredSlots = serviceFilters.length === 0
+        ? slots
+        : slots.filter(slot => slot.serviceSlotOptions.some(o => serviceFilters.includes(o.serviceOption.service.serviceId)));
+
+    // Per-column open intervals on the selected weekday — owner-managed slots
+    // follow business hours, everyone else follows their own working hours.
+    const openHoursByColumn = useMemo(() => {
+        const weekday = weekdayName(isoDate);
+        const map: Record<string, { start: string; end: string }[]> = {};
+        for (const col of staffColumns) {
+            const hours = col.staffId === NONE_COL
+                ? workingHours
+                : (staff.find(s => s.staffId === col.staffId)?.workingHours ?? []);
+            map[col.staffId] = openIntervals(hours, weekday);
+        }
+        return map;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [staffColumns, staff, workingHours, isoDate]);
+
+    // Which columns have the staff on approved leave for the selected day —
+    // Owner-managed never does (no staff to be on leave). Reassigning a
+    // booked slot away from a staff going on leave only ever changes who's
+    // assigned (see resolveSlotConflicts server-side), never which service
+    // option it's for, so this is purely about showing the day as blocked.
+    const onLeaveByColumn = useMemo(() => {
+        const map: Record<string, boolean> = {};
+        for (const col of staffColumns) {
+            if (col.staffId === NONE_COL) continue;
+            map[col.staffId] = leaves.some(l =>
+                l.staffId === col.staffId && l.status === "APPROVED"
+                && l.startDate <= isoDate && l.endDate >= isoDate
+            );
+        }
+        return map;
+    }, [staffColumns, leaves, isoDate]);
 
     // ── Add helpers ───────────────────────────────────────────────────────────
     const openAdd = (prefill?: Partial<ServiceSlotInput>) => {
-        setForm({
-            ...emptyForm(isoDate), startTime: rangeStart, endTime: lines[1] ?? rangeEnd, ...prefill,
-            ...(isStaff ? { staffId: ownStaffId } : {}),
-        });
+        const startTime = rangeStart, endTime = lines[1] ?? rangeEnd;
+        setForm({ ...emptyForm(isoDate), startTime, endTime, ...prefill, ...(isStaff ? { staffId: ownStaffId } : {}) });
+        setAddDates(prefill?.daysOfWeek?.length ? [""] : [isoDate]);
+        setAddRanges([{ startTime, endTime }]);
         setFormServiceId("");
         setFormError("");
         setFieldErrors({});
@@ -181,12 +300,26 @@ export default function CalendarPage() {
 
     const handleCreate = async () => {
         if (!activeToken) return;
+        const datesToCreate = addDates.filter(Boolean);
+        if (form.daysOfWeek.length === 0 && datesToCreate.length === 0) {
+            setFieldErrors({ schedule: "Select at least one date." });
+            return;
+        }
         setIsSaving(true);
         setFormError("");
         setFieldErrors({});
         try {
-            const result = await createServiceSlot(activeToken, form);
-            if (applyGraphQLErrors(result, { setFieldErrors, setFormError, fallbackMessage: "Failed to create slot" })) return;
+            // Weekday-recurring: one mutation per time range (the backend
+            // expands each into its own set of future occurrences). Specific
+            // dates: one slot per date × time range, sequentially, so a
+            // failure partway through still leaves what came before it created.
+            const inputs: ServiceSlotInput[] = form.daysOfWeek.length > 0
+                ? addRanges.map(range => ({ ...form, ...range }))
+                : datesToCreate.flatMap(date => addRanges.map(range => ({ ...form, date, daysOfWeek: [], ...range })));
+            for (const input of inputs) {
+                const result = await createServiceSlot(activeToken, input);
+                if (applyGraphQLErrors(result, { setFieldErrors, setFormError, fallbackMessage: "Failed to create slot" })) return;
+            }
             setShowAdd(false);
             fetchSlots();
         } catch {
@@ -196,12 +329,30 @@ export default function CalendarPage() {
         }
     };
 
+    const handleRecordWalkIn = async (input: WalkInSubmission) => {
+        if (!activeToken) return;
+        setIsSavingWalkIn(true);
+        setWalkInFormError("");
+        try {
+            const result = await recordWalkIn(activeToken, input);
+            if (applyGraphQLErrors(result, { setFormError: setWalkInFormError, fallbackMessage: "Failed to record walk-in" })) return;
+            setShowWalkIn(false);
+            await Promise.all([fetchSlots(), fetchBookings()]);
+        } catch {
+            setWalkInFormError("Something went wrong. Please try again.");
+        } finally {
+            setIsSavingWalkIn(false);
+        }
+    };
+
     // ── Manage helpers ──────────────────────────────────────────────────────────
     const openManage = async (slot: ServiceSlot) => {
         setManaging(slot);
         setReassignTo("");
         setDeleteFuture(false);
         setManageError("");
+        setConfirmingDeleteSlot(false);
+        setDeleteSlotError("");
 
         const firstPkg = slot.serviceSlotOptions[0];
         setEditFormServiceId(firstPkg?.serviceOption.service.serviceId ?? "");
@@ -213,7 +364,6 @@ export default function CalendarPage() {
             endTime: extractTime(slot.endTime),
             serviceOptionIds: slot.serviceSlotOptions.map(p => p.serviceOption.serviceOptionId),
         });
-        setEditApplyFuture(false);
         setEditFormError("");
         setEditFieldErrors({});
 
@@ -231,7 +381,7 @@ export default function CalendarPage() {
         setEditFormError("");
         setEditFieldErrors({});
         try {
-            const result = await updateServiceSlot(activeToken, managing.serviceSlotId, editForm, editApplyFuture);
+            const result = await updateServiceSlot(activeToken, managing.serviceSlotId, editForm);
             if (applyGraphQLErrors(result, {
                 setFieldErrors: setEditFieldErrors, setFormError: setEditFormError, fallbackMessage: "Failed to update slot",
             })) return;
@@ -265,20 +415,36 @@ export default function CalendarPage() {
         }
     };
 
+    const openDeleteSlotConfirm = () => {
+        setDeleteSlotError("");
+        setConfirmingDeleteSlot(true);
+    };
+
     const handleDelete = async () => {
         if (!activeToken || !managing) return;
         setManageBusy(true);
-        setManageError("");
+        setDeleteSlotError("");
         try {
             const result = await deleteServiceSlot(activeToken, managing.serviceSlotId, deleteFuture);
             if (result.errors?.length) {
-                setManageError(result.errors[0].message);
+                const parsed = parseGraphQLErrors(result, "Failed to delete slot");
+                const partialMessage = parsed.fieldErrors.deleteFutureRecurring;
+                if (partialMessage) {
+                    setConfirmingDeleteSlot(false);
+                    setManaging(null);
+                    setPageError(partialMessage);
+                    fetchSlots();
+                    fetchBookings();
+                    return;
+                }
+                setDeleteSlotError(parsed.formError || Object.values(parsed.fieldErrors)[0] || result.errors[0].message);
                 return;
             }
+            setConfirmingDeleteSlot(false);
             setManaging(null);
             fetchSlots();
         } catch {
-            setManageError("Something went wrong. Please try again.");
+            setDeleteSlotError("Something went wrong. Please try again.");
         } finally {
             setManageBusy(false);
         }
@@ -306,32 +472,46 @@ export default function CalendarPage() {
     }
 
     return (
-        <Container fluid className="py-4 px-4">
+        <Container fluid className="py-5 px-4">
+           
+            <BookingRequestsPanel
+                pending={pendingBookings}
+                busyId={bookingBusyId}
+                onAccept={b => runBookingAction(b, acceptBooking)}
+                onReject={b => runBookingAction(b, rejectBooking)}
+                onReschedule={b => setReschedulingBooking(b)}
+            />
+
             <CalendarToolbar
-                onBack={() => navigate(isStaff ? "/profile" : "/services")}
                 onAddClick={() => openAdd()}
+                onWalkInClick={() => { setWalkInFormError(""); setShowWalkIn(true); }}
                 dateLabel={displayDate(selectedDate)}
                 isoDate={isoDate}
                 dateInputRef={dateInputRef}
                 onPrevDate={() => setSelectedDate(addDays(selectedDate, -1))}
                 onNextDate={() => setSelectedDate(addDays(selectedDate, 1))}
                 onDateChange={value => setSelectedDate(new Date(`${value}T00:00:00`))}
-                {...(isStaff ? {} : { staffFilter, setStaffFilter, staff })}
-                serviceFilter={serviceFilter}
-                setServiceFilter={setServiceFilter}
+                {...(isStaff ? {} : { staffFilters, setStaffFilters, staff })}
+                serviceFilters={serviceFilters}
+                setServiceFilters={setServiceFilters}
                 services={services}
             />
 
             {pageError && <Alert variant="danger">{pageError}</Alert>}
+
+            <CalendarLegend />
 
             <CalendarGrid
                 staffColumns={staffColumns}
                 lines={lines}
                 intervals={intervals}
                 rangeEnd={rangeEnd}
-                slots={slots}
+                slots={filteredSlots}
+                openHoursByColumn={openHoursByColumn}
+                onLeaveByColumn={onLeaveByColumn}
                 onAddSlot={openAdd}
                 onManageSlot={openManage}
+                bookingBySlot={bookingBySlot}
             />
 
             <AddServiceSlotModal
@@ -344,6 +524,10 @@ export default function CalendarPage() {
                 setForm={setForm}
                 formServiceId={formServiceId}
                 setFormServiceId={setFormServiceId}
+                dates={addDates}
+                setDates={setAddDates}
+                ranges={addRanges}
+                setRanges={setAddRanges}
                 services={services}
                 staff={staff}
                 workingHours={workingHours}
@@ -353,8 +537,23 @@ export default function CalendarPage() {
                 lockedStaffId={isStaff ? ownStaffId : undefined}
             />
 
+            <RecordWalkInModal
+                show={showWalkIn}
+                onHide={() => setShowWalkIn(false)}
+                services={services}
+                staff={staff}
+                workingHours={workingHours}
+                lines={lines}
+                leaves={leaves}
+                initialDate={isoDate}
+                onSubmit={handleRecordWalkIn}
+                isSaving={isSavingWalkIn}
+                formError={walkInFormError}
+                lockedStaffId={isStaff ? ownStaffId : undefined}
+            />
+
             <ManageServiceSlotModal
-                show={!!managing}
+                show={!!managing && !confirmingDeleteSlot}
                 onHide={() => setManaging(null)}
                 managing={managing}
                 manageError={manageError}
@@ -374,15 +573,54 @@ export default function CalendarPage() {
                 editFormError={editFormError}
                 editFieldErrors={editFieldErrors}
                 setEditFieldErrors={setEditFieldErrors}
-                editApplyFuture={editApplyFuture}
-                setEditApplyFuture={setEditApplyFuture}
                 onUpdate={handleUpdate}
                 isEditSaving={isEditSaving}
+                lockedStaffId={isStaff ? ownStaffId : undefined}
                 deleteFuture={deleteFuture}
                 setDeleteFuture={setDeleteFuture}
-                onDelete={handleDelete}
-                lockedStaffId={isStaff ? ownStaffId : undefined}
+                onDelete={openDeleteSlotConfirm}
                 allowReassign={!isStaff}
+                booking={managing ? bookingBySlot[managing.serviceSlotId] : null}
+                onCancelBooking={() => {
+                    const b = managing && bookingBySlot[managing.serviceSlotId];
+                    if (b) runBookingAction(b, cancelBooking);
+                }}
+                onRescheduleBooking={() => {
+                    const b = managing && bookingBySlot[managing.serviceSlotId];
+                    if (b) { setManaging(null); setReschedulingBooking(b); }
+                }}
+                onRejectBooking={() => {
+                    const b = managing && bookingBySlot[managing.serviceSlotId];
+                    if (b) runBookingAction(b, rejectBooking);
+                }}
+            />
+
+            <ConfirmDeleteModal
+                show={confirmingDeleteSlot}
+                title="Delete service slot"
+                itemName={deleteFuture ? "this slot and every later occurrence of this series, from this date onward" : "this service slot"}
+                warningNote={deleteFuture ? "Slots that already have a booking are kept, not deleted. Earlier occurrences before this date are also kept." : undefined}
+                error={deleteSlotError}
+                isDeleting={manageBusy}
+                onCancel={() => {
+                    setConfirmingDeleteSlot(false);
+                    setManaging(null);
+                }}
+                onConfirm={handleDelete}
+            />
+
+            <RescheduleBookingModal
+                show={!!reschedulingBooking}
+                onHide={() => setReschedulingBooking(null)}
+                booking={reschedulingBooking}
+                token={activeToken}
+                onDone={() => {
+                    setReschedulingBooking(null);
+                    fetchBookings();
+                    fetchSlots();
+                    notifyPendingCountsChanged();
+                }}
+                lockedStaffId={isStaff ? ownStaffId : undefined}
             />
         </Container>
     );

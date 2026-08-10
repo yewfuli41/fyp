@@ -20,4 +20,8 @@ type IAuthService interface {
 	LogIn(ctx context.Context, logInParam param.LogInParam) (*param.AuthResult, error)
 	GetUserProfile(ctx context.Context, email string) (*param.AuthUserParam, error)
 	ResetPassword(ctx context.Context, resetPasswordParam param.ResetPasswordParam) error
+	// ChangePassword lets an already-logged-in user change their own
+	// password by proving they know the current one — unlike ResetPassword,
+	// it doesn't require MustResetPassword to be set.
+	ChangePassword(ctx context.Context, changePasswordParam param.ChangePasswordParam) error
 }

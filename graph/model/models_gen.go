@@ -10,6 +10,12 @@ import (
 	"time"
 )
 
+type ApplyLeaveInput struct {
+	StartDate     string  `json:"startDate"`
+	EndDate       string  `json:"endDate"`
+	Justification *string `json:"justification,omitempty"`
+}
+
 type AuthPayload struct {
 	Token string `json:"token"`
 	User  *User  `json:"user"`
@@ -23,11 +29,46 @@ type Booking struct {
 	SlotOption    *ServiceSlotOption `json:"slotOption"`
 	Status        *BookingStatus     `json:"status,omitempty"`
 	BookingType   BookingType        `json:"bookingType"`
+	Description   *string            `json:"description,omitempty"`
 	DeletedAt     *string            `json:"deletedAt,omitempty"`
 	CreatedAt     string             `json:"createdAt"`
 	DecidedAt     *string            `json:"decidedAt,omitempty"`
 	DecidedBy     *string            `json:"decidedBy,omitempty"`
 	DecidedByUser *User              `json:"decidedByUser,omitempty"`
+}
+
+type BookingDetail struct {
+	BookingID       string        `json:"bookingId"`
+	Status          BookingStatus `json:"status"`
+	BookingType     BookingType   `json:"bookingType"`
+	ServiceSlotID   string        `json:"serviceSlotId"`
+	SlotOptionID    string        `json:"slotOptionId"`
+	ServiceOptionID string        `json:"serviceOptionId"`
+	Date            string        `json:"date"`
+	StartTime       time.Time     `json:"startTime"`
+	EndTime         time.Time     `json:"endTime"`
+	ServiceName     string        `json:"serviceName"`
+	OptionName      string        `json:"optionName"`
+	StaffName       *string       `json:"staffName,omitempty"`
+	CustomerName    string        `json:"customerName"`
+	CustomerEmail   string        `json:"customerEmail"`
+	BusinessID      string        `json:"businessId"`
+	BusinessName    string        `json:"businessName"`
+	Description     *string       `json:"description,omitempty"`
+	CreatedAt       string        `json:"createdAt"`
+}
+
+type BookingSummary struct {
+	TotalBookings      int32          `json:"totalBookings"`
+	ByStatus           []*StatusCount `json:"byStatus"`
+	ByType             []*TypeCount   `json:"byType"`
+	TodayAcceptedCount int32          `json:"todayAcceptedCount"`
+	PendingCount       int32          `json:"pendingCount"`
+}
+
+type BookingTrendPoint struct {
+	Date  string `json:"date"`
+	Count int32  `json:"count"`
 }
 
 type BusinessProfile struct {
@@ -65,19 +106,37 @@ type BusinessWorkingHour struct {
 	DeletedAt          *string          `json:"deletedAt,omitempty"`
 }
 
+type CancellationAnalysis struct {
+	TotalCancelled           int32                  `json:"totalCancelled"`
+	TotalRejected            int32                  `json:"totalRejected"`
+	TotalCancelledOrRejected int32                  `json:"totalCancelledOrRejected"`
+	CancelledOrRejectedRate  float64                `json:"cancelledOrRejectedRate"`
+	ByService                []*ServiceCancellation `json:"byService"`
+	ByStaff                  []*StaffCancellation   `json:"byStaff"`
+}
+
+type CustomerRetention struct {
+	NewCustomers       int32 `json:"newCustomers"`
+	ReturningCustomers int32 `json:"returningCustomers"`
+	TotalCustomers     int32 `json:"totalCustomers"`
+}
+
 type LeaveApplication struct {
-	LeaveID       string      `json:"leaveId"`
-	StaffID       string      `json:"staffId"`
-	Staff         *Staff      `json:"staff"`
-	StartDate     string      `json:"startDate"`
-	EndDate       string      `json:"endDate"`
-	Justification *string     `json:"justification,omitempty"`
-	FileURL       *string     `json:"fileUrl,omitempty"`
-	Status        LeaveStatus `json:"status"`
-	Remark        *string     `json:"remark,omitempty"`
-	DecidedAt     *string     `json:"decidedAt,omitempty"`
-	DeletedAt     *string     `json:"deletedAt,omitempty"`
-	CreatedAt     string      `json:"createdAt"`
+	LeaveID          string           `json:"leaveId"`
+	StaffID          string           `json:"staffId"`
+	Staff            *Staff           `json:"staff"`
+	StaffName        string           `json:"staffName"`
+	Position         *string          `json:"position,omitempty"`
+	StartDate        string           `json:"startDate"`
+	EndDate          string           `json:"endDate"`
+	Justification    *string          `json:"justification,omitempty"`
+	FileURL          *string          `json:"fileUrl,omitempty"`
+	Status           LeaveStatus      `json:"status"`
+	Remark           *string          `json:"remark,omitempty"`
+	DecidedAt        *string          `json:"decidedAt,omitempty"`
+	DeletedAt        *string          `json:"deletedAt,omitempty"`
+	CreatedAt        string           `json:"createdAt"`
+	AffectedBookings []*BookingDetail `json:"affectedBookings"`
 }
 
 type LogInInput struct {
@@ -116,6 +175,18 @@ type Service struct {
 	DeletedAt      *string          `json:"deletedAt,omitempty"`
 }
 
+type ServiceCancellation struct {
+	ServiceID   string `json:"serviceId"`
+	ServiceName string `json:"serviceName"`
+	Count       int32  `json:"count"`
+}
+
+type ServiceFilterOption struct {
+	ServiceIds  []string `json:"serviceIds"`
+	ServiceName string   `json:"serviceName"`
+	Deleted     bool     `json:"deleted"`
+}
+
 type ServiceInput struct {
 	ServiceName    string                `json:"serviceName"`
 	Description    *string               `json:"description,omitempty"`
@@ -131,13 +202,21 @@ type ServiceOption struct {
 	ServiceOptionItems []*ServiceOptionItem `json:"serviceOptionItems"`
 	ServiceSlotOptions []*ServiceSlotOption `json:"serviceSlotOptions"`
 	RecurringSchedules []*RecurringSchedule `json:"recurringSchedules"`
+	Removed            bool                 `json:"removed"`
+	EffectiveFrom      *string              `json:"effectiveFrom,omitempty"`
+	EffectiveUntil     *string              `json:"effectiveUntil,omitempty"`
+	HasBooking         bool                 `json:"hasBooking"`
 	DeletedAt          *string              `json:"deletedAt,omitempty"`
 }
 
 type ServiceOptionInput struct {
-	ServiceOptionName  string                    `json:"serviceOptionName"`
-	Description        *string                   `json:"description,omitempty"`
-	ServiceOptionItems []*ServiceOptionItemInput `json:"serviceOptionItems"`
+	ServiceOptionID     *string                   `json:"serviceOptionId,omitempty"`
+	ServiceOptionName   string                    `json:"serviceOptionName"`
+	Description         *string                   `json:"description,omitempty"`
+	ServiceOptionItems  []*ServiceOptionItemInput `json:"serviceOptionItems"`
+	EffectiveFrom       *string                   `json:"effectiveFrom,omitempty"`
+	EffectiveUntil      *string                   `json:"effectiveUntil,omitempty"`
+	ClearEffectiveUntil *bool                     `json:"clearEffectiveUntil,omitempty"`
 }
 
 type ServiceOptionItem struct {
@@ -150,6 +229,12 @@ type ServiceOptionItem struct {
 
 type ServiceOptionItemInput struct {
 	ServiceOptionItemName string `json:"serviceOptionItemName"`
+}
+
+type ServicePopularity struct {
+	ServiceID    string `json:"serviceId"`
+	ServiceName  string `json:"serviceName"`
+	BookingCount int32  `json:"bookingCount"`
 }
 
 type ServiceSlot struct {
@@ -193,6 +278,18 @@ type SignUpInput struct {
 	Password      string `json:"password"`
 }
 
+type SlotReassignmentInput struct {
+	ServiceSlotID string  `json:"serviceSlotId"`
+	StaffID       *string `json:"staffId,omitempty"`
+}
+
+type SlotUtilization struct {
+	TotalSlots      int32                 `json:"totalSlots"`
+	BookedSlots     int32                 `json:"bookedSlots"`
+	UtilizationRate float64               `json:"utilizationRate"`
+	Sections        []*UtilizationSection `json:"sections"`
+}
+
 type Staff struct {
 	StaffID            string               `json:"staffId"`
 	UserID             string               `json:"userId"`
@@ -208,7 +305,15 @@ type Staff struct {
 	LeaveApplications  []*LeaveApplication  `json:"leaveApplications"`
 	ServiceSlots       []*ServiceSlot       `json:"serviceSlots"`
 	RecurringSchedules []*RecurringSchedule `json:"recurringSchedules"`
+	HasBooking         bool                 `json:"hasBooking"`
 	DeletedAt          *string              `json:"deletedAt,omitempty"`
+}
+
+type StaffCancellation struct {
+	StaffID       *string `json:"staffId,omitempty"`
+	StaffName     string  `json:"staffName"`
+	CustomerCount int32   `json:"customerCount"`
+	StaffCount    int32   `json:"staffCount"`
 }
 
 type StaffInput struct {
@@ -216,7 +321,15 @@ type StaffInput struct {
 	Email         string              `json:"email"`
 	ContactNumber string              `json:"contactNumber"`
 	Position      string              `json:"position"`
+	Password      string              `json:"password"`
 	WorkingHours  []*WorkingHourInput `json:"workingHours"`
+}
+
+type StaffUtilization struct {
+	StaffID     *string `json:"staffId,omitempty"`
+	StaffName   string  `json:"staffName"`
+	Bookings    int32   `json:"bookings"`
+	HoursBooked float64 `json:"hoursBooked"`
 }
 
 type StaffWorkingHour struct {
@@ -227,6 +340,16 @@ type StaffWorkingHour struct {
 	StartTime       time.Time `json:"startTime"`
 	EndTime         time.Time `json:"endTime"`
 	DeletedAt       *string   `json:"deletedAt,omitempty"`
+}
+
+type StatusCount struct {
+	Status BookingStatus `json:"status"`
+	Count  int32         `json:"count"`
+}
+
+type TypeCount struct {
+	BookingType BookingType `json:"bookingType"`
+	Count       int32       `json:"count"`
 }
 
 type UpdateProfileInput struct {
@@ -253,6 +376,25 @@ type User struct {
 	BusinessProfile     *BusinessProfile `json:"businessProfile,omitempty"`
 	StaffProfile        *Staff           `json:"staffProfile,omitempty"`
 	Bookings            []*Booking       `json:"bookings"`
+}
+
+type UtilizationBreakdownPoint struct {
+	Label       string `json:"label"`
+	TotalSlots  int32  `json:"totalSlots"`
+	BookedSlots int32  `json:"bookedSlots"`
+}
+
+type UtilizationSection struct {
+	Subtitle string                       `json:"subtitle"`
+	Points   []*UtilizationBreakdownPoint `json:"points"`
+}
+
+type WalkInInput struct {
+	ServiceOptionID string    `json:"serviceOptionId"`
+	StaffID         *string   `json:"staffId,omitempty"`
+	Date            string    `json:"date"`
+	StartTime       time.Time `json:"startTime"`
+	EndTime         time.Time `json:"endTime"`
 }
 
 type WorkingHourInput struct {
@@ -496,6 +638,122 @@ func (e *LeaveStatus) UnmarshalJSON(b []byte) error {
 }
 
 func (e LeaveStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type SlotUtilizationGroupBy string
+
+const (
+	SlotUtilizationGroupByWeekday SlotUtilizationGroupBy = "weekday"
+	SlotUtilizationGroupByDate    SlotUtilizationGroupBy = "date"
+	SlotUtilizationGroupByMonth   SlotUtilizationGroupBy = "month"
+	SlotUtilizationGroupByYear    SlotUtilizationGroupBy = "year"
+)
+
+var AllSlotUtilizationGroupBy = []SlotUtilizationGroupBy{
+	SlotUtilizationGroupByWeekday,
+	SlotUtilizationGroupByDate,
+	SlotUtilizationGroupByMonth,
+	SlotUtilizationGroupByYear,
+}
+
+func (e SlotUtilizationGroupBy) IsValid() bool {
+	switch e {
+	case SlotUtilizationGroupByWeekday, SlotUtilizationGroupByDate, SlotUtilizationGroupByMonth, SlotUtilizationGroupByYear:
+		return true
+	}
+	return false
+}
+
+func (e SlotUtilizationGroupBy) String() string {
+	return string(e)
+}
+
+func (e *SlotUtilizationGroupBy) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SlotUtilizationGroupBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SlotUtilizationGroupBy", str)
+	}
+	return nil
+}
+
+func (e SlotUtilizationGroupBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *SlotUtilizationGroupBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e SlotUtilizationGroupBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type TrendGranularity string
+
+const (
+	TrendGranularityDay   TrendGranularity = "day"
+	TrendGranularityWeek  TrendGranularity = "week"
+	TrendGranularityMonth TrendGranularity = "month"
+)
+
+var AllTrendGranularity = []TrendGranularity{
+	TrendGranularityDay,
+	TrendGranularityWeek,
+	TrendGranularityMonth,
+}
+
+func (e TrendGranularity) IsValid() bool {
+	switch e {
+	case TrendGranularityDay, TrendGranularityWeek, TrendGranularityMonth:
+		return true
+	}
+	return false
+}
+
+func (e TrendGranularity) String() string {
+	return string(e)
+}
+
+func (e *TrendGranularity) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TrendGranularity(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TrendGranularity", str)
+	}
+	return nil
+}
+
+func (e TrendGranularity) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *TrendGranularity) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e TrendGranularity) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

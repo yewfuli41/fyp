@@ -43,6 +43,7 @@ func (r *mutationResolver) RegisterStaff(ctx context.Context, staff *model.Staff
 		StaffEmail:         staff.Email,
 		StaffContactNumber: staff.ContactNumber,
 		Position:           staff.Position,
+		Password:           staff.Password,
 		WorkingHours:       staffWorkingHours,
 	}
 

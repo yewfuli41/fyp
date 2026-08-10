@@ -39,12 +39,12 @@ func (_m *MockIServiceRepo) EXPECT() *MockIServiceRepo_Expecter {
 	return &MockIServiceRepo_Expecter{mock: &_m.Mock}
 }
 
-// DeleteServiceOptionsByServiceID provides a mock function for the type MockIServiceRepo
-func (_mock *MockIServiceRepo) DeleteServiceOptionsByServiceID(ctx context.Context, tx *sql.Tx, serviceID int64) error {
+// CascadeDeleteServiceSlots provides a mock function for the type MockIServiceRepo
+func (_mock *MockIServiceRepo) CascadeDeleteServiceSlots(ctx context.Context, tx *sql.Tx, serviceID int64) error {
 	ret := _mock.Called(ctx, tx, serviceID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for DeleteServiceOptionsByServiceID")
+		panic("no return value specified for CascadeDeleteServiceSlots")
 	}
 
 	var r0 error
@@ -56,20 +56,20 @@ func (_mock *MockIServiceRepo) DeleteServiceOptionsByServiceID(ctx context.Conte
 	return r0
 }
 
-// MockIServiceRepo_DeleteServiceOptionsByServiceID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteServiceOptionsByServiceID'
-type MockIServiceRepo_DeleteServiceOptionsByServiceID_Call struct {
+// MockIServiceRepo_CascadeDeleteServiceSlots_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CascadeDeleteServiceSlots'
+type MockIServiceRepo_CascadeDeleteServiceSlots_Call struct {
 	*mock.Call
 }
 
-// DeleteServiceOptionsByServiceID is a helper method to define mock.On call
+// CascadeDeleteServiceSlots is a helper method to define mock.On call
 //   - ctx context.Context
 //   - tx *sql.Tx
 //   - serviceID int64
-func (_e *MockIServiceRepo_Expecter) DeleteServiceOptionsByServiceID(ctx interface{}, tx interface{}, serviceID interface{}) *MockIServiceRepo_DeleteServiceOptionsByServiceID_Call {
-	return &MockIServiceRepo_DeleteServiceOptionsByServiceID_Call{Call: _e.mock.On("DeleteServiceOptionsByServiceID", ctx, tx, serviceID)}
+func (_e *MockIServiceRepo_Expecter) CascadeDeleteServiceSlots(ctx interface{}, tx interface{}, serviceID interface{}) *MockIServiceRepo_CascadeDeleteServiceSlots_Call {
+	return &MockIServiceRepo_CascadeDeleteServiceSlots_Call{Call: _e.mock.On("CascadeDeleteServiceSlots", ctx, tx, serviceID)}
 }
 
-func (_c *MockIServiceRepo_DeleteServiceOptionsByServiceID_Call) Run(run func(ctx context.Context, tx *sql.Tx, serviceID int64)) *MockIServiceRepo_DeleteServiceOptionsByServiceID_Call {
+func (_c *MockIServiceRepo_CascadeDeleteServiceSlots_Call) Run(run func(ctx context.Context, tx *sql.Tx, serviceID int64)) *MockIServiceRepo_CascadeDeleteServiceSlots_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -92,12 +92,75 @@ func (_c *MockIServiceRepo_DeleteServiceOptionsByServiceID_Call) Run(run func(ct
 	return _c
 }
 
-func (_c *MockIServiceRepo_DeleteServiceOptionsByServiceID_Call) Return(err error) *MockIServiceRepo_DeleteServiceOptionsByServiceID_Call {
+func (_c *MockIServiceRepo_CascadeDeleteServiceSlots_Call) Return(err error) *MockIServiceRepo_CascadeDeleteServiceSlots_Call {
 	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockIServiceRepo_DeleteServiceOptionsByServiceID_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, serviceID int64) error) *MockIServiceRepo_DeleteServiceOptionsByServiceID_Call {
+func (_c *MockIServiceRepo_CascadeDeleteServiceSlots_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, serviceID int64) error) *MockIServiceRepo_CascadeDeleteServiceSlots_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DropSlotOptionIfExpired provides a mock function for the type MockIServiceRepo
+func (_mock *MockIServiceRepo) DropSlotOptionIfExpired(ctx context.Context, tx *sql.Tx, slotOptionID int64) error {
+	ret := _mock.Called(ctx, tx, slotOptionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DropSlotOptionIfExpired")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, int64) error); ok {
+		r0 = returnFunc(ctx, tx, slotOptionID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIServiceRepo_DropSlotOptionIfExpired_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropSlotOptionIfExpired'
+type MockIServiceRepo_DropSlotOptionIfExpired_Call struct {
+	*mock.Call
+}
+
+// DropSlotOptionIfExpired is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx *sql.Tx
+//   - slotOptionID int64
+func (_e *MockIServiceRepo_Expecter) DropSlotOptionIfExpired(ctx interface{}, tx interface{}, slotOptionID interface{}) *MockIServiceRepo_DropSlotOptionIfExpired_Call {
+	return &MockIServiceRepo_DropSlotOptionIfExpired_Call{Call: _e.mock.On("DropSlotOptionIfExpired", ctx, tx, slotOptionID)}
+}
+
+func (_c *MockIServiceRepo_DropSlotOptionIfExpired_Call) Run(run func(ctx context.Context, tx *sql.Tx, slotOptionID int64)) *MockIServiceRepo_DropSlotOptionIfExpired_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *sql.Tx
+		if args[1] != nil {
+			arg1 = args[1].(*sql.Tx)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIServiceRepo_DropSlotOptionIfExpired_Call) Return(err error) *MockIServiceRepo_DropSlotOptionIfExpired_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIServiceRepo_DropSlotOptionIfExpired_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, slotOptionID int64) error) *MockIServiceRepo_DropSlotOptionIfExpired_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -370,6 +433,72 @@ func (_c *MockIServiceRepo_GetServicesByBusinessID_Call) Return(serviceParams []
 }
 
 func (_c *MockIServiceRepo_GetServicesByBusinessID_Call) RunAndReturn(run func(ctx context.Context, businessID int64) ([]param.ServiceParam, error)) *MockIServiceRepo_GetServicesByBusinessID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// HasBookingForOption provides a mock function for the type MockIServiceRepo
+func (_mock *MockIServiceRepo) HasBookingForOption(ctx context.Context, serviceOptionID int64) (bool, error) {
+	ret := _mock.Called(ctx, serviceOptionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasBookingForOption")
+	}
+
+	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (bool, error)); ok {
+		return returnFunc(ctx, serviceOptionID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) bool); ok {
+		r0 = returnFunc(ctx, serviceOptionID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, serviceOptionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIServiceRepo_HasBookingForOption_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasBookingForOption'
+type MockIServiceRepo_HasBookingForOption_Call struct {
+	*mock.Call
+}
+
+// HasBookingForOption is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOptionID int64
+func (_e *MockIServiceRepo_Expecter) HasBookingForOption(ctx interface{}, serviceOptionID interface{}) *MockIServiceRepo_HasBookingForOption_Call {
+	return &MockIServiceRepo_HasBookingForOption_Call{Call: _e.mock.On("HasBookingForOption", ctx, serviceOptionID)}
+}
+
+func (_c *MockIServiceRepo_HasBookingForOption_Call) Run(run func(ctx context.Context, serviceOptionID int64)) *MockIServiceRepo_HasBookingForOption_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIServiceRepo_HasBookingForOption_Call) Return(b bool, err error) *MockIServiceRepo_HasBookingForOption_Call {
+	_c.Call.Return(b, err)
+	return _c
+}
+
+func (_c *MockIServiceRepo_HasBookingForOption_Call) RunAndReturn(run func(ctx context.Context, serviceOptionID int64) (bool, error)) *MockIServiceRepo_HasBookingForOption_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -651,6 +780,222 @@ func (_c *MockIServiceRepo_InsertServiceOptionItem_Call) RunAndReturn(run func(c
 	return _c
 }
 
+// IsOptionEffectiveOn provides a mock function for the type MockIServiceRepo
+func (_mock *MockIServiceRepo) IsOptionEffectiveOn(ctx context.Context, serviceOptionID int64, date string) (bool, error) {
+	ret := _mock.Called(ctx, serviceOptionID, date)
+
+	if len(ret) == 0 {
+		panic("no return value specified for IsOptionEffectiveOn")
+	}
+
+	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string) (bool, error)); ok {
+		return returnFunc(ctx, serviceOptionID, date)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string) bool); ok {
+		r0 = returnFunc(ctx, serviceOptionID, date)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, string) error); ok {
+		r1 = returnFunc(ctx, serviceOptionID, date)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIServiceRepo_IsOptionEffectiveOn_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsOptionEffectiveOn'
+type MockIServiceRepo_IsOptionEffectiveOn_Call struct {
+	*mock.Call
+}
+
+// IsOptionEffectiveOn is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOptionID int64
+//   - date string
+func (_e *MockIServiceRepo_Expecter) IsOptionEffectiveOn(ctx interface{}, serviceOptionID interface{}, date interface{}) *MockIServiceRepo_IsOptionEffectiveOn_Call {
+	return &MockIServiceRepo_IsOptionEffectiveOn_Call{Call: _e.mock.On("IsOptionEffectiveOn", ctx, serviceOptionID, date)}
+}
+
+func (_c *MockIServiceRepo_IsOptionEffectiveOn_Call) Run(run func(ctx context.Context, serviceOptionID int64, date string)) *MockIServiceRepo_IsOptionEffectiveOn_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIServiceRepo_IsOptionEffectiveOn_Call) Return(b bool, err error) *MockIServiceRepo_IsOptionEffectiveOn_Call {
+	_c.Call.Return(b, err)
+	return _c
+}
+
+func (_c *MockIServiceRepo_IsOptionEffectiveOn_Call) RunAndReturn(run func(ctx context.Context, serviceOptionID int64, date string) (bool, error)) *MockIServiceRepo_IsOptionEffectiveOn_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetOptionWindow provides a mock function for the type MockIServiceRepo
+func (_mock *MockIServiceRepo) SetOptionWindow(ctx context.Context, tx *sql.Tx, serviceOptionID int64, from string, until *string) error {
+	ret := _mock.Called(ctx, tx, serviceOptionID, from, until)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetOptionWindow")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, int64, string, *string) error); ok {
+		r0 = returnFunc(ctx, tx, serviceOptionID, from, until)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIServiceRepo_SetOptionWindow_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetOptionWindow'
+type MockIServiceRepo_SetOptionWindow_Call struct {
+	*mock.Call
+}
+
+// SetOptionWindow is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx *sql.Tx
+//   - serviceOptionID int64
+//   - from string
+//   - until *string
+func (_e *MockIServiceRepo_Expecter) SetOptionWindow(ctx interface{}, tx interface{}, serviceOptionID interface{}, from interface{}, until interface{}) *MockIServiceRepo_SetOptionWindow_Call {
+	return &MockIServiceRepo_SetOptionWindow_Call{Call: _e.mock.On("SetOptionWindow", ctx, tx, serviceOptionID, from, until)}
+}
+
+func (_c *MockIServiceRepo_SetOptionWindow_Call) Run(run func(ctx context.Context, tx *sql.Tx, serviceOptionID int64, from string, until *string)) *MockIServiceRepo_SetOptionWindow_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *sql.Tx
+		if args[1] != nil {
+			arg1 = args[1].(*sql.Tx)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		var arg4 *string
+		if args[4] != nil {
+			arg4 = args[4].(*string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIServiceRepo_SetOptionWindow_Call) Return(err error) *MockIServiceRepo_SetOptionWindow_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIServiceRepo_SetOptionWindow_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, serviceOptionID int64, from string, until *string) error) *MockIServiceRepo_SetOptionWindow_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetServiceDefaultOption provides a mock function for the type MockIServiceRepo
+func (_mock *MockIServiceRepo) SetServiceDefaultOption(ctx context.Context, tx *sql.Tx, serviceID int64, serviceOptionID int64) error {
+	ret := _mock.Called(ctx, tx, serviceID, serviceOptionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetServiceDefaultOption")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, int64, int64) error); ok {
+		r0 = returnFunc(ctx, tx, serviceID, serviceOptionID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIServiceRepo_SetServiceDefaultOption_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetServiceDefaultOption'
+type MockIServiceRepo_SetServiceDefaultOption_Call struct {
+	*mock.Call
+}
+
+// SetServiceDefaultOption is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx *sql.Tx
+//   - serviceID int64
+//   - serviceOptionID int64
+func (_e *MockIServiceRepo_Expecter) SetServiceDefaultOption(ctx interface{}, tx interface{}, serviceID interface{}, serviceOptionID interface{}) *MockIServiceRepo_SetServiceDefaultOption_Call {
+	return &MockIServiceRepo_SetServiceDefaultOption_Call{Call: _e.mock.On("SetServiceDefaultOption", ctx, tx, serviceID, serviceOptionID)}
+}
+
+func (_c *MockIServiceRepo_SetServiceDefaultOption_Call) Run(run func(ctx context.Context, tx *sql.Tx, serviceID int64, serviceOptionID int64)) *MockIServiceRepo_SetServiceDefaultOption_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *sql.Tx
+		if args[1] != nil {
+			arg1 = args[1].(*sql.Tx)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		var arg3 int64
+		if args[3] != nil {
+			arg3 = args[3].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIServiceRepo_SetServiceDefaultOption_Call) Return(err error) *MockIServiceRepo_SetServiceDefaultOption_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIServiceRepo_SetServiceDefaultOption_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, serviceID int64, serviceOptionID int64) error) *MockIServiceRepo_SetServiceDefaultOption_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SoftDeleteService provides a mock function for the type MockIServiceRepo
 func (_mock *MockIServiceRepo) SoftDeleteService(ctx context.Context, tx *sql.Tx, serviceID int64, businessID int64) error {
 	ret := _mock.Called(ctx, tx, serviceID, businessID)
@@ -716,6 +1061,69 @@ func (_c *MockIServiceRepo_SoftDeleteService_Call) Return(err error) *MockIServi
 }
 
 func (_c *MockIServiceRepo_SoftDeleteService_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, serviceID int64, businessID int64) error) *MockIServiceRepo_SoftDeleteService_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SoftDeleteServiceOption provides a mock function for the type MockIServiceRepo
+func (_mock *MockIServiceRepo) SoftDeleteServiceOption(ctx context.Context, tx *sql.Tx, serviceOptionID int64) error {
+	ret := _mock.Called(ctx, tx, serviceOptionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SoftDeleteServiceOption")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, int64) error); ok {
+		r0 = returnFunc(ctx, tx, serviceOptionID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIServiceRepo_SoftDeleteServiceOption_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SoftDeleteServiceOption'
+type MockIServiceRepo_SoftDeleteServiceOption_Call struct {
+	*mock.Call
+}
+
+// SoftDeleteServiceOption is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx *sql.Tx
+//   - serviceOptionID int64
+func (_e *MockIServiceRepo_Expecter) SoftDeleteServiceOption(ctx interface{}, tx interface{}, serviceOptionID interface{}) *MockIServiceRepo_SoftDeleteServiceOption_Call {
+	return &MockIServiceRepo_SoftDeleteServiceOption_Call{Call: _e.mock.On("SoftDeleteServiceOption", ctx, tx, serviceOptionID)}
+}
+
+func (_c *MockIServiceRepo_SoftDeleteServiceOption_Call) Run(run func(ctx context.Context, tx *sql.Tx, serviceOptionID int64)) *MockIServiceRepo_SoftDeleteServiceOption_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *sql.Tx
+		if args[1] != nil {
+			arg1 = args[1].(*sql.Tx)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIServiceRepo_SoftDeleteServiceOption_Call) Return(err error) *MockIServiceRepo_SoftDeleteServiceOption_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIServiceRepo_SoftDeleteServiceOption_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, serviceOptionID int64) error) *MockIServiceRepo_SoftDeleteServiceOption_Call {
 	_c.Call.Return(run)
 	return _c
 }

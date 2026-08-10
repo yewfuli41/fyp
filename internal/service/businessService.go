@@ -9,18 +9,74 @@ import (
 	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
+	"fyp/utils"
+	"sort"
+	"strings"
+	"time"
 )
 
 type businessService struct {
-	businessRepo interfaces.IBusinessRepo
-	tx           *database.Transaction
+	businessRepo    interfaces.IBusinessRepo
+	serviceSlotRepo interfaces.IServiceSlotRepo
+	tx              *database.Transaction
 }
 
-func NewBusinessService(db *sql.DB, businessRepo interfaces.IBusinessRepo) interfaces.IBusinessService {
+func NewBusinessService(db *sql.DB, businessRepo interfaces.IBusinessRepo, serviceSlotRepo interfaces.IServiceSlotRepo) interfaces.IBusinessService {
 	return &businessService{
-		businessRepo: businessRepo,
-		tx:           database.NewTransaction(db),
+		businessRepo:    businessRepo,
+		serviceSlotRepo: serviceSlotRepo,
+		tx:              database.NewTransaction(db),
 	}
+}
+
+// validateSlotsWithinNewWorkingHours checks that every existing owner-managed
+// slot window is still covered by the NEW proposed working hours on its
+// weekday — otherwise the edit would silently strand a slot (bookable or
+// already booked) outside business hours, with no check anywhere else ever
+// catching it after the fact.
+func validateSlotsWithinNewWorkingHours(windows []param.SlotWindowParam, newHours []param.WorkingHourParam) error {
+	byDay := make(map[string][]param.WorkingHourParam)
+	for _, wh := range newHours {
+		byDay[wh.Day] = append(byDay[wh.Day], wh)
+	}
+
+	seen := make(map[string]bool)
+	var offendingDates []string
+	weekdayByDate := make(map[string]string)
+	for _, w := range windows {
+		weekday, err := weekdayOf(w.Date)
+		if err != nil {
+			continue
+		}
+		wStart := timeOfDay(w.StartTime)
+		wEnd := timeOfDay(w.EndTime)
+		covered := false
+		for _, bwh := range byDay[weekday] {
+			bStart := timeOfDay(bwh.StartTime)
+			bEnd := timeOfDay(bwh.EndTime)
+			if !wStart.Before(bStart) && !wEnd.After(bEnd) {
+				covered = true
+				break
+			}
+		}
+		if !covered && !seen[w.Date] {
+			seen[w.Date] = true
+			offendingDates = append(offendingDates, w.Date)
+			weekdayByDate[w.Date] = weekday
+		}
+	}
+	if len(offendingDates) == 0 {
+		return nil
+	}
+	sort.Strings(offendingDates)
+	labels := make([]string, len(offendingDates))
+	for i, date := range offendingDates {
+		labels[i] = fmt.Sprintf("%s (%s)", date, utils.CapitalizeFirst(weekdayByDate[date]))
+	}
+	return errs.ValidationErrors{{
+		Field:   "workingHours",
+		Message: fmt.Sprintf("Can't update working hours — existing slots fall outside the new hours on: %s.", strings.Join(labels, ", ")),
+	}}
 }
 
 func (s *businessService) RegisterBusinessProfile(ctx context.Context, businessParam param.BusinessProfileParam) (*param.BusinessProfileParam, error) {
@@ -65,6 +121,15 @@ func (s *businessService) UpdateBusinessProfile(ctx context.Context, businessPar
 
 		updatedBusiness, err := s.businessRepo.UpdateBusinessProfile(ctx, tx, businessParam)
 		if err != nil {
+			return err
+		}
+
+		today := time.Now().Format("2006-01-02")
+		windows, err := s.serviceSlotRepo.GetFutureUnassignedSlotWindows(ctx, updatedBusiness.BusinessID, today)
+		if err != nil {
+			return err
+		}
+		if err := validateSlotsWithinNewWorkingHours(windows, businessParam.WorkingHours); err != nil {
 			return err
 		}
 

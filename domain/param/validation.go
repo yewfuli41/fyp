@@ -21,6 +21,8 @@ const (
 	maxBusinessNameLength  = 255
 	maxServiceNameLength   = 255
 	maxPackageNameLength   = 255
+	maxJustificationLength = 1000
+	maxRemarkLength        = 1000
 )
 
 var emailRegex = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)

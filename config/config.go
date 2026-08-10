@@ -15,6 +15,7 @@ type Config struct {
 
 type EmailConfig struct {
 	SendGridAPIKey string
+	ResendAPIKey   string
 	FromEmail      string
 	FromName       string
 }
@@ -45,6 +46,7 @@ func Load(path string) (*Config, error) {
 		return nil, errors.New("JWT_SECRET is required in environment variables")
 	}
 	cfg.Email.SendGridAPIKey = os.Getenv("SENDGRID_API_KEY")
+	cfg.Email.ResendAPIKey = os.Getenv("RESEND_API_KEY")
 	cfg.Email.FromEmail = os.Getenv("FROM_EMAIL")
 	cfg.Email.FromName = os.Getenv("FROM_NAME")
 	return cfg, nil

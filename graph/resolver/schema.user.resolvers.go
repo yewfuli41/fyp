@@ -86,6 +86,26 @@ func (r *mutationResolver) ResetPassword(ctx context.Context, newPassword string
 	return true, nil
 }
 
+// ChangePassword is the resolver for the changePassword field.
+func (r *mutationResolver) ChangePassword(ctx context.Context, currentPassword string, newPassword string) (bool, error) {
+	currentUser, err := contexts.CurrentUser(ctx)
+	if err != nil {
+		return false, graphErrs.ToGraphQLError(err)
+	}
+
+	err = r.App.AuthService.ChangePassword(ctx, param.ChangePasswordParam{
+		UserID:          currentUser.UserID,
+		Email:           currentUser.Email,
+		CurrentPassword: currentPassword,
+		NewPassword:     newPassword,
+	})
+	if err != nil {
+		return false, graphErrs.ToGraphQLError(err)
+	}
+
+	return true, nil
+}
+
 // UpdateProfile is the resolver for the updateProfile field.
 func (r *mutationResolver) UpdateProfile(ctx context.Context, user model.UpdateProfileInput) (*model.User, error) {
 	currentUser, err := contexts.CurrentUser(ctx)

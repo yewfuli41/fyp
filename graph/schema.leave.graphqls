@@ -1,0 +1,47 @@
+input ApplyLeaveInput {
+  startDate: Date!
+  endDate: Date!
+  justification: String
+}
+
+# Assigns (or, when staffId is omitted, unassigns — owner-managed) a
+# replacement staff for one service slot affected by a leave approval or a
+# working-hours edit.
+input SlotReassignmentInput {
+  serviceSlotId: ID!
+  staffId: ID
+}
+
+extend type Query {
+  # The current staff user's own leave applications.
+  myLeaveApplications: [LeaveApplication!]!
+  # Every leave application for the owner's business (pending, approved and
+  # rejected), each carrying the bookings it would affect if approved.
+  businessLeaveApplications: [LeaveApplication!]!
+  # Precheck for updateStaffWorkingHours — the staff's currently-booked slots
+  # that would fall outside the proposed hours, so the owner can be shown a
+  # replacement-staff picker before committing the change.
+  staffHoursConflicts(staffId: ID!, workingHours: [WorkingHourInput!]!): [ServiceSlot!]!
+}
+
+extend type Mutation {
+  applyLeave(input: ApplyLeaveInput!): LeaveApplication!
+  # Lets the applying staff member edit just their reason while the
+  # application is still pending — the date range can't be changed here.
+  updateLeaveApplication(leaveId: ID!, justification: String): LeaveApplication!
+  deleteLeaveApplication(leaveId: ID!): Boolean!
+  # Approving never blocks on picking replacements — a slot with no booking
+  # is freed back to owner-managed immediately, and a booked slot is simply
+  # left as-is (still visible, still assigned) until the owner reschedules
+  # that booking separately; see affectedBookings, which keeps listing it
+  # under this leave until it's moved off the leave's date range.
+  approveLeaveApplication(leaveId: ID!): LeaveApplication!
+  # Also reverses an already-approved leave (moving it to rejected, with a
+  # required remark) — there is no separate cancel. Does not undo any staff
+  # reassignments already made when it was approved.
+  rejectLeaveApplication(leaveId: ID!, remark: String!): LeaveApplication!
+  # Edits a staff member's weekly working hours. Any of their booked slots
+  # that would fall outside the new hours must be covered by reassignments —
+  # call staffHoursConflicts first to find out which ones, if any.
+  updateStaffWorkingHours(staffId: ID!, workingHours: [WorkingHourInput!]!, reassignments: [SlotReassignmentInput!]!): Staff!
+}

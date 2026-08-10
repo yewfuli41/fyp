@@ -32,6 +32,11 @@ export function AuthProvider({
   const login = (token: string, user: User) => {
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
+    // Every fresh sign-in lands in Customer Mode (AppNavbar's getInitialMode
+    // reads this) regardless of role or whatever mode was last active in a
+    // previous session — a page reload of an already-open session doesn't
+    // call login() at all, so this never resets the mode mid-session.
+    localStorage.setItem("viewMode", "customer");
 
     setToken(token);
     setUser(user);

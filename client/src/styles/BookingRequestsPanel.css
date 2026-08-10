@@ -1,0 +1,100 @@
+.req-card {
+    border: 1px solid #e6e8eb;
+    border-radius: 16px;
+    padding: 1.1rem 1.25rem;
+    height: 100%;
+    background: #fff;
+    text-align: left;
+}
+
+.req-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    background: linear-gradient(135deg, #33b1a6, #3f8fd0);
+}
+
+.req-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.1rem;
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+.req-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.req-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.req-btn {
+    flex: 1;
+    min-width: 120px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 10px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: filter 0.15s ease, background 0.15s ease;
+}
+
+.req-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.req-accept {
+    color: #fff;
+    background: linear-gradient(135deg, #33b1a6, #3f8fd0);
+}
+
+.req-accept:not(:disabled):hover {
+    filter: brightness(1.05);
+}
+
+.req-outline {
+    background: #fff;
+    border-color: #d7dbe0;
+    color: #2b2f33;
+}
+
+.req-outline:not(:disabled):hover {
+    background: #f6f8fa;
+}
+
+.req-reject {
+    color: #e0484d;
+}
+
+.req-detail {
+    background: #f6f8fa;
+    border: 1px solid #e6e8eb;
+    border-radius: 10px;
+    padding: 0.75rem 0.9rem;
+    font-size: 0.95rem;
+}
+
+.req-detail-btn {
+    flex: 0 0 auto;
+    min-width: auto;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}

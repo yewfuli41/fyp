@@ -17,6 +17,15 @@ type ServiceOption {
   serviceOptionItems: [ServiceOptionItem!]!
   serviceSlotOptions: [ServiceSlotOption!]!
   recurringSchedules: [RecurringSchedule!]!
+  # true when no version of this option's group is effective today (e.g. a
+  # brand-new option whose bounded window hasn't started, or has ended).
+  removed: Boolean!
+  effectiveFrom: Date
+  effectiveUntil: Date
+  # true once anything has ever booked this option — exactly what blocks
+  # deleting it (see updateService). Lets the client refuse a delete
+  # immediately instead of only finding out after a full form submit.
+  hasBooking: Boolean!
   deletedAt: DateTime
 }
 
@@ -33,9 +42,24 @@ input ServiceOptionItemInput {
 }
 
 input ServiceOptionInput {
+  # Set when editing an existing option. Its name/items can't be changed in
+  # place — delete it (it must have no booking) and add a replacement instead.
+  # Omit/null serviceOptionId (and the dates) when adding a brand new option.
+  serviceOptionId: ID
   serviceOptionName: String!
   description: String
   serviceOptionItems: [ServiceOptionItemInput!]!
+  # For a brand new option: when it starts (effectiveFrom, defaults to today)
+  # and an optional bounded end (effectiveUntil). For an existing, unchanged
+  # option: a new start and/or end date to resize its window to (today or
+  # later only) — the default option can't be given an end date.
+  effectiveFrom: Date
+  effectiveUntil: Date
+  # true to explicitly clear an existing option's already-saved effectiveUntil
+  # (reopening it) without setting a new one. effectiveUntil alone can't
+  # express "clear it" since blank and "not set this time" serialize
+  # identically.
+  clearEffectiveUntil: Boolean
 }
 
 input ServiceInput {

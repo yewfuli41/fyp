@@ -42,7 +42,7 @@ export const addDays = (d: Date, n: number): Date => {
 
 export const todayISO = (): string => toISO(new Date());
 
-const nowHHMM = (): string => {
+export const nowHHMM = (): string => {
     const now = new Date();
     return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 };
@@ -54,32 +54,79 @@ export const emptyForm = (date: string): ServiceSlotInput => ({
     serviceOptionIds: [],
 });
 
-// A service's first package (lowest serviceOptionId) is always its
-// auto-created default package (named after the service itself), so
-// selecting a service can safely pre-check it as the initial package choice.
-export const defaultOptionId = (services: Service[], serviceId: string): string | undefined =>
-    services.find(s => s.serviceId === serviceId)?.serviceOptions[0]?.serviceOptionId;
+// Selecting a service pre-checks its first option that's actually offered on
+// the relevant date. Note: `removed` means "no version of this option's group
+// is effective today" (see IsRemoved in serviceRepo.go) — it's relative to
+// today, not to the date being scheduled for, so it must NOT gate this
+// alongside isOptionOfferedOn(date): an upcoming option can be `removed` today
+// while still being exactly what should be offered for a future slot date.
+export const defaultOptionId = (services: Service[], serviceId: string, date: string, daysOfWeek: string[] = []): string | undefined =>
+    services.find(s => s.serviceId === serviceId)?.serviceOptions
+        .find(option => isOptionSelectableFor(option, date, daysOfWeek))?.serviceOptionId;
 
-// Allowed slot times = working-hours envelope of the chosen staff (or the
-// business, for owner-managed) across the selected weekday(s) / date. Shared
-// by the Add and Edit forms.
+// Whether an option's effective window covers the given date — used wherever
+// a specific date (not just "today") determines which options are offerable:
+// creating/editing a slot, and a customer picking a booking date.
+export const isOptionOfferedOn = (opt: { effectiveFrom?: string; effectiveUntil?: string }, date: string): boolean =>
+    (!opt.effectiveFrom || opt.effectiveFrom <= date) && (!opt.effectiveUntil || opt.effectiveUntil >= date);
+
+// Whether an option should be offered in the Add-slot form for the current
+// schedule choice. A single date has one concrete occurrence, so this is
+// exactly isOptionOfferedOn for that date. A weekday-recurring schedule has
+// no single date — it spans many future occurrences — so an "upcoming"
+// option (effectiveFrom still ahead) must stay selectable here too: the
+// backend only creates occurrences once the option actually becomes
+// effective, and stops creating them past its effectiveUntil. Filtering by
+// "effective today" would hide upcoming/limited-time options from recurring
+// schedules entirely, even though they're exactly what recurring schedules
+// need to support.
+export const isOptionSelectableFor = (
+    opt: { effectiveFrom?: string; effectiveUntil?: string }, date: string, daysOfWeek: string[],
+): boolean =>
+    daysOfWeek.length > 0
+        ? !opt.effectiveUntil || opt.effectiveUntil >= todayISO()
+        : isOptionOfferedOn(opt, date);
+
+// A column's open time intervals ("HH:MM"–"HH:MM") on a given weekday —
+// used by the calendar grid to gray out cells outside working hours.
+export const openIntervals = (workingHours: WorkingHour[], weekday: string): { start: string; end: string }[] =>
+    workingHours
+        .filter(wh => wh.day === weekday)
+        .map(wh => ({ start: extractTime(wh.startTime), end: extractTime(wh.endTime) }));
+
+// Allowed slot times = working-hours window shared by EVERY selected weekday
+// for the chosen staff (or the business, for owner-managed) — the
+// intersection, not the union. One start/end time is applied to all selected
+// days at once, so a day with no working hours at all (or a narrower window
+// than the others) must constrain the result, not be silently ignored: with
+// a union, checking "Sunday" (no hours) alongside "Monday" (9-18) would still
+// show Monday's times as if they applied to both days, and nothing would stop
+// a slot from being created on Sunday too.
 export const computeTimeOptions = (
     input: ServiceSlotInput, staffList: Staff[], workingHours: WorkingHour[], lines: string[],
 ): string[] => {
     const days = input.daysOfWeek.length > 0
         ? input.daysOfWeek
         : (input.date ? [weekdayName(input.date)] : []);
+    if (days.length === 0) return lines;
     const source: WorkingHour[] = input.staffId
         ? (staffList.find(s => s.staffId === input.staffId)?.workingHours ?? [])
         : workingHours;
-    const relevant = source.filter(wh => days.length === 0 || days.includes(wh.day));
-    if (relevant.length === 0) return days.length === 0 ? lines : [];
-    let min = "23:59", max = "00:00";
-    for (const wh of relevant) {
-        const s = extractTime(wh.startTime), e = extractTime(wh.endTime);
-        if (s < min) min = s;
-        if (e > max) max = e;
+
+    let min = "00:00", max = "23:59";
+    for (const day of days) {
+        const dayHours = source.filter(wh => wh.day === day);
+        if (dayHours.length === 0) return []; // this day isn't worked at all — no time can cover every selected day
+        let dayMin = "23:59", dayMax = "00:00";
+        for (const wh of dayHours) {
+            const s = extractTime(wh.startTime), e = extractTime(wh.endTime);
+            if (s < dayMin) dayMin = s;
+            if (e > dayMax) dayMax = e;
+        }
+        if (dayMin > min) min = dayMin;
+        if (dayMax < max) max = dayMax;
     }
+    if (min >= max) return [];
     const options = timeLines(min, max);
     // A single date (not a recurring weekday) that's today can't offer times
     // that have already passed — the backend rejects those anyway.

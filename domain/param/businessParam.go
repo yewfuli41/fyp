@@ -13,6 +13,53 @@ type WorkingHourParam struct {
 	EndTime   time.Time
 }
 
+// ValidateWorkingHoursShape checks a working-hours list is internally
+// consistent — non-empty, each entry start < end, and no two entries on the
+// same day overlap. Shared by staff registration and any later edit to a
+// staff's (or business's) working hours.
+func ValidateWorkingHoursShape(workingHours []WorkingHourParam) errs.ValidationErrors {
+	var validationErrs errs.ValidationErrors
+
+	if len(workingHours) == 0 {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "workingHours", Message: "At least one working hour is required"})
+	}
+
+	for i, wh := range workingHours {
+		if !wh.StartTime.Before(wh.EndTime) {
+			validationErrs = append(validationErrs, errs.ValidationError{
+				Field:   fmt.Sprintf("workingHours[%d]", i),
+				Message: "Start time must be before end time",
+			})
+		}
+	}
+
+	byDay := make(map[string][]int)
+	for i, wh := range workingHours {
+		byDay[wh.Day] = append(byDay[wh.Day], i)
+	}
+	overlapping := make(map[int]bool)
+	for _, indices := range byDay {
+		for i := 0; i < len(indices); i++ {
+			for j := i + 1; j < len(indices); j++ {
+				a := workingHours[indices[i]]
+				b := workingHours[indices[j]]
+				if a.StartTime.Before(b.EndTime) && b.StartTime.Before(a.EndTime) {
+					overlapping[indices[i]] = true
+					overlapping[indices[j]] = true
+				}
+			}
+		}
+	}
+	for i := range overlapping {
+		validationErrs = append(validationErrs, errs.ValidationError{
+			Field:   fmt.Sprintf("workingHours[%d]", i),
+			Message: "Working hours overlap with another entry on the same day",
+		})
+	}
+
+	return validationErrs
+}
+
 type BusinessProfileParam struct {
 	BusinessID            int64
 	OwnerUserID           int64

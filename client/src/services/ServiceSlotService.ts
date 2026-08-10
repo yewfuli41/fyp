@@ -101,17 +101,15 @@ export const createServiceSlot = async (token: string, input: ServiceSlotInput) 
     return await doGraphQL<{ createServiceSlot: ServiceSlot }>(query, token);
 };
 
-// applyToFutureRecurring: false edits just this occurrence; true edits it plus
-// every future occurrence sharing its staff/time/weekday (mirrors deleteServiceSlot's flag).
+// Edits just this one occurrence.
 export const updateServiceSlot = async (
-    token: string, serviceSlotId: string, input: ServiceSlotInput, applyToFutureRecurring: boolean,
+    token: string, serviceSlotId: string, input: ServiceSlotInput,
 ) => {
     const query = `
         mutation {
             updateServiceSlot(
                 serviceSlotId: "${serviceSlotId}",
-                input: { ${buildInputBody(input)} },
-                applyToFutureRecurring: ${applyToFutureRecurring}
+                input: { ${buildInputBody(input)} }
             ) {
                 ${SLOT_FIELDS}
             }

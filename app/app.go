@@ -17,6 +17,8 @@ type App struct {
 	ServiceSlotService interfaces.IServiceSlotService
 	EmailService       interfaces.IEmailService
 	BookingService     interfaces.IBookingService
+	LeaveService       interfaces.ILeaveService
+	AnalyticsService   interfaces.IAnalyticsService
 }
 
 func NewApp(db *sql.DB, cfg *config.Config) *App {
@@ -25,16 +27,20 @@ func NewApp(db *sql.DB, cfg *config.Config) *App {
 	profileRepo := repository.NewProfileRepo(db)
 	profileService := service.NewProfileService(profileRepo)
 	businessRepo := repository.NewBusinessRepo(db)
-	businessService := service.NewBusinessService(db, businessRepo)
+	serviceSlotRepo := repository.NewServiceSlotRepo(db)
+	businessService := service.NewBusinessService(db, businessRepo, serviceSlotRepo)
 	serviceRepo := repository.NewServiceRepo(db)
 	serviceService := service.NewServiceService(db, serviceRepo)
-	emailService := service.NewSendGridEmailService(cfg.Email)
-	staffRepo := repository.NewStaffRepo(db)
-	staffService := service.NewStaffService(db, staffRepo, businessRepo, authRepo, emailService)
-	serviceSlotRepo := repository.NewServiceSlotRepo(db)
-	serviceSlotService := service.NewServiceSlotService(db, serviceSlotRepo, cfg.ServiceSlot)
+	emailService := service.NewResendEmailService(cfg.Email)
 	bookingRepo := repository.NewBookingRepo(db)
-	bookingService := service.NewBookingService(bookingRepo)
+	staffRepo := repository.NewStaffRepo(db)
+	staffService := service.NewStaffService(db, staffRepo, businessRepo, authRepo, serviceSlotRepo, bookingRepo, emailService)
+	leaveRepo := repository.NewLeaveRepo(db)
+	serviceSlotService := service.NewServiceSlotService(db, serviceSlotRepo, serviceRepo, leaveRepo, cfg.ServiceSlot, emailService)
+	bookingService := service.NewBookingService(db, bookingRepo, emailService, serviceRepo)
+	leaveService := service.NewLeaveService(db, leaveRepo, serviceSlotRepo, bookingRepo, businessRepo, emailService)
+	analyticsRepo := repository.NewAnalyticsRepo(db)
+	analyticsService := service.NewAnalyticsService(analyticsRepo)
 	return &App{
 		AuthService:        authService,
 		ProfileService:     profileService,
@@ -44,5 +50,7 @@ func NewApp(db *sql.DB, cfg *config.Config) *App {
 		ServiceSlotService: serviceSlotService,
 		EmailService:       emailService,
 		BookingService:     bookingService,
+		LeaveService:       leaveService,
+		AnalyticsService:   analyticsService,
 	}
 }

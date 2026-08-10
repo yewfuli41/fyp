@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Alert, Button, Card, Col, Container, Form, Row, Spinner } from "react-bootstrap";
+import { Alert, Badge, Button, Card, Col, Container, Form, Row, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -7,8 +7,9 @@ import {
     type Service, type ServiceInput
 } from "../services/ServiceService";
 import { userProfile } from "../services/ProfileService";
-import { applyGraphQLErrors } from "../utils/graphqlErrors";
-import { emptyInput } from "../utils/serviceFormHelpers";
+import { getBusinessBookings } from "../services/BookingService";
+import { parseGraphQLErrors } from "../utils/graphqlErrors";
+import { emptyInput, getOptionStatus, OPTION_STATUS_LABEL, OPTION_STATUS_VARIANT } from "../utils/serviceFormHelpers";
 import ServiceFormModal from "../modals/ServiceFormModal";
 import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
 
@@ -18,6 +19,7 @@ export default function ServicePage() {
     const activeToken = token ?? localStorage.getItem("token");
 
     const [hasBusiness, setHasBusiness] = useState<boolean | null>(null);
+    const [pendingCount, setPendingCount] = useState(0);
     const [services, setServices] = useState<Service[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [pageError, setPageError] = useState("");
@@ -60,6 +62,9 @@ export default function ServicePage() {
                 setHasBusiness(hasBusinessProfile);
                 if (hasBusinessProfile) {
                     await fetchServices();
+                    const bookingsRes = await getBusinessBookings(activeToken);
+                    const bookings = bookingsRes.data?.businessBookings ?? [];
+                    setPendingCount(bookings.filter(b => b.status === "PENDING").length);
                 }
             } catch {
                 setPageError("Failed to load profile.");
@@ -88,8 +93,16 @@ export default function ServicePage() {
             description: svc.description ?? "",
             serviceOptions: svc.serviceOptions.length > 0
                 ? svc.serviceOptions.map(pkg => ({
+                    serviceOptionId: pkg.serviceOptionId,
                     serviceOptionName: pkg.serviceOptionName,
                     description: pkg.description ?? "",
+                    // Left blank — the owner can move the start date, but starts
+                    // from "no change requested" until they touch the field.
+                    effectiveFrom: undefined,
+                    effectiveUntil: undefined,
+                    currentEffectiveFrom: pkg.effectiveFrom,
+                    currentEffectiveUntil: pkg.effectiveUntil,
+                    hasBooking: pkg.hasBooking,
                     serviceOptionItems: pkg.serviceOptionItems.length > 0
                         ? pkg.serviceOptionItems.map(item => ({ serviceOptionItemName: item.serviceOptionItemName }))
                         : [{ serviceOptionItemName: "" }],
@@ -107,18 +120,51 @@ export default function ServicePage() {
 
         setFormError("");
         setFieldErrors({});
+
+        // Every option but the default (position 0, which falls back to the
+        // service name — see ensureDefaultOption server-side) needs a name.
+        // These used to be silently dropped from the payload instead of
+        // surfacing an error, so a blank-named option would just vanish and
+        // the form would close as if the save fully succeeded.
+        //
+        // Every brand-new option (including the default) now also needs an
+        // explicit effective-from date — it's no longer silently defaulted
+        // to today, the owner has to pick it.
+        const fieldErrs: Record<string, string> = {};
+        formInput.serviceOptions.forEach((pkg, i) => {
+            if (i > 0 && !pkg.serviceOptionName.trim()) {
+                fieldErrs[`serviceOptionName[${i}]`] = "Option name is required";
+            }
+            if (!pkg.serviceOptionId && !pkg.effectiveFrom) {
+                fieldErrs[`serviceOptionEffectiveFrom[${i}]`] = "Effective from is required";
+            }
+        });
+        if (Object.keys(fieldErrs).length > 0) {
+            setFieldErrors(fieldErrs);
+            setFormError("Please fix the errors above.");
+            return;
+        }
+
         setIsSubmitting(true);
 
         const payload: ServiceInput = {
             serviceName: formInput.serviceName,
             description: formInput.description || undefined,
-            serviceOptions: formInput.serviceOptions
-                .filter(pkg => pkg.serviceOptionName.trim())
-                .map(pkg => ({
-                    serviceOptionName: pkg.serviceOptionName,
-                    description: pkg.description || undefined,
-                    serviceOptionItems: pkg.serviceOptionItems.filter(i => i.serviceOptionItemName.trim()),
-                })),
+            serviceOptions: formInput.serviceOptions.map(pkg => ({
+                serviceOptionId: pkg.serviceOptionId,
+                serviceOptionName: pkg.serviceOptionName,
+                description: pkg.description || undefined,
+                effectiveFrom: pkg.effectiveFrom || undefined,
+                effectiveUntil: pkg.effectiveUntil || undefined,
+                // effectiveUntil === "" means the owner explicitly cleared a
+                // previously-saved end date — that can't be expressed by
+                // effectiveUntil alone (blank looks the same as untouched),
+                // so flag it explicitly.
+                clearEffectiveUntil: pkg.effectiveUntil === "" && !!pkg.currentEffectiveUntil,
+                serviceOptionItems: pkg.serviceOptionItems
+                    .filter(i => i.serviceOptionItemName.trim())
+                    .map(i => ({ serviceOptionItemName: i.serviceOptionItemName })),
+            })),
         };
 
         try {
@@ -126,11 +172,12 @@ export default function ServicePage() {
                 ? await updateService(activeToken, editingService.serviceId, payload)
                 : await createService(activeToken, payload);
 
-            if (applyGraphQLErrors(result, {
-                setFieldErrors,
-                setFormError,
-                fallbackMessage: "Operation failed",
-            })) return;
+            const parsed = parseGraphQLErrors(result, "Operation failed");
+            if (parsed.hasErrors) {
+                setFieldErrors(parsed.fieldErrors);
+                setFormError(parsed.formError);
+                return;
+            }
 
             setShowForm(false);
             fetchServices();
@@ -143,7 +190,14 @@ export default function ServicePage() {
 
     // ── Delete helpers ─────────────────────────────────────────────────────────
 
+    const serviceHasBooking = (svc: Service) => svc.serviceOptions.some(o => o.hasBooking);
+
     const openDelete = (svc: Service) => {
+        if (serviceHasBooking(svc)) {
+            setPageError("Deletion disabled - booking exists.");
+            return;
+        }
+        setPageError("");
         setDeletingService(svc);
         setDeleteError("");
         setShowDeleteConfirm(true);
@@ -213,21 +267,25 @@ export default function ServicePage() {
 
     return (
         <Container className="py-5">
-            <Button
-                variant="link"
-                className="px-0 mb-2 text-decoration-none"
-                onClick={() => navigate("/profile")}
-            >
-                &larr; Back
-            </Button>
-
             <h1 className="mb-2 fs-1 text-start">Services</h1>
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div className="d-flex gap-2">
                     <Button variant="primary" onClick={openAdd}>Add Service</Button>
-                    <Button variant="outline-secondary" onClick={() => navigate("/service-slots")}>
-                        Manage Service Slots
-                    </Button>
+                    <div className="position-relative">
+                        <Button variant="outline-secondary" onClick={() => navigate("/service-slots")}>
+                            Manage Service Slots
+                        </Button>
+                        {pendingCount > 0 && (
+                            <Badge
+                                bg="danger"
+                                pill
+                                className="position-absolute top-0 start-100 translate-middle"
+                                title={`${pendingCount} pending request${pendingCount === 1 ? "" : "s"}`}
+                            >
+                                {pendingCount}
+                            </Badge>
+                        )}
+                    </div>
                 </div>
                 <Form.Control
                     type="text"
@@ -254,7 +312,11 @@ export default function ServicePage() {
                                             <Button variant="primary" size="sm" onClick={() => openEdit(svc)}>
                                                 Edit
                                             </Button>
-                                            <Button variant="danger" size="sm" onClick={() => openDelete(svc)}>
+                                            <Button
+                                                variant={serviceHasBooking(svc) ? "outline-secondary" : "danger"}
+                                                size="sm"
+                                                onClick={() => openDelete(svc)}
+                                            >
                                                 Delete
                                             </Button>
                                         </div>
@@ -269,25 +331,29 @@ export default function ServicePage() {
                                         <p className="text-muted mb-0">No options</p>
                                     ) : (
                                         <div className="d-flex flex-column gap-2 text-start">
-                                            {svc.serviceOptions.map(pkg => (
-                                                <div key={pkg.serviceOptionId}>
-                                                    <div className="fw-semibold">
-                                                        {pkg.serviceOptionName}
-                                                        {pkg.description && (
-                                                            <span className="text-muted fw-normal ms-1">— {pkg.description}</span>
+                                            {svc.serviceOptions.map(pkg => {
+                                                const status = getOptionStatus(pkg.effectiveFrom, pkg.effectiveUntil);
+                                                return (
+                                                    <div key={pkg.serviceOptionId}>
+                                                        <div className="fw-semibold">
+                                                            {pkg.serviceOptionName}
+                                                            <Badge bg={OPTION_STATUS_VARIANT[status]} className="ms-2">{OPTION_STATUS_LABEL[status]}</Badge>
+                                                        </div>
+                                                        <div className="text-muted small">
+                                                            {pkg.effectiveFrom ?? "—"} — {pkg.effectiveUntil ?? "Present"}
+                                                        </div>
+                                                        {pkg.serviceOptionItems.length > 0 && (
+                                                            <ul className="mb-0 mt-1 ps-3">
+                                                                {pkg.serviceOptionItems.map(item => (
+                                                                    <li key={item.serviceOptionItemId} className="text-muted small">
+                                                                        {item.serviceOptionItemName}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
                                                         )}
                                                     </div>
-                                                    {pkg.serviceOptionItems.length > 0 && (
-                                                        <ul className="mb-0 mt-1 ps-3">
-                                                            {pkg.serviceOptionItems.map(item => (
-                                                                <li key={item.serviceOptionItemId} className="text-muted small">
-                                                                    {item.serviceOptionItemName}
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    )}
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </Card.Body>
@@ -314,6 +380,7 @@ export default function ServicePage() {
                 show={showDeleteConfirm}
                 title="Delete Service"
                 itemName={deletingService?.serviceName}
+                warningNote="This will also delete all of this service's slots that have no existing booking."
                 error={deleteError}
                 isDeleting={isDeleting}
                 onCancel={() => setShowDeleteConfirm(false)}

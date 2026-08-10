@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
 	"fyp/internal/interfaces/mocks"
@@ -57,6 +58,7 @@ var _ = Describe("ServiceService", func() {
 				ServiceOptions: []param.ServiceOptionParam{
 					{
 						ServiceOptionName: "Deep Tissue",
+						EffectiveFrom:     "2030-01-01", // now required — no more defaulting to today
 						ServiceOptionItems: []param.ServiceOptionItemParam{
 							{ServiceOptionItemName: "Oil"},
 						},
@@ -69,6 +71,7 @@ var _ = Describe("ServiceService", func() {
 				ServiceOptions: []param.ServiceOptionParam{
 					{
 						ServiceOptionName: "Deep Tissue",
+						EffectiveFrom:     "2030-01-01",
 						ServiceOptionItems: []param.ServiceOptionItemParam{
 							{ServiceOptionItemName: "Oil"},
 						},
@@ -122,6 +125,34 @@ var _ = Describe("ServiceService", func() {
 			Expect(result).To(BeNil())
 		})
 
+		It("rejects an option with no effective-from date — it's no longer defaulted to today", func() {
+			p := param.ServiceParam{
+				BusinessID:  1,
+				ServiceName: "Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionName: "Deep Tissue"}, // EffectiveFrom left blank
+				},
+			}
+
+			// The check only runs once inside the transaction, after the service
+			// row itself is inserted — so that part of the flow still happens.
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().
+				InsertService(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(sp param.ServiceParam) bool {
+					return sp.ServiceName == "Massage"
+				})).
+				Return(createdSvc, nil).Once()
+			dbMock.ExpectRollback()
+
+			result, err := serviceSvc.CreateService(ctx, p)
+			Expect(result).To(BeNil())
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions[0]", Message: "Effective from is required",
+			}))
+		})
+
 		It("rolls back when InsertService fails", func() {
 			dbMock.ExpectBegin()
 			serviceRepo.EXPECT().
@@ -154,100 +185,614 @@ var _ = Describe("ServiceService", func() {
 	})
 
 	Describe("UpdateService", func() {
+		var updatedSvc *param.ServiceParam
 
-		var (
-			serviceParam         param.ServiceParam
-			expectedServiceParam param.ServiceParam
-			updatedSvc           *param.ServiceParam
-		)
+		// A window safely in the future so validateEditWindow (from >= today) passes.
+		const editFrom = "2030-01-01"
+		const editUntil = "2030-01-31"
 
 		BeforeEach(func() {
-			serviceParam = param.ServiceParam{
-				ServiceID:   10,
-				ServiceName: "Updated Massage",
-				ServiceOptions: []param.ServiceOptionParam{
-					{
-						ServiceOptionName: "Swedish",
-						ServiceOptionItems: []param.ServiceOptionItemParam{
-							{ServiceOptionItemName: "Lotion"},
-						},
-					},
-				},
-			}
-			expectedServiceParam = param.ServiceParam{
-				ServiceID:   10,
-				ServiceName: "Updated Massage",
-				ServiceOptions: []param.ServiceOptionParam{
-					{
-						ServiceOptionName: "Swedish",
-						ServiceOptionItems: []param.ServiceOptionItemParam{
-							{ServiceOptionItemName: "Lotion"},
-						},
-					},
-				},
-			}
-			updatedSvc = &param.ServiceParam{
-				ServiceID:   10,
-				ServiceName: "Updated Massage",
-			}
+			updatedSvc = &param.ServiceParam{ServiceID: 10, ServiceName: "Updated Massage"}
 		})
 
-		It("successfully updates a service and its packages", func() {
+		anyServiceParam := mock.MatchedBy(func(sp param.ServiceParam) bool { return sp.ServiceID == 10 })
+
+		It("leaves an unchanged option untouched", func() {
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 31, ServiceOptionName: "Swedish",
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}},
+				},
+			}
+
 			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish"},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
+			serviceRepo.EXPECT().SetServiceDefaultOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(31)).Return(nil).Once()
+			dbMock.ExpectCommit()
 
-			serviceRepo.EXPECT().
-				UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), expectedServiceParam).
-				Return(updatedSvc, nil).
-				Once()
+			result, err := serviceSvc.UpdateService(ctx, p)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ServiceOptions).To(HaveLen(1))
+			Expect(result.ServiceOptions[0].ServiceOptionID).To(Equal(int64(31)))
+		})
 
-			serviceRepo.EXPECT().
-				DeleteServiceOptionsByServiceID(ctx, mock.AnythingOfType("*sql.Tx"), int64(10)).
-				Return(nil).
-				Once()
+		It("moves a non-default option's effective-from date forward", func() {
+			newFrom := editFrom // "2030-01-01"
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 30, ServiceOptionName: "Default", // default option, unchanged
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}},
+					{ServiceOptionID: 31, ServiceOptionName: "Swedish", // unchanged name/items
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}},
+						EffectiveFrom:      newFrom},
+				},
+			}
 
-			createdPkg := &param.ServiceOptionParam{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish"}
-			serviceRepo.EXPECT().
-				InsertServiceOption(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServiceOptionParam) bool {
-					return p.ServiceID == 10 && p.ServiceOptionName == "Swedish"
-				})).
-				Return(createdPkg, nil).
-				Once()
-			serviceRepo.EXPECT().
-				InsertServiceOptionItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(p param.ServiceOptionItemParam) bool {
-					return p.ServiceOptionID == 31 && p.ServiceOptionItemName == "Lotion"
-				})).
-				Return(nil).
-				Once()
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 30, ServiceID: 10, ServiceOptionName: "Default"},
+				{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish", EffectiveFrom: "2020-01-01"},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(30)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
+			serviceRepo.EXPECT().SetOptionWindow(ctx, mock.AnythingOfType("*sql.Tx"), int64(31), newFrom, (*string)(nil)).Return(nil).Once()
+			serviceRepo.EXPECT().SetServiceDefaultOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(30)).Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			result, err := serviceSvc.UpdateService(ctx, p)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ServiceOptions).To(HaveLen(2))
+			Expect(result.ServiceOptions[1].EffectiveFrom).To(Equal(newFrom))
+		})
+
+		It("sets an effective-until date on an existing option", func() {
+			until := editUntil // "2030-01-31"
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 30, ServiceOptionName: "Default",
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}},
+					{ServiceOptionID: 31, ServiceOptionName: "Swedish", // unchanged name/items
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}},
+						EffectiveUntil:     &until},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 30, ServiceID: 10, ServiceOptionName: "Default"},
+				{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish", EffectiveFrom: "2020-01-01"},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(30)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
+			serviceRepo.EXPECT().SetOptionWindow(ctx, mock.AnythingOfType("*sql.Tx"), int64(31), "2020-01-01", &until).Return(nil).Once()
+			serviceRepo.EXPECT().SetServiceDefaultOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(30)).Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			result, err := serviceSvc.UpdateService(ctx, p)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ServiceOptions).To(HaveLen(2))
+			Expect(result.ServiceOptions[1].EffectiveUntil).To(Equal(&until))
+		})
+
+		It("clears an existing option's saved effective-until date, reviving it", func() {
+			until := editUntil
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 30, ServiceOptionName: "Default",
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}},
+					{ServiceOptionID: 31, ServiceOptionName: "Swedish", ClearEffectiveUntil: true,
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 30, ServiceID: 10, ServiceOptionName: "Default"},
+				{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish", EffectiveFrom: "2020-01-01", EffectiveUntil: &until},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(30)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
+			serviceRepo.EXPECT().SetOptionWindow(ctx, mock.AnythingOfType("*sql.Tx"), int64(31), "2020-01-01", (*string)(nil)).Return(nil).Once()
+			serviceRepo.EXPECT().SetServiceDefaultOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(30)).Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			result, err := serviceSvc.UpdateService(ctx, p)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ServiceOptions).To(HaveLen(2))
+			Expect(result.ServiceOptions[1].EffectiveUntil).To(BeNil())
+		})
+
+		It("rejects an effective-until in the past for an existing option", func() {
+			past := "2000-01-01"
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 30, ServiceOptionName: "Default",
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}},
+					{ServiceOptionID: 31, ServiceOptionName: "Swedish",
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}},
+						EffectiveUntil:     &past},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 30, ServiceID: 10, ServiceOptionName: "Default"},
+				{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish"},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(30)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
+			dbMock.ExpectRollback()
+
+			_, err := serviceSvc.UpdateService(ctx, p)
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions[1]", Message: "Effective until cannot be in the past",
+			}))
+		})
+
+		It("rejects renaming an existing option directly", func() {
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 31, ServiceOptionName: "Swedish Deluxe", // changed name
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish"},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
+			dbMock.ExpectRollback()
+
+			_, err := serviceSvc.UpdateService(ctx, p)
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions[0]", Message: "To change this option's name or items, delete it and add a new option instead.",
+			}))
+		})
+
+		It("rejects changing an existing option's items directly", func() {
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 31, ServiceOptionName: "Swedish", // same name, changed items
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Oil"}}},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish"},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
+			dbMock.ExpectRollback()
+
+			_, err := serviceSvc.UpdateService(ctx, p)
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions[0]", Message: "To change this option's name or items, delete it and add a new option instead.",
+			}))
+		})
+
+		It("allows a brand new option to be scheduled with its own effective window", func() {
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 31, ServiceOptionName: "Swedish", // unchanged
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}},
+					{ServiceOptionName: "Hot Stone", // brand new, no ID
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Stones"}},
+						EffectiveFrom:      editFrom},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish"},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
+
+			created := &param.ServiceOptionParam{ServiceOptionID: 41, ServiceID: 10, ServiceOptionName: "Hot Stone"}
+			serviceRepo.EXPECT().InsertServiceOption(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(o param.ServiceOptionParam) bool {
+				return o.ServiceOptionName == "Hot Stone" && o.EffectiveFrom == editFrom && o.EffectiveUntil == nil
+			})).Return(created, nil).Once()
+			serviceRepo.EXPECT().InsertServiceOptionItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(it param.ServiceOptionItemParam) bool {
+				return it.ServiceOptionID == 41 && it.ServiceOptionItemName == "Stones"
+			})).Return(nil).Once()
+			serviceRepo.EXPECT().SetServiceDefaultOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(31)).Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			result, err := serviceSvc.UpdateService(ctx, p)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ServiceOptions).To(HaveLen(2))
+			Expect(result.ServiceOptions[1].ServiceOptionID).To(Equal(int64(41)))
+		})
+
+		It("rejects a brand new option with no effective-from date", func() {
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 31, ServiceOptionName: "Swedish", // unchanged
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}},
+					{ServiceOptionName: "Hot Stone", // brand new, EffectiveFrom left blank
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Stones"}}},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish"},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
+			dbMock.ExpectRollback()
+
+			_, err := serviceSvc.UpdateService(ctx, p)
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions[1]", Message: "Effective from is required",
+			}))
+		})
+
+		It("rejects an effective-until date on the default option", func() {
+			until := editUntil
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 30, ServiceOptionName: "Default",
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}},
+						EffectiveUntil:     &until},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 30, ServiceID: 10, ServiceOptionName: "Default"},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(30)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}, nil).Once()
+			dbMock.ExpectRollback()
+
+			_, err := serviceSvc.UpdateService(ctx, p)
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions[0]", Message: "The default option can't have an effective-until date. Set another option as default first.",
+			}))
+		})
+
+		It("moves the default option's effective-from date into the future", func() {
+			future := editFrom // "2030-01-01"
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 30, ServiceOptionName: "Default", // unchanged content
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}},
+						EffectiveFrom:      future},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 30, ServiceID: 10, ServiceOptionName: "Default", EffectiveFrom: "2021-06-01"},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(30)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}, nil).Once()
+			serviceRepo.EXPECT().SetOptionWindow(ctx, mock.AnythingOfType("*sql.Tx"), int64(30), future, (*string)(nil)).Return(nil).Once()
+			serviceRepo.EXPECT().SetServiceDefaultOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(30)).Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			result, err := serviceSvc.UpdateService(ctx, p)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ServiceOptions).To(HaveLen(1))
+			Expect(result.ServiceOptions[0].EffectiveFrom).To(Equal(future))
+		})
+
+		It("rejects a past effective-from date for the default option", func() {
+			past := "2000-01-01"
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 30, ServiceOptionName: "Default",
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}},
+						EffectiveFrom:      past},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 30, ServiceID: 10, ServiceOptionName: "Default", EffectiveFrom: "2021-06-01"},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(30)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}, nil).Once()
+			dbMock.ExpectRollback()
+
+			_, err := serviceSvc.UpdateService(ctx, p)
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions[0]", Message: "The default option's effective-from date cannot be in the past.",
+			}))
+		})
+
+		It("promotes a different existing option to default when it's submitted at position 0", func() {
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 31, ServiceOptionName: "Swedish", // was NOT default, now at position 0
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}},
+					{ServiceOptionID: 30, ServiceOptionName: "Default", // was default, now demoted
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 30, ServiceID: 10, ServiceOptionName: "Default"},
+				{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish"},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(30)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
+			// The new position-0 option (31) becomes default; 30 is no longer.
+			serviceRepo.EXPECT().SetServiceDefaultOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(31)).Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			result, err := serviceSvc.UpdateService(ctx, p)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ServiceOptions).To(HaveLen(2))
+			Expect(result.ServiceOptions[0].ServiceOptionID).To(Equal(int64(31)))
+		})
+
+		It("rejects promoting an option with an already-saved end date to default", func() {
+			until := editUntil
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 31, ServiceOptionName: "Swedish", // now at position 0
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}},
+					{ServiceOptionID: 30, ServiceOptionName: "Default",
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 30, ServiceID: 10, ServiceOptionName: "Default"},
+				{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish", EffectiveUntil: &until},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(30)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
+			dbMock.ExpectRollback()
+
+			_, err := serviceSvc.UpdateService(ctx, p)
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions[0]", Message: "This option has an effective-until date set. Clear it (or delete this option and add a replacement without one), then set it as default.",
+			}))
+		})
+
+		It("promotes an option to default while clearing its saved end date in the same save", func() {
+			until := editUntil
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 31, ServiceOptionName: "Swedish", ClearEffectiveUntil: true, // now at position 0
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}},
+					{ServiceOptionID: 30, ServiceOptionName: "Default",
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 30, ServiceID: 10, ServiceOptionName: "Default"},
+				{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish", EffectiveFrom: "2020-01-01", EffectiveUntil: &until},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(30)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
+			serviceRepo.EXPECT().SetOptionWindow(ctx, mock.AnythingOfType("*sql.Tx"), int64(31), "2020-01-01", (*string)(nil)).Return(nil).Once()
+			serviceRepo.EXPECT().SetServiceDefaultOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(31)).Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			result, err := serviceSvc.UpdateService(ctx, p)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ServiceOptions).To(HaveLen(2))
+			Expect(result.ServiceOptions[0].ServiceOptionID).To(Equal(int64(31)))
+			Expect(result.ServiceOptions[0].EffectiveUntil).To(BeNil())
+		})
+
+		It("rejects an option ID that doesn't belong to this service", func() {
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 999, ServiceOptionName: "Swedish"},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish"},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).Return(nil, nil).Once()
+			dbMock.ExpectRollback()
+
+			result, err := serviceSvc.UpdateService(ctx, p)
+			Expect(result).To(BeNil())
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions[0]", Message: "This option no longer exists",
+			}))
+		})
+
+		It("inserts a brand new option and retires one that's no longer present", func() {
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionName: "Swedish", EffectiveFrom: "2030-01-01", // brand new (no id)
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 99, ServiceID: 10, ServiceOptionName: "Deep Tissue"},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(99)).Return(nil, nil).Once()
+
+			created := &param.ServiceOptionParam{ServiceOptionID: 32, ServiceID: 10, ServiceOptionName: "Swedish"}
+			serviceRepo.EXPECT().InsertServiceOption(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(o param.ServiceOptionParam) bool {
+				return o.ServiceOptionName == "Swedish"
+			})).Return(created, nil).Once()
+			serviceRepo.EXPECT().InsertServiceOptionItem(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(it param.ServiceOptionItemParam) bool {
+				return it.ServiceOptionID == 32 && it.ServiceOptionItemName == "Lotion"
+			})).Return(nil).Once()
+
+			// Deep Tissue (99) was dropped → delete it directly, once confirmed
+			// nothing booked references it.
+			serviceRepo.EXPECT().HasBookingForOption(ctx, int64(99)).Return(false, nil).Once()
+			serviceRepo.EXPECT().SoftDeleteServiceOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(99)).Return(nil).Once()
+			serviceRepo.EXPECT().SetServiceDefaultOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(32)).Return(nil).Once()
 
 			dbMock.ExpectCommit()
 
-			result, err := serviceSvc.UpdateService(ctx, serviceParam)
-
+			result, err := serviceSvc.UpdateService(ctx, p)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.ServiceName).To(Equal("Updated Massage"))
 			Expect(result.ServiceOptions).To(HaveLen(1))
+			Expect(result.ServiceOptions[0].ServiceOptionID).To(Equal(int64(32)))
 		})
 
-		It("rolls back when DeleteServiceOptionsByServiceID fails", func() {
+		It("rejects deleting an option that has an active booking", func() {
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionID: 31, ServiceOptionName: "Swedish", // stays the default, unchanged
+						ServiceOptionItems: []param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}},
+					// Deep Tissue (99) omitted → would be deleted, but it has a booking.
+				},
+			}
+
 			dbMock.ExpectBegin()
-			serviceRepo.EXPECT().
-				UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), expectedServiceParam).
-				Return(updatedSvc, nil).Once()
-			serviceRepo.EXPECT().
-				DeleteServiceOptionsByServiceID(ctx, mock.AnythingOfType("*sql.Tx"), int64(10)).
-				Return(fmt.Errorf("delete pkg error")).Once()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return([]param.ServiceOptionParam{
+				{ServiceOptionID: 31, ServiceID: 10, ServiceOptionName: "Swedish"},
+				{ServiceOptionID: 99, ServiceID: 10, ServiceOptionName: "Deep Tissue"},
+			}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
+				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(99)).Return(nil, nil).Once()
+			serviceRepo.EXPECT().HasBookingForOption(ctx, int64(99)).Return(true, nil).Once()
 			dbMock.ExpectRollback()
 
-			result, err := serviceSvc.UpdateService(ctx, serviceParam)
+			_, err := serviceSvc.UpdateService(ctx, p)
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions", Message: `Can't delete "Deep Tissue" — it has a booking.`,
+			}))
+		})
+
+		It("rolls back when GetServiceOptionsByServiceID fails", func() {
+			p := param.ServiceParam{
+				ServiceID:   10,
+				ServiceName: "Updated Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionName: "Swedish"},
+				},
+			}
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().UpdateService(ctx, mock.AnythingOfType("*sql.Tx"), anyServiceParam).Return(updatedSvc, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return(nil, fmt.Errorf("fetch existing options error")).Once()
+			dbMock.ExpectRollback()
+
+			result, err := serviceSvc.UpdateService(ctx, p)
 			Expect(result).To(BeNil())
-			Expect(err).To(MatchError("delete pkg error"))
+			Expect(err).To(MatchError("fetch existing options error"))
 		})
 	})
 
 	Describe("DeleteService", func() {
-		It("successfully deletes a service when no bookings exist", func() {
+		It("successfully deletes a service, cascading to its options and any now-orphaned slots", func() {
 			serviceRepo.EXPECT().HasBookingForService(ctx, int64(10)).Return(false, nil).Once()
 			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().
+				GetServiceOptionsByServiceID(ctx, int64(10)).
+				Return([]param.ServiceOptionParam{
+					{ServiceOptionID: 20, ServiceID: 10, ServiceOptionName: "Deep Tissue"},
+					{ServiceOptionID: 21, ServiceID: 10, ServiceOptionName: "Swedish"},
+				}, nil).
+				Once()
+			serviceRepo.EXPECT().SoftDeleteServiceOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(20)).Return(nil).Once()
+			serviceRepo.EXPECT().SoftDeleteServiceOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(21)).Return(nil).Once()
+			serviceRepo.EXPECT().CascadeDeleteServiceSlots(ctx, mock.AnythingOfType("*sql.Tx"), int64(10)).Return(nil).Once()
 			serviceRepo.EXPECT().SoftDeleteService(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(1)).Return(nil).Once()
 			dbMock.ExpectCommit()
 
@@ -292,6 +837,30 @@ var _ = Describe("ServiceService", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(HaveLen(1))
 			Expect(result[0].ServiceOptions).To(HaveLen(1))
+			Expect(result[0].ServiceOptions[0].ServiceOptionItems).To(HaveLen(1))
+		})
+
+		It("loads removed option items from deleted rows for management display", func() {
+			services := []param.ServiceParam{
+				{ServiceID: 10, ServiceName: "Massage"},
+			}
+			packages := []param.ServiceOptionParam{
+				{ServiceOptionID: 20, ServiceOptionName: "Deep Tissue", IsRemoved: true},
+			}
+			items := []param.ServiceOptionItemParam{
+				{ServiceOptionItemName: "Oil"},
+			}
+
+			serviceRepo.EXPECT().GetServicesByBusinessID(ctx, int64(1)).Return(services, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionsByServiceID(ctx, int64(10)).Return(packages, nil).Once()
+			serviceRepo.EXPECT().GetServiceOptionItemsByOptionIDIncludeDeleted(ctx, int64(20)).Return(items, nil).Once()
+
+			result, err := serviceSvc.GetServicesByBusinessID(ctx, 1)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(HaveLen(1))
+			Expect(result[0].ServiceOptions).To(HaveLen(1))
+			Expect(result[0].ServiceOptions[0].IsRemoved).To(BeTrue())
 			Expect(result[0].ServiceOptions[0].ServiceOptionItems).To(HaveLen(1))
 		})
 

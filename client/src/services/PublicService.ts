@@ -10,10 +10,18 @@ export interface PublicBusiness {
     businessEmail: string;
 }
 
+export interface PublicServiceOptionItem {
+    serviceOptionItemId: string;
+    serviceOptionItemName: string;
+}
+
 export interface PublicServiceOption {
     serviceOptionId: string;
     serviceOptionName: string;
     description?: string;
+    serviceOptionItems: PublicServiceOptionItem[];
+    effectiveFrom?: string;
+    effectiveUntil?: string;
 }
 
 export interface PublicService {
@@ -83,6 +91,12 @@ export const getPublicServices = (businessId: string) => {
                     serviceOptionId
                     serviceOptionName
                     description
+                    effectiveFrom
+                    effectiveUntil
+                    serviceOptionItems {
+                        serviceOptionItemId
+                        serviceOptionItemName
+                    }
                 }
             }
         }
@@ -107,11 +121,13 @@ export const getAvailableSlots = (
     serviceOptionId: string,
     date: string,
     staffId?: string,
+    unassignedOnly?: boolean,
 ) => {
     const staffArg = staffId ? `, staffId: "${staffId}"` : "";
+    const unassignedArg = unassignedOnly ? `, unassignedOnly: true` : "";
     const query = `
         query {
-            availableSlots(businessId: "${businessId}", serviceOptionId: "${serviceOptionId}", date: "${date}"${staffArg}) {
+            availableSlots(businessId: "${businessId}", serviceOptionId: "${serviceOptionId}", date: "${date}"${staffArg}${unassignedArg}) {
                 serviceSlotId
                 staffId
                 staff { name }
@@ -123,4 +139,25 @@ export const getAvailableSlots = (
         }
     `;
     return doGraphQL<{ availableSlots: AvailableSlot[] }>(query);
+};
+
+export const getAvailableDates = (
+    businessId: string,
+    from: string,
+    until: string,
+    serviceId?: string,
+    staffId?: string,
+    serviceOptionId?: string,
+    unassignedOnly?: boolean,
+) => {
+    const serviceArg = serviceId ? `, serviceId: "${serviceId}"` : "";
+    const optionArg = serviceOptionId ? `, serviceOptionId: "${serviceOptionId}"` : "";
+    const staffArg = staffId ? `, staffId: "${staffId}"` : "";
+    const unassignedArg = unassignedOnly ? `, unassignedOnly: true` : "";
+    const query = `
+        query {
+            availableDates(businessId: "${businessId}", from: "${from}", until: "${until}"${serviceArg}${optionArg}${staffArg}${unassignedArg})
+        }
+    `;
+    return doGraphQL<{ availableDates: string[] }>(query);
 };

@@ -12,8 +12,8 @@ type SlotTierParam struct {
 	SlotOptionID      int64
 	ServiceOptionID   int64
 	ServiceOptionName string
-	ServiceID          int64
-	ServiceName        string
+	ServiceID         int64
+	ServiceName       string
 }
 
 type ServiceSlotParam struct {
@@ -29,8 +29,25 @@ type ServiceSlotParam struct {
 	CreatedBy           int64
 	HasBooking          bool // loaded for display — true once a customer has booked this slot
 
-	ServiceOptionIDs []int64            // input: packages to make bookable
-	Packages          []SlotTierParam // loaded for display
+	ServiceOptionIDs []int64         // input: packages to make bookable
+	Packages         []SlotTierParam // loaded for display
+}
+
+// RecurringScheduleRenewalParam is one active weekday-recurring series that
+// may need new occurrences generated to keep its horizon topped up — a
+// series only gets its occurrences eagerly generated once, at creation time
+// (see resolveSchedule), so without renewal it simply runs dry once that
+// fixed window passes.
+type RecurringScheduleRenewalParam struct {
+	RecurringScheduleID int64
+	StaffID             *int64 // nil => owner-managed (no assigned staff)
+	Day                 string
+	StartTime           time.Time
+	EndTime             time.Time
+	// LastDate is the latest active ("YYYY-MM-DD") occurrence already
+	// generated for this series, or "" if none remain (e.g. every occurrence
+	// was individually deleted without deleting the series itself).
+	LastDate string
 }
 
 func (p ServiceSlotParam) Validate() error {
@@ -68,4 +85,32 @@ func (p ServiceSlotParam) Validate() error {
 		return validationErrs
 	}
 	return nil
+}
+
+// SlotWindowParam is a minimal (date, time window) projection of a slot —
+// used to check a working-hours edit against existing occurrences without
+// loading full slot details.
+type SlotWindowParam struct {
+	Date      string // "YYYY-MM-DD"
+	StartTime time.Time
+	EndTime   time.Time
+}
+
+// AssignedSlotParam is a staff-assigned slot's identity + window + booking
+// status — used to detect and resolve conflicts when a staff member goes on
+// leave or their working hours shrink (see leaveService and
+// staffService.UpdateStaffWorkingHours).
+type AssignedSlotParam struct {
+	ServiceSlotID int64
+	Date          string // "YYYY-MM-DD"
+	StartTime     time.Time
+	EndTime       time.Time
+	HasBooking    bool
+}
+
+// SlotReassignmentParam picks a replacement staff (or unassigns, when
+// StaffID is nil) for one affected service slot.
+type SlotReassignmentParam struct {
+	ServiceSlotID int64
+	StaffID       *int64
 }

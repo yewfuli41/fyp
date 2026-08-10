@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
-import { Alert, Button, Container, Form, Spinner } from "react-bootstrap";
+import { Alert, Button, Container, Form, Modal, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { userProfile, updateProfile } from "../services/ProfileService";
+import { userProfile, updateProfile, changePassword } from "../services/ProfileService";
 import { applyGraphQLErrors, type FieldErrors } from "../utils/graphqlErrors";
-import { FIELD_LIMITS, shouldClearEmailError, shouldClearContactNumberError } from "../utils/fieldLimits";
+import { FIELD_LIMITS, shouldClearEmailError, shouldClearContactNumberError, shouldClearPasswordError } from "../utils/fieldLimits";
+import PasswordInput from "../components/PasswordInput";
 import userIcon from "../assets/user-icon-simple-design-free-vector.jpg";
 import emailIcon from "../assets/message-icon-logo-design-vector.webp";
 import phoneIcon from "../assets/phone--v1.jpg";
@@ -32,6 +33,54 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [businessProfile, setBusinessProfile] = useState<any>(null);
+
+  // Change password modal
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordFieldErrors, setPasswordFieldErrors] = useState<FieldErrors>({});
+  const [passwordFormError, setPasswordFormError] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const openChangePassword = () => {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setPasswordFieldErrors({});
+    setPasswordFormError("");
+    setShowChangePassword(true);
+  };
+
+  const handleChangePassword = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!activeToken) return;
+
+    setPasswordFieldErrors({});
+    setPasswordFormError("");
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordFieldErrors({ confirmNewPassword: "Passwords do not match" });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const result = await changePassword(activeToken, currentPassword, newPassword);
+      if (applyGraphQLErrors(result, {
+        setFieldErrors: setPasswordFieldErrors,
+        setFormError: setPasswordFormError,
+        fallbackMessage: "Failed to change password",
+      })) return;
+
+      setShowChangePassword(false);
+      setFormSuccess("Password changed successfully!");
+    } catch {
+      setPasswordFormError("Something went wrong. Please try again.");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   useEffect(() => {
     if (!activeToken) return;
@@ -270,7 +319,7 @@ export default function ProfilePage() {
         </Form>
 
         <div className="profile-actions">
-          <Button type="button" className="profile-action-button">
+          <Button type="button" className="profile-action-button" onClick={openChangePassword}>
             Change Password
           </Button>
           {businessProfile ? (
@@ -303,6 +352,57 @@ export default function ProfilePage() {
           )}
         </div>
       </section>
+
+      <Modal show={showChangePassword} onHide={() => setShowChangePassword(false)} backdrop="static">
+        <Modal.Header closeButton><Modal.Title>Change Password</Modal.Title></Modal.Header>
+        <Form onSubmit={handleChangePassword}>
+          <Modal.Body>
+            <PasswordInput
+              controlId="currentPassword"
+              label="Current password"
+              value={currentPassword}
+              onChange={(value) => {
+                setCurrentPassword(value);
+                setPasswordFieldErrors(prev => ({ ...prev, currentPassword: "" }));
+              }}
+              isInvalid={!!passwordFieldErrors.currentPassword}
+              errorMessage={passwordFieldErrors.currentPassword}
+              className="mb-3"
+            />
+            <PasswordInput
+              controlId="newPassword"
+              label="New password"
+              value={newPassword}
+              onChange={(value) => {
+                setNewPassword(value);
+                if (shouldClearPasswordError(passwordFieldErrors.newPassword, value))
+                  setPasswordFieldErrors(prev => ({ ...prev, newPassword: "" }));
+              }}
+              isInvalid={!!passwordFieldErrors.newPassword}
+              errorMessage={passwordFieldErrors.newPassword}
+              className="mb-3"
+            />
+            <PasswordInput
+              controlId="confirmNewPassword"
+              label="Confirm new password"
+              value={confirmNewPassword}
+              onChange={(value) => {
+                setConfirmNewPassword(value);
+                setPasswordFieldErrors(prev => ({ ...prev, confirmNewPassword: "" }));
+              }}
+              isInvalid={!!passwordFieldErrors.confirmNewPassword}
+              errorMessage={passwordFieldErrors.confirmNewPassword}
+            />
+            {passwordFormError && <Alert variant="danger" className="mt-3 mb-0">{passwordFormError}</Alert>}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="outline-secondary" onClick={() => setShowChangePassword(false)}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={isChangingPassword}>
+              {isChangingPassword ? "Changing..." : "Change Password"}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
     </Container>
   );
 }

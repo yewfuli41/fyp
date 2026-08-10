@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS business_profiles (
     address TEXT,
     image_url TEXT,
     business_contact_number VARCHAR(30),
-    business_email VARCHAR(255)
+    business_email VARCHAR(255),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS business_working_hours (
@@ -45,7 +46,16 @@ CREATE TABLE IF NOT EXISTS service_options (
     service_id BIGINT NOT NULL REFERENCES services(service_id) ON DELETE CASCADE,
     service_option_name VARCHAR(255) NOT NULL,
     description TEXT,
-    deleted_at TIMESTAMPTZ
+    deleted_at TIMESTAMPTZ,
+    -- An option's own validity window — name/items are immutable once
+    -- created, so this is just when this specific option is offered, not a
+    -- pointer into a version history.
+    effective_from DATE NOT NULL DEFAULT CURRENT_DATE,
+    effective_until DATE,
+    -- True for exactly one option per service. The default can't be removed
+    -- or given an end date, so a service always has one option available.
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    CHECK (effective_until IS NULL OR effective_until >= effective_from)
 );
 
 CREATE TABLE IF NOT EXISTS service_option_items (
@@ -90,12 +100,15 @@ CREATE TABLE IF NOT EXISTS leave_applications (
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CHECK (start_date <= end_date),
-    CHECK (status IN ('pending', 'approved', 'rejected'))
+    CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled'))
 );
 
 CREATE TABLE IF NOT EXISTS recurring_schedules (
     recurring_schedule_id BIGSERIAL PRIMARY KEY,
-    staff_id BIGINT NOT NULL REFERENCES staff(staff_id) ON DELETE CASCADE,
+    business_id BIGINT NOT NULL REFERENCES business_profiles(business_id) ON DELETE CASCADE,
+    -- NULL => owner-managed (no assigned staff) — business_id is what scopes
+    -- the series in that case, since there's no staff row to go through.
+    staff_id BIGINT REFERENCES staff(staff_id) ON DELETE CASCADE,
     day VARCHAR(30) NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
@@ -136,6 +149,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     booking_group_id BIGINT NOT NULL,
     status VARCHAR(30) NOT NULL DEFAULT 'pending',
     booking_type VARCHAR(30) NOT NULL,
+    description TEXT,
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     decided_at TIMESTAMPTZ,
@@ -163,8 +177,12 @@ CREATE UNIQUE INDEX services_unique_name
 ON services (business_id, LOWER(service_name))
 WHERE deleted_at IS NULL;
 
+-- effective_from is part of the key so a service can reuse an option name for
+-- a later, unrelated option starting on a different date (e.g. a seasonal
+-- special that recurs each year under the same name), while still preventing
+-- two options from starting on the same date with the same name.
 CREATE UNIQUE INDEX service_options_unique_name
-ON service_options (service_id, LOWER(service_option_name))
+ON service_options (service_id, LOWER(service_option_name), effective_from)
 WHERE deleted_at IS NULL;
 
 CREATE UNIQUE INDEX service_option_items_unique_name

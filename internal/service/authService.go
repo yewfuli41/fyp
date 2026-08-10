@@ -156,6 +156,36 @@ func (s *authService) ResetPassword(ctx context.Context, resetPasswordParam para
 	return s.authRepo.UpdatePassword(ctx, resetPasswordParam.UserID, string(hashedPassword))
 }
 
+func (s *authService) ChangePassword(ctx context.Context, changePasswordParam param.ChangePasswordParam) error {
+	if err := changePasswordParam.ValidateChangePassword(); err != nil {
+		return err
+	}
+
+	user, err := s.authRepo.GetUser(ctx, changePasswordParam.Email)
+	if err != nil {
+		return err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(changePasswordParam.CurrentPassword)); err != nil {
+		return errs.ValidationErrors{
+			{Field: "currentPassword", Message: "Current password is incorrect"},
+		}
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(changePasswordParam.NewPassword)); err == nil {
+		return errs.ValidationErrors{
+			{Field: "newPassword", Message: "New password must be different from your current password"},
+		}
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(changePasswordParam.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	return s.authRepo.UpdatePassword(ctx, changePasswordParam.UserID, string(hashedPassword))
+}
+
 func (s *authService) GenerateToken(user *param.AuthUserParam) (string, error) {
 	now := time.Now()
 	expiresAt := now.Add(time.Duration(s.authConfig.JWTExpirationHours * float64(time.Hour)))

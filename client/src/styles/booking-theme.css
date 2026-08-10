@@ -1,0 +1,25 @@
+/* Shared design tokens for the customer-facing booking flow (landing,
+   business list, service browsing, booking modal). Kept separate from the
+   app-wide index.css so this redesign stays scoped to the booking pages. */
+:root {
+    --bk-primary: #2f6feb;
+    --bk-primary-dark: #1f4fc4;
+    --bk-primary-soft: #eef3ff;
+    --bk-gradient: linear-gradient(135deg, #5b8def, #2f6feb);
+    --bk-surface: #ffffff;
+    --bk-surface-muted: #f6f8fc;
+    --bk-border: #e8eaf1;
+    --bk-text: #1a1d29;
+    --bk-text-muted: #6b7280;
+    --bk-text-faint: #97a0af;
+    --bk-success: #1a9c6d;
+    --bk-success-soft: #e8f7f0;
+    --bk-danger: #d64545;
+    --bk-danger-soft: #fdecec;
+    --bk-radius-lg: 22px;
+    --bk-radius-md: 16px;
+    --bk-radius-sm: 11px;
+    --bk-shadow-sm: 0 1px 3px rgba(20, 24, 40, 0.06);
+    --bk-shadow-md: 0 10px 30px -10px rgba(20, 24, 40, 0.16);
+    --bk-shadow-lg: 0 24px 60px -20px rgba(20, 24, 40, 0.28);
+}

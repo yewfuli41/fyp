@@ -59,6 +59,7 @@ func hasBookingSQL(slotAlias string) string {
 		JOIN service_slot_options ssp ON b.slot_option_id = ssp.slot_option_id
 		WHERE ssp.service_slot_id = %s.service_slot_id
 			AND b.deleted_at IS NULL
+			AND b.status NOT IN ('cancelled', 'rejected')
 	)`, slotAlias)
 }
 
@@ -80,20 +81,19 @@ func (r *serviceSlotRepo) InsertServiceSlotOption(ctx context.Context, tx *sql.T
 	return err
 }
 
-// InsertRecurringSchedule records one (staff, day) series — not per package,
-// since a slot's bookable packages are attached separately via
-// service_slot_options regardless of how many there are.
+// InsertRecurringSchedule records one (staff-or-owner-managed, day) series —
+// not per package, since a slot's bookable packages are attached separately
+// via service_slot_options regardless of how many there are. staff_id is
+// nullable (owner-managed), so business_id is what scopes the series in
+// that case — see GetRecurringSchedulesNeedingRenewal and
+// SoftDeleteRecurringSchedule.
 func (r *serviceSlotRepo) InsertRecurringSchedule(ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam, day string) (int64, error) {
-	// recurring_schedules.staff_id is NOT NULL, so only staff-assigned slots are recorded here.
-	if p.StaffID == nil {
-		return 0, nil
-	}
 	var id int64
 	err := tx.QueryRowContext(ctx, `
-		INSERT INTO recurring_schedules (staff_id, day, start_time, end_time, created_by)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO recurring_schedules (business_id, staff_id, day, start_time, end_time, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING recurring_schedule_id
-	`, *p.StaffID, day, timeStr(p.StartTime), timeStr(p.EndTime), p.CreatedBy).Scan(&id)
+	`, p.BusinessID, staffArg(p.StaffID), day, timeStr(p.StartTime), timeStr(p.EndTime), p.CreatedBy).Scan(&id)
 	return id, err
 }
 
@@ -205,7 +205,7 @@ func (r *serviceSlotRepo) getSlotOptions(ctx context.Context, serviceSlotID int6
 		JOIN services s ON s.service_id = sp.service_id
 		WHERE ssp.service_slot_id = $1
 			AND ssp.deleted_at IS NULL
-		ORDER BY ssp.slot_option_id
+		ORDER BY sp.service_option_id
 	`, serviceSlotID)
 	if err != nil {
 		return nil, err
@@ -233,12 +233,22 @@ func (r *serviceSlotRepo) ReassignStaff(ctx context.Context, tx *sql.Tx, service
 	return err
 }
 
+// HasBookingForServiceSlot reports whether a slot has any booking still
+// awaiting an outcome — pending counts as "has a booking" here (not just
+// accepted/rescheduled): a customer is waiting on a decision, so deleting the
+// slot out from under them should be blocked/retained, not silently deleted
+// with their request auto-rejected.
+// HasBookingForServiceSlot reports whether serviceSlotID has a genuinely
+// active booking — past, cancelled, and rejected bookings don't block
+// deleting the slot.
 func (r *serviceSlotRepo) HasBookingForServiceSlot(ctx context.Context, serviceSlotID int64) (bool, error) {
 	var count int
 	err := r.DB.QueryRowContext(ctx, `
 		SELECT COUNT(*) FROM bookings b
 		JOIN service_slot_options ssp ON b.slot_option_id = ssp.slot_option_id
-		WHERE ssp.service_slot_id = $1 AND b.deleted_at IS NULL
+		WHERE ssp.service_slot_id = $1
+			AND b.deleted_at IS NULL
+			AND b.status IN ('pending', 'accepted', 'rescheduled')
 	`, serviceSlotID).Scan(&count)
 	if err != nil {
 		return false, err
@@ -296,13 +306,38 @@ func (r *serviceSlotRepo) GetFutureRecurringSlotIDs(ctx context.Context, busines
 	return ids, rows.Err()
 }
 
+// GetSlotDates returns the ("YYYY-MM-DD") dates of the given slots, sorted.
+func (r *serviceSlotRepo) GetSlotDates(ctx context.Context, slotIDs []int64) ([]string, error) {
+	if len(slotIDs) == 0 {
+		return nil, nil
+	}
+	rows, err := r.DB.QueryContext(ctx, `
+		SELECT to_char(date, 'YYYY-MM-DD')
+		FROM service_slots
+		WHERE service_slot_id = ANY($1)
+		ORDER BY date
+	`, pq.Array(slotIDs))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var dates []string
+	for rows.Next() {
+		var d string
+		if err := rows.Scan(&d); err != nil {
+			return nil, err
+		}
+		dates = append(dates, d)
+	}
+	return dates, rows.Err()
+}
+
 func (r *serviceSlotRepo) SoftDeleteRecurringSchedule(ctx context.Context, tx *sql.Tx, businessID int64, recurringScheduleID int64) error {
 	_, err := tx.ExecContext(ctx, `
 		UPDATE recurring_schedules rs
 		SET deleted_at = NOW()
-		FROM staff st
-		WHERE rs.staff_id = st.staff_id
-			AND st.business_id = $1
+		WHERE rs.business_id = $1
 			AND rs.recurring_schedule_id = $2
 			AND rs.deleted_at IS NULL
 	`, businessID, recurringScheduleID)
@@ -350,8 +385,88 @@ func (r *serviceSlotRepo) StaffCoversTime(ctx context.Context, staffID int64, we
 	return exists, err
 }
 
-func (r *serviceSlotRepo) GetAvailableStaff(ctx context.Context, businessID int64, date string, weekday string, startTime, endTime time.Time, excludeSlotID int64) ([]param.StaffParam, error) {
+// GetFutureUnassignedSlotWindows returns the (date, start, end) of every
+// non-deleted owner-managed (staff_id IS NULL) slot for a business from
+// fromDate onward — used to check a business working-hours edit doesn't
+// strand an existing slot outside the new hours.
+func (r *serviceSlotRepo) GetFutureUnassignedSlotWindows(ctx context.Context, businessID int64, fromDate string) ([]param.SlotWindowParam, error) {
 	rows, err := r.DB.QueryContext(ctx, `
+		SELECT to_char(ss.date, 'YYYY-MM-DD'), ss.start_time, ss.end_time
+		FROM service_slots ss
+		WHERE ss.staff_id IS NULL
+			AND ss.date >= $2::date
+			AND ss.deleted_at IS NULL
+			AND `+businessScopeSQL("ss", "$1"), businessID, fromDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var windows []param.SlotWindowParam
+	for rows.Next() {
+		var w param.SlotWindowParam
+		if err := rows.Scan(&w.Date, &w.StartTime, &w.EndTime); err != nil {
+			return nil, err
+		}
+		windows = append(windows, w)
+	}
+	return windows, rows.Err()
+}
+
+func (r *serviceSlotRepo) queryAssignedSlots(ctx context.Context, staffID int64, dateCond string, dateArgs ...any) ([]param.AssignedSlotParam, error) {
+	rows, err := r.DB.QueryContext(ctx, `
+		SELECT ss.service_slot_id, to_char(ss.date, 'YYYY-MM-DD'), ss.start_time, ss.end_time, `+hasBookingSQL("ss")+`
+		FROM service_slots ss
+		WHERE ss.staff_id = $1
+			AND `+dateCond+`
+			AND ss.deleted_at IS NULL
+	`, append([]any{staffID}, dateArgs...)...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var slots []param.AssignedSlotParam
+	for rows.Next() {
+		var s param.AssignedSlotParam
+		if err := rows.Scan(&s.ServiceSlotID, &s.Date, &s.StartTime, &s.EndTime, &s.HasBooking); err != nil {
+			return nil, err
+		}
+		slots = append(slots, s)
+	}
+	return slots, rows.Err()
+}
+
+// GetAssignedSlotsInRange returns a staff's non-deleted assigned slots whose
+// date falls within [fromDate, toDate] — used to find every slot a leave
+// application would affect.
+func (r *serviceSlotRepo) GetAssignedSlotsInRange(ctx context.Context, staffID int64, fromDate, toDate string) ([]param.AssignedSlotParam, error) {
+	return r.queryAssignedSlots(ctx, staffID, "ss.date >= $2::date AND ss.date <= $3::date", fromDate, toDate)
+}
+
+// GetFutureAssignedSlotWindows returns a staff's non-deleted assigned slots
+// from fromDate onward — used to check a working-hours edit against them.
+func (r *serviceSlotRepo) GetFutureAssignedSlotWindows(ctx context.Context, staffID int64, fromDate string) ([]param.AssignedSlotParam, error) {
+	return r.queryAssignedSlots(ctx, staffID, "ss.date >= $2::date", fromDate)
+}
+
+func (r *serviceSlotRepo) BusinessCoversTime(ctx context.Context, businessID int64, weekday string, startTime, endTime time.Time) (bool, error) {
+	var exists bool
+	err := r.DB.QueryRowContext(ctx, `
+		SELECT EXISTS(
+			SELECT 1 FROM business_working_hours
+			WHERE business_id = $1
+				AND day = $2
+				AND start_time <= $3
+				AND end_time >= $4
+				AND deleted_at IS NULL
+		)
+	`, businessID, weekday, timeStr(startTime), timeStr(endTime)).Scan(&exists)
+	return exists, err
+}
+
+func (r *serviceSlotRepo) GetAvailableStaff(ctx context.Context, businessID int64, date string, weekday string, startTime, endTime time.Time, excludeSlotID int64) ([]param.StaffParam, error) {
+	rows, err := r.DB.QueryContext(ctx, fmt.Sprintf(`
 		SELECT
 			st.staff_id,
 			st.user_id,
@@ -360,7 +475,8 @@ func (r *serviceSlotRepo) GetAvailableStaff(ctx context.Context, businessID int6
 			u.email,
 			u.must_reset_password,
 			st.staff_contact_number,
-			st.position
+			st.position,
+			%s
 		FROM staff st
 		JOIN users u ON u.user_id = st.user_id
 		WHERE st.business_id = $1
@@ -383,7 +499,7 @@ func (r *serviceSlotRepo) GetAvailableStaff(ctx context.Context, businessID int6
 					AND ss.deleted_at IS NULL
 			)
 		ORDER BY st.staff_id
-	`, businessID, weekday, timeStr(startTime), timeStr(endTime), date, excludeSlotID)
+	`, staffHasBookingSQL("st")), businessID, weekday, timeStr(startTime), timeStr(endTime), date, excludeSlotID)
 	if err != nil {
 		return nil, err
 	}
@@ -398,6 +514,70 @@ func (r *serviceSlotRepo) GetAvailableStaff(ctx context.Context, businessID int6
 		staffList = append(staffList, *staff)
 	}
 	return staffList, rows.Err()
+}
+
+// GetRecurringSchedulesNeedingRenewal returns every active recurring series
+// for businessID whose latest active occurrence is before horizonEnd —
+// including series with no active occurrences left at all (MAX(date) IS NULL,
+// e.g. every occurrence was individually deleted without deleting the series).
+func (r *serviceSlotRepo) GetRecurringSchedulesNeedingRenewal(ctx context.Context, businessID int64, horizonEnd string) ([]param.RecurringScheduleRenewalParam, error) {
+	rows, err := r.DB.QueryContext(ctx, `
+		SELECT rs.recurring_schedule_id, rs.staff_id, rs.day, rs.start_time, rs.end_time,
+			to_char(MAX(ss.date), 'YYYY-MM-DD')
+		FROM recurring_schedules rs
+		LEFT JOIN service_slots ss ON ss.recurring_schedule_id = rs.recurring_schedule_id AND ss.deleted_at IS NULL
+		WHERE rs.deleted_at IS NULL
+			AND rs.business_id = $1
+		GROUP BY rs.recurring_schedule_id, rs.staff_id, rs.day, rs.start_time, rs.end_time
+		HAVING MAX(ss.date) IS NULL OR MAX(ss.date) < $2::date
+	`, businessID, horizonEnd)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []param.RecurringScheduleRenewalParam
+	for rows.Next() {
+		var s param.RecurringScheduleRenewalParam
+		var staffID sql.NullInt64
+		var lastDate sql.NullString
+		if err := rows.Scan(&s.RecurringScheduleID, &staffID, &s.Day, &s.StartTime, &s.EndTime, &lastDate); err != nil {
+			return nil, err
+		}
+		if staffID.Valid {
+			s.StaffID = &staffID.Int64
+		}
+		s.LastDate = lastDate.String
+		results = append(results, s)
+	}
+	return results, rows.Err()
+}
+
+// GetOptionIDsForRecurringSchedule returns every service option ever
+// attached to an occurrence of this series.
+func (r *serviceSlotRepo) GetOptionIDsForRecurringSchedule(ctx context.Context, recurringScheduleID int64) ([]int64, error) {
+	rows, err := r.DB.QueryContext(ctx, `
+		SELECT DISTINCT sso.service_option_id
+		FROM service_slot_options sso
+		JOIN service_slots ss ON ss.service_slot_id = sso.service_slot_id
+		WHERE ss.recurring_schedule_id = $1
+			AND ss.deleted_at IS NULL
+			AND sso.deleted_at IS NULL
+	`, recurringScheduleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
 }
 
 func scanServiceSlot(row rowScannerService) (*param.ServiceSlotParam, error) {

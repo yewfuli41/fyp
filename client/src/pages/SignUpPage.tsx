@@ -24,7 +24,7 @@ export default function SignUpPage() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      navigate("/");
+      navigate("/book");
     }
   }, [isLoggedIn, navigate]);
 
@@ -82,8 +82,6 @@ export default function SignUpPage() {
     <Container className="auth-page py-5">
       <div className="auth-card">
         <h1 className="mb-4">Sign up</h1>
-
-        {formError && <Alert variant="danger">{formError}</Alert>}
 
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3" controlId="username">
@@ -172,6 +170,8 @@ export default function SignUpPage() {
             errorMessage={fieldErrors.confirmPassword}
             className="mb-4"
           />
+
+          {formError && <Alert variant="danger">{formError}</Alert>}
 
           <Button type="submit" variant="primary" className="w-100" disabled={isSubmitting}>
             {isSubmitting ? "Signing up..." : "Sign up"}

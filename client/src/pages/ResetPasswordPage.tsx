@@ -69,7 +69,7 @@ export default function ResetPasswordPage() {
 
   return (
     <Container className="auth-page py-5">
-      <Modal show centered backdrop="static" keyboard={false}>
+      <Modal show backdrop="static" keyboard={false}>
         <Modal.Header>
           <Modal.Title>Reset password</Modal.Title>
         </Modal.Header>
@@ -78,7 +78,6 @@ export default function ResetPasswordPage() {
             <Alert variant="info">
               Please replace your temporary staff password before continuing.
             </Alert>
-            {formError && <Alert variant="danger">{formError}</Alert>}
             <PasswordInput
               controlId="newPassword"
               label="New password"
@@ -108,6 +107,7 @@ export default function ResetPasswordPage() {
               isInvalid={!!fieldErrors.confirmPassword}
               errorMessage={fieldErrors.confirmPassword}
             />
+            {formError && <Alert variant="danger" className="mb-0">{formError}</Alert>}
           </Modal.Body>
           <Modal.Footer>
             <Button type="submit" variant="primary" disabled={isSubmitting} className="w-100">

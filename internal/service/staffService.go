@@ -2,9 +2,7 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
 	"database/sql"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"fyp/database"
@@ -19,20 +17,27 @@ import (
 )
 
 type staffService struct {
-	staffRepo    interfaces.IStaffRepo
-	businessRepo interfaces.IBusinessRepo
-	authRepo     interfaces.IAuthRepo
-	tx           *database.Transaction
-	emailService interfaces.IEmailService
+	staffRepo       interfaces.IStaffRepo
+	businessRepo    interfaces.IBusinessRepo
+	authRepo        interfaces.IAuthRepo
+	serviceSlotRepo interfaces.IServiceSlotRepo
+	bookingRepo     interfaces.IBookingRepo
+	tx              *database.Transaction
+	emailService    interfaces.IEmailService
 }
 
-func NewStaffService(db *sql.DB, staffRepo interfaces.IStaffRepo, businessRepo interfaces.IBusinessRepo, authRepo interfaces.IAuthRepo, emailService interfaces.IEmailService) interfaces.IStaffService {
+func NewStaffService(
+	db *sql.DB, staffRepo interfaces.IStaffRepo, businessRepo interfaces.IBusinessRepo, authRepo interfaces.IAuthRepo,
+	serviceSlotRepo interfaces.IServiceSlotRepo, bookingRepo interfaces.IBookingRepo, emailService interfaces.IEmailService,
+) interfaces.IStaffService {
 	return &staffService{
-		staffRepo:    staffRepo,
-		businessRepo: businessRepo,
-		authRepo:     authRepo,
-		tx:           database.NewTransaction(db),
-		emailService: emailService,
+		staffRepo:       staffRepo,
+		businessRepo:    businessRepo,
+		authRepo:        authRepo,
+		serviceSlotRepo: serviceSlotRepo,
+		bookingRepo:     bookingRepo,
+		tx:              database.NewTransaction(db),
+		emailService:    emailService,
 	}
 }
 
@@ -100,17 +105,12 @@ func (s *staffService) RegisterStaff(ctx context.Context, ownerParam *param.Busi
 	if len(validationErrs) > 0 {
 		return validationErrs
 	}
-	var tempPassword string
 	var createdNewUser bool
 	err = s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
 		userProfile, err := s.authRepo.GetUser(ctx, staffParam.StaffEmail)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				tempPassword, err = generateTemporaryPassword()
-				if err != nil {
-					return err
-				}
-				hashedPassword, err := bcrypt.GenerateFromPassword([]byte(tempPassword), bcrypt.DefaultCost)
+				hashedPassword, err := bcrypt.GenerateFromPassword([]byte(staffParam.Password), bcrypt.DefaultCost)
 				if err != nil {
 					return err
 				}
@@ -151,10 +151,10 @@ func (s *staffService) RegisterStaff(ctx context.Context, ownerParam *param.Busi
 		return err
 	}
 	if createdNewUser {
-		err = s.emailService.SendStaffWelcomeEmail(staffParam.StaffEmail, tempPassword)
+		err = s.emailService.SendStaffWelcomeEmail(staffParam.StaffEmail)
 		if err != nil {
 			log.Errorf("Failed to send welcome email to %s: %v", staffParam.StaffEmail, err)
-			return fmt.Errorf("staff created but welcome email could not be sent. Staff tempprary password: %s", tempPassword)
+			return fmt.Errorf("staff created, but the welcome email could not be sent — let them know their temporary password directly")
 		}
 	}
 	return nil
@@ -266,10 +266,79 @@ func (s *staffService) DeleteStaff(ctx context.Context, staffID int64, businessI
 	})
 }
 
-func generateTemporaryPassword() (string, error) {
-	bytes := make([]byte, 12)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", err
+func (s *staffService) GetStaffHoursConflicts(ctx context.Context, businessID int64, staffID int64, workingHours []param.WorkingHourParam) ([]param.ServiceSlotParam, error) {
+	today := time.Now().Format("2006-01-02")
+	affected, err := s.serviceSlotRepo.GetFutureAssignedSlotWindows(ctx, staffID, today)
+	if err != nil {
+		return nil, err
 	}
-	return base64.RawURLEncoding.EncodeToString(bytes), nil
+	outside := slotsOutsideHours(affected, workingHours)
+
+	slots := make([]param.ServiceSlotParam, 0, len(outside))
+	for _, slot := range outside {
+		if !slot.HasBooking {
+			continue
+		}
+		full, err := s.serviceSlotRepo.GetServiceSlotByID(ctx, slot.ServiceSlotID, businessID)
+		if err != nil {
+			return nil, err
+		}
+		slots = append(slots, *full)
+	}
+	return slots, nil
+}
+
+func (s *staffService) UpdateStaffWorkingHours(ctx context.Context, businessID int64, staffID int64, workingHours []param.WorkingHourParam, reassignments []param.SlotReassignmentParam) (*param.StaffParam, error) {
+	if validationErrs := param.ValidateWorkingHoursShape(workingHours); len(validationErrs) > 0 {
+		return nil, validationErrs
+	}
+
+	business, err := s.businessRepo.GetBusinessByID(ctx, businessID)
+	if err != nil {
+		return nil, err
+	}
+	if validationErrs := validateStaffWithinBusinessHours(workingHours, business.WorkingHours); len(validationErrs) > 0 {
+		return nil, validationErrs
+	}
+
+	today := time.Now().Format("2006-01-02")
+	affected, err := s.serviceSlotRepo.GetFutureAssignedSlotWindows(ctx, staffID, today)
+	if err != nil {
+		return nil, err
+	}
+	outside := slotsOutsideHours(affected, workingHours)
+
+	var result *param.StaffParam
+	var toNotify []*param.BookingContextParam
+	err = s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
+		current, err := s.staffRepo.GetStaffByIDTx(ctx, tx, staffID, businessID)
+		if err != nil {
+			return err
+		}
+
+		notify, err := resolveSlotConflicts(ctx, tx, s.serviceSlotRepo, s.bookingRepo, businessID, outside, reassignments)
+		if err != nil {
+			return err
+		}
+		toNotify = notify
+
+		if err := s.staffRepo.DeleteStaffWorkingHours(ctx, tx, staffID); err != nil {
+			return err
+		}
+		if err := s.staffRepo.InsertStaffWorkingHours(ctx, tx, param.StaffParam{StaffID: staffID, WorkingHours: workingHours}); err != nil {
+			return err
+		}
+		result = current
+		return nil
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ValidationErrors{{Field: "staffId", Message: "Staff profile not found."}}
+		}
+		return nil, err
+	}
+
+	notifyStaffReassigned(s.emailService, toNotify)
+	result.WorkingHours = workingHours
+	return result, nil
 }

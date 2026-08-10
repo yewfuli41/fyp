@@ -41,7 +41,7 @@ var _ = Describe("ServiceSlotRepo", func() {
 			"date", "start_time", "end_time", "created_by", "has_booking",
 		}
 		pkgCols = []string{"slot_option_id", "service_option_id", "service_option_name", "service_id", "service_name"}
-		staffCols = []string{"staff_id", "user_id", "business_id", "staff_name", "email", "must_reset_password", "staff_contact_number", "position"}
+		staffCols = []string{"staff_id", "user_id", "business_id", "staff_name", "email", "must_reset_password", "staff_contact_number", "position", "has_booking"}
 		startTime = time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC)
 		endTime = time.Date(0, 1, 1, 10, 0, 0, 0, time.UTC)
 	})
@@ -111,26 +111,30 @@ var _ = Describe("ServiceSlotRepo", func() {
 	})
 
 	Describe("InsertRecurringSchedule", func() {
-		It("does nothing and returns 0 for an owner-managed slot", func() {
-			mock.ExpectBegin()
-			tx, _ := db.Begin()
-
-			p := param.ServiceSlotParam{StartTime: startTime, EndTime: endTime, CreatedBy: 1}
-
-			id, err := repo.InsertRecurringSchedule(ctx, tx, p, "monday")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(id).To(Equal(int64(0)))
-		})
-
-		It("creates a recurring schedule row for a staff-assigned slot", func() {
-			staffID := int64(5)
-			p := param.ServiceSlotParam{StaffID: &staffID, StartTime: startTime, EndTime: endTime, CreatedBy: 1}
+		It("creates a recurring schedule row with a NULL staff_id for an owner-managed slot", func() {
+			p := param.ServiceSlotParam{BusinessID: 1, StartTime: startTime, EndTime: endTime, CreatedBy: 1}
 
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
 			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO recurring_schedules")).
-				WithArgs(staffID, "monday", "09:00:00", "10:00:00", p.CreatedBy).
+				WithArgs(int64(1), nil, "monday", "09:00:00", "10:00:00", p.CreatedBy).
+				WillReturnRows(sqlmock.NewRows([]string{"recurring_schedule_id"}).AddRow(9))
+
+			id, err := repo.InsertRecurringSchedule(ctx, tx, p, "monday")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(id).To(Equal(int64(9)))
+		})
+
+		It("creates a recurring schedule row for a staff-assigned slot", func() {
+			staffID := int64(5)
+			p := param.ServiceSlotParam{BusinessID: 1, StaffID: &staffID, StartTime: startTime, EndTime: endTime, CreatedBy: 1}
+
+			mock.ExpectBegin()
+			tx, _ := db.Begin()
+
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO recurring_schedules")).
+				WithArgs(int64(1), staffID, "monday", "09:00:00", "10:00:00", p.CreatedBy).
 				WillReturnRows(sqlmock.NewRows([]string{"recurring_schedule_id"}).AddRow(9))
 
 			id, err := repo.InsertRecurringSchedule(ctx, tx, p, "monday")
@@ -420,7 +424,7 @@ var _ = Describe("ServiceSlotRepo", func() {
 			mock.ExpectQuery(regexp.QuoteMeta("FROM staff st")).
 				WithArgs(int64(1), "monday", "09:00:00", "10:00:00", "2026-08-10", int64(100)).
 				WillReturnRows(sqlmock.NewRows(staffCols).
-					AddRow(5, 50, 1, "Alice", "alice@example.com", false, "0123456789", "Therapist"))
+					AddRow(5, 50, 1, "Alice", "alice@example.com", false, "0123456789", "Therapist", false))
 
 			results, err := repo.GetAvailableStaff(ctx, 1, "2026-08-10", "monday", startTime, endTime, 100)
 			Expect(err).NotTo(HaveOccurred())
@@ -436,6 +440,57 @@ var _ = Describe("ServiceSlotRepo", func() {
 			results, err := repo.GetAvailableStaff(ctx, 1, "2026-08-10", "monday", startTime, endTime, 100)
 			Expect(err).To(MatchError("db error"))
 			Expect(results).To(BeNil())
+		})
+	})
+
+	Describe("GetRecurringSchedulesNeedingRenewal", func() {
+		It("returns schedules whose horizon has fallen short", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("FROM recurring_schedules rs")).
+				WithArgs(int64(1), "2026-09-01").
+				WillReturnRows(sqlmock.NewRows(
+					[]string{"recurring_schedule_id", "staff_id", "day", "start_time", "end_time", "last_date"},
+				).
+					AddRow(42, 5, "monday", startTime, endTime, "2026-08-10").
+					AddRow(43, 6, "friday", startTime, endTime, nil))
+
+			results, err := repo.GetRecurringSchedulesNeedingRenewal(ctx, 1, "2026-09-01")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(results).To(HaveLen(2))
+			Expect(results[0].RecurringScheduleID).To(Equal(int64(42)))
+			Expect(results[0].LastDate).To(Equal("2026-08-10"))
+			Expect(results[1].LastDate).To(Equal("")) // no active occurrences left at all
+		})
+
+		It("returns an error when the query fails", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("FROM recurring_schedules rs")).
+				WithArgs(int64(1), "2026-09-01").
+				WillReturnError(fmt.Errorf("db error"))
+
+			results, err := repo.GetRecurringSchedulesNeedingRenewal(ctx, 1, "2026-09-01")
+			Expect(err).To(MatchError("db error"))
+			Expect(results).To(BeNil())
+		})
+	})
+
+	Describe("GetOptionIDsForRecurringSchedule", func() {
+		It("returns every option ever attached to the series", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slot_options sso")).
+				WithArgs(int64(42)).
+				WillReturnRows(sqlmock.NewRows([]string{"service_option_id"}).AddRow(9).AddRow(11))
+
+			ids, err := repo.GetOptionIDsForRecurringSchedule(ctx, 42)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ids).To(Equal([]int64{9, 11}))
+		})
+
+		It("returns an error when the query fails", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slot_options sso")).
+				WithArgs(int64(42)).
+				WillReturnError(fmt.Errorf("db error"))
+
+			ids, err := repo.GetOptionIDsForRecurringSchedule(ctx, 42)
+			Expect(err).To(MatchError("db error"))
+			Expect(ids).To(BeNil())
 		})
 	})
 })

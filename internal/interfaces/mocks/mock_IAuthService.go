@@ -38,6 +38,63 @@ func (_m *MockIAuthService) EXPECT() *MockIAuthService_Expecter {
 	return &MockIAuthService_Expecter{mock: &_m.Mock}
 }
 
+// ChangePassword provides a mock function for the type MockIAuthService
+func (_mock *MockIAuthService) ChangePassword(ctx context.Context, changePasswordParam param.ChangePasswordParam) error {
+	ret := _mock.Called(ctx, changePasswordParam)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ChangePassword")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, param.ChangePasswordParam) error); ok {
+		r0 = returnFunc(ctx, changePasswordParam)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIAuthService_ChangePassword_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ChangePassword'
+type MockIAuthService_ChangePassword_Call struct {
+	*mock.Call
+}
+
+// ChangePassword is a helper method to define mock.On call
+//   - ctx context.Context
+//   - changePasswordParam param.ChangePasswordParam
+func (_e *MockIAuthService_Expecter) ChangePassword(ctx interface{}, changePasswordParam interface{}) *MockIAuthService_ChangePassword_Call {
+	return &MockIAuthService_ChangePassword_Call{Call: _e.mock.On("ChangePassword", ctx, changePasswordParam)}
+}
+
+func (_c *MockIAuthService_ChangePassword_Call) Run(run func(ctx context.Context, changePasswordParam param.ChangePasswordParam)) *MockIAuthService_ChangePassword_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 param.ChangePasswordParam
+		if args[1] != nil {
+			arg1 = args[1].(param.ChangePasswordParam)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIAuthService_ChangePassword_Call) Return(err error) *MockIAuthService_ChangePassword_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIAuthService_ChangePassword_Call) RunAndReturn(run func(ctx context.Context, changePasswordParam param.ChangePasswordParam) error) *MockIAuthService_ChangePassword_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetUserProfile provides a mock function for the type MockIAuthService
 func (_mock *MockIAuthService) GetUserProfile(ctx context.Context, email string) (*param.AuthUserParam, error) {
 	ret := _mock.Called(ctx, email)

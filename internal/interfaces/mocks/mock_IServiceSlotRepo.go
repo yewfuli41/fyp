@@ -40,6 +40,170 @@ func (_m *MockIServiceSlotRepo) EXPECT() *MockIServiceSlotRepo_Expecter {
 	return &MockIServiceSlotRepo_Expecter{mock: &_m.Mock}
 }
 
+// BusinessCoversTime provides a mock function for the type MockIServiceSlotRepo
+func (_mock *MockIServiceSlotRepo) BusinessCoversTime(ctx context.Context, businessID int64, weekday string, startTime time.Time, endTime time.Time) (bool, error) {
+	ret := _mock.Called(ctx, businessID, weekday, startTime, endTime)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BusinessCoversTime")
+	}
+
+	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, time.Time, time.Time) (bool, error)); ok {
+		return returnFunc(ctx, businessID, weekday, startTime, endTime)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, time.Time, time.Time) bool); ok {
+		r0 = returnFunc(ctx, businessID, weekday, startTime, endTime)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, string, time.Time, time.Time) error); ok {
+		r1 = returnFunc(ctx, businessID, weekday, startTime, endTime)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIServiceSlotRepo_BusinessCoversTime_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BusinessCoversTime'
+type MockIServiceSlotRepo_BusinessCoversTime_Call struct {
+	*mock.Call
+}
+
+// BusinessCoversTime is a helper method to define mock.On call
+//   - ctx context.Context
+//   - businessID int64
+//   - weekday string
+//   - startTime time.Time
+//   - endTime time.Time
+func (_e *MockIServiceSlotRepo_Expecter) BusinessCoversTime(ctx interface{}, businessID interface{}, weekday interface{}, startTime interface{}, endTime interface{}) *MockIServiceSlotRepo_BusinessCoversTime_Call {
+	return &MockIServiceSlotRepo_BusinessCoversTime_Call{Call: _e.mock.On("BusinessCoversTime", ctx, businessID, weekday, startTime, endTime)}
+}
+
+func (_c *MockIServiceSlotRepo_BusinessCoversTime_Call) Run(run func(ctx context.Context, businessID int64, weekday string, startTime time.Time, endTime time.Time)) *MockIServiceSlotRepo_BusinessCoversTime_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 time.Time
+		if args[3] != nil {
+			arg3 = args[3].(time.Time)
+		}
+		var arg4 time.Time
+		if args[4] != nil {
+			arg4 = args[4].(time.Time)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_BusinessCoversTime_Call) Return(b bool, err error) *MockIServiceSlotRepo_BusinessCoversTime_Call {
+	_c.Call.Return(b, err)
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_BusinessCoversTime_Call) RunAndReturn(run func(ctx context.Context, businessID int64, weekday string, startTime time.Time, endTime time.Time) (bool, error)) *MockIServiceSlotRepo_BusinessCoversTime_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetAssignedSlotsInRange provides a mock function for the type MockIServiceSlotRepo
+func (_mock *MockIServiceSlotRepo) GetAssignedSlotsInRange(ctx context.Context, staffID int64, fromDate string, toDate string) ([]param.AssignedSlotParam, error) {
+	ret := _mock.Called(ctx, staffID, fromDate, toDate)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAssignedSlotsInRange")
+	}
+
+	var r0 []param.AssignedSlotParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string) ([]param.AssignedSlotParam, error)); ok {
+		return returnFunc(ctx, staffID, fromDate, toDate)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string) []param.AssignedSlotParam); ok {
+		r0 = returnFunc(ctx, staffID, fromDate, toDate)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]param.AssignedSlotParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, string, string) error); ok {
+		r1 = returnFunc(ctx, staffID, fromDate, toDate)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIServiceSlotRepo_GetAssignedSlotsInRange_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAssignedSlotsInRange'
+type MockIServiceSlotRepo_GetAssignedSlotsInRange_Call struct {
+	*mock.Call
+}
+
+// GetAssignedSlotsInRange is a helper method to define mock.On call
+//   - ctx context.Context
+//   - staffID int64
+//   - fromDate string
+//   - toDate string
+func (_e *MockIServiceSlotRepo_Expecter) GetAssignedSlotsInRange(ctx interface{}, staffID interface{}, fromDate interface{}, toDate interface{}) *MockIServiceSlotRepo_GetAssignedSlotsInRange_Call {
+	return &MockIServiceSlotRepo_GetAssignedSlotsInRange_Call{Call: _e.mock.On("GetAssignedSlotsInRange", ctx, staffID, fromDate, toDate)}
+}
+
+func (_c *MockIServiceSlotRepo_GetAssignedSlotsInRange_Call) Run(run func(ctx context.Context, staffID int64, fromDate string, toDate string)) *MockIServiceSlotRepo_GetAssignedSlotsInRange_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_GetAssignedSlotsInRange_Call) Return(assignedSlotParams []param.AssignedSlotParam, err error) *MockIServiceSlotRepo_GetAssignedSlotsInRange_Call {
+	_c.Call.Return(assignedSlotParams, err)
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_GetAssignedSlotsInRange_Call) RunAndReturn(run func(ctx context.Context, staffID int64, fromDate string, toDate string) ([]param.AssignedSlotParam, error)) *MockIServiceSlotRepo_GetAssignedSlotsInRange_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetAvailableStaff provides a mock function for the type MockIServiceSlotRepo
 func (_mock *MockIServiceSlotRepo) GetAvailableStaff(ctx context.Context, businessID int64, date string, weekday string, startTime time.Time, endTime time.Time, excludeSlotID int64) ([]param.StaffParam, error) {
 	ret := _mock.Called(ctx, businessID, date, weekday, startTime, endTime, excludeSlotID)
@@ -138,6 +302,80 @@ func (_c *MockIServiceSlotRepo_GetAvailableStaff_Call) RunAndReturn(run func(ctx
 	return _c
 }
 
+// GetFutureAssignedSlotWindows provides a mock function for the type MockIServiceSlotRepo
+func (_mock *MockIServiceSlotRepo) GetFutureAssignedSlotWindows(ctx context.Context, staffID int64, fromDate string) ([]param.AssignedSlotParam, error) {
+	ret := _mock.Called(ctx, staffID, fromDate)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetFutureAssignedSlotWindows")
+	}
+
+	var r0 []param.AssignedSlotParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string) ([]param.AssignedSlotParam, error)); ok {
+		return returnFunc(ctx, staffID, fromDate)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string) []param.AssignedSlotParam); ok {
+		r0 = returnFunc(ctx, staffID, fromDate)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]param.AssignedSlotParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, string) error); ok {
+		r1 = returnFunc(ctx, staffID, fromDate)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIServiceSlotRepo_GetFutureAssignedSlotWindows_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFutureAssignedSlotWindows'
+type MockIServiceSlotRepo_GetFutureAssignedSlotWindows_Call struct {
+	*mock.Call
+}
+
+// GetFutureAssignedSlotWindows is a helper method to define mock.On call
+//   - ctx context.Context
+//   - staffID int64
+//   - fromDate string
+func (_e *MockIServiceSlotRepo_Expecter) GetFutureAssignedSlotWindows(ctx interface{}, staffID interface{}, fromDate interface{}) *MockIServiceSlotRepo_GetFutureAssignedSlotWindows_Call {
+	return &MockIServiceSlotRepo_GetFutureAssignedSlotWindows_Call{Call: _e.mock.On("GetFutureAssignedSlotWindows", ctx, staffID, fromDate)}
+}
+
+func (_c *MockIServiceSlotRepo_GetFutureAssignedSlotWindows_Call) Run(run func(ctx context.Context, staffID int64, fromDate string)) *MockIServiceSlotRepo_GetFutureAssignedSlotWindows_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_GetFutureAssignedSlotWindows_Call) Return(assignedSlotParams []param.AssignedSlotParam, err error) *MockIServiceSlotRepo_GetFutureAssignedSlotWindows_Call {
+	_c.Call.Return(assignedSlotParams, err)
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_GetFutureAssignedSlotWindows_Call) RunAndReturn(run func(ctx context.Context, staffID int64, fromDate string) ([]param.AssignedSlotParam, error)) *MockIServiceSlotRepo_GetFutureAssignedSlotWindows_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetFutureRecurringSlotIDs provides a mock function for the type MockIServiceSlotRepo
 func (_mock *MockIServiceSlotRepo) GetFutureRecurringSlotIDs(ctx context.Context, businessID int64, recurringScheduleID int64, fromDate string) ([]int64, error) {
 	ret := _mock.Called(ctx, businessID, recurringScheduleID, fromDate)
@@ -214,6 +452,222 @@ func (_c *MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call) Return(int64s []i
 }
 
 func (_c *MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call) RunAndReturn(run func(ctx context.Context, businessID int64, recurringScheduleID int64, fromDate string) ([]int64, error)) *MockIServiceSlotRepo_GetFutureRecurringSlotIDs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetFutureUnassignedSlotWindows provides a mock function for the type MockIServiceSlotRepo
+func (_mock *MockIServiceSlotRepo) GetFutureUnassignedSlotWindows(ctx context.Context, businessID int64, fromDate string) ([]param.SlotWindowParam, error) {
+	ret := _mock.Called(ctx, businessID, fromDate)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetFutureUnassignedSlotWindows")
+	}
+
+	var r0 []param.SlotWindowParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string) ([]param.SlotWindowParam, error)); ok {
+		return returnFunc(ctx, businessID, fromDate)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string) []param.SlotWindowParam); ok {
+		r0 = returnFunc(ctx, businessID, fromDate)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]param.SlotWindowParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, string) error); ok {
+		r1 = returnFunc(ctx, businessID, fromDate)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIServiceSlotRepo_GetFutureUnassignedSlotWindows_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFutureUnassignedSlotWindows'
+type MockIServiceSlotRepo_GetFutureUnassignedSlotWindows_Call struct {
+	*mock.Call
+}
+
+// GetFutureUnassignedSlotWindows is a helper method to define mock.On call
+//   - ctx context.Context
+//   - businessID int64
+//   - fromDate string
+func (_e *MockIServiceSlotRepo_Expecter) GetFutureUnassignedSlotWindows(ctx interface{}, businessID interface{}, fromDate interface{}) *MockIServiceSlotRepo_GetFutureUnassignedSlotWindows_Call {
+	return &MockIServiceSlotRepo_GetFutureUnassignedSlotWindows_Call{Call: _e.mock.On("GetFutureUnassignedSlotWindows", ctx, businessID, fromDate)}
+}
+
+func (_c *MockIServiceSlotRepo_GetFutureUnassignedSlotWindows_Call) Run(run func(ctx context.Context, businessID int64, fromDate string)) *MockIServiceSlotRepo_GetFutureUnassignedSlotWindows_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_GetFutureUnassignedSlotWindows_Call) Return(slotWindowParams []param.SlotWindowParam, err error) *MockIServiceSlotRepo_GetFutureUnassignedSlotWindows_Call {
+	_c.Call.Return(slotWindowParams, err)
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_GetFutureUnassignedSlotWindows_Call) RunAndReturn(run func(ctx context.Context, businessID int64, fromDate string) ([]param.SlotWindowParam, error)) *MockIServiceSlotRepo_GetFutureUnassignedSlotWindows_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetOptionIDsForRecurringSchedule provides a mock function for the type MockIServiceSlotRepo
+func (_mock *MockIServiceSlotRepo) GetOptionIDsForRecurringSchedule(ctx context.Context, recurringScheduleID int64) ([]int64, error) {
+	ret := _mock.Called(ctx, recurringScheduleID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetOptionIDsForRecurringSchedule")
+	}
+
+	var r0 []int64
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) ([]int64, error)); ok {
+		return returnFunc(ctx, recurringScheduleID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) []int64); ok {
+		r0 = returnFunc(ctx, recurringScheduleID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]int64)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, recurringScheduleID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIServiceSlotRepo_GetOptionIDsForRecurringSchedule_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOptionIDsForRecurringSchedule'
+type MockIServiceSlotRepo_GetOptionIDsForRecurringSchedule_Call struct {
+	*mock.Call
+}
+
+// GetOptionIDsForRecurringSchedule is a helper method to define mock.On call
+//   - ctx context.Context
+//   - recurringScheduleID int64
+func (_e *MockIServiceSlotRepo_Expecter) GetOptionIDsForRecurringSchedule(ctx interface{}, recurringScheduleID interface{}) *MockIServiceSlotRepo_GetOptionIDsForRecurringSchedule_Call {
+	return &MockIServiceSlotRepo_GetOptionIDsForRecurringSchedule_Call{Call: _e.mock.On("GetOptionIDsForRecurringSchedule", ctx, recurringScheduleID)}
+}
+
+func (_c *MockIServiceSlotRepo_GetOptionIDsForRecurringSchedule_Call) Run(run func(ctx context.Context, recurringScheduleID int64)) *MockIServiceSlotRepo_GetOptionIDsForRecurringSchedule_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_GetOptionIDsForRecurringSchedule_Call) Return(int64s []int64, err error) *MockIServiceSlotRepo_GetOptionIDsForRecurringSchedule_Call {
+	_c.Call.Return(int64s, err)
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_GetOptionIDsForRecurringSchedule_Call) RunAndReturn(run func(ctx context.Context, recurringScheduleID int64) ([]int64, error)) *MockIServiceSlotRepo_GetOptionIDsForRecurringSchedule_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetRecurringSchedulesNeedingRenewal provides a mock function for the type MockIServiceSlotRepo
+func (_mock *MockIServiceSlotRepo) GetRecurringSchedulesNeedingRenewal(ctx context.Context, businessID int64, horizonEnd string) ([]param.RecurringScheduleRenewalParam, error) {
+	ret := _mock.Called(ctx, businessID, horizonEnd)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRecurringSchedulesNeedingRenewal")
+	}
+
+	var r0 []param.RecurringScheduleRenewalParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string) ([]param.RecurringScheduleRenewalParam, error)); ok {
+		return returnFunc(ctx, businessID, horizonEnd)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string) []param.RecurringScheduleRenewalParam); ok {
+		r0 = returnFunc(ctx, businessID, horizonEnd)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]param.RecurringScheduleRenewalParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, string) error); ok {
+		r1 = returnFunc(ctx, businessID, horizonEnd)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIServiceSlotRepo_GetRecurringSchedulesNeedingRenewal_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRecurringSchedulesNeedingRenewal'
+type MockIServiceSlotRepo_GetRecurringSchedulesNeedingRenewal_Call struct {
+	*mock.Call
+}
+
+// GetRecurringSchedulesNeedingRenewal is a helper method to define mock.On call
+//   - ctx context.Context
+//   - businessID int64
+//   - horizonEnd string
+func (_e *MockIServiceSlotRepo_Expecter) GetRecurringSchedulesNeedingRenewal(ctx interface{}, businessID interface{}, horizonEnd interface{}) *MockIServiceSlotRepo_GetRecurringSchedulesNeedingRenewal_Call {
+	return &MockIServiceSlotRepo_GetRecurringSchedulesNeedingRenewal_Call{Call: _e.mock.On("GetRecurringSchedulesNeedingRenewal", ctx, businessID, horizonEnd)}
+}
+
+func (_c *MockIServiceSlotRepo_GetRecurringSchedulesNeedingRenewal_Call) Run(run func(ctx context.Context, businessID int64, horizonEnd string)) *MockIServiceSlotRepo_GetRecurringSchedulesNeedingRenewal_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_GetRecurringSchedulesNeedingRenewal_Call) Return(recurringScheduleRenewalParams []param.RecurringScheduleRenewalParam, err error) *MockIServiceSlotRepo_GetRecurringSchedulesNeedingRenewal_Call {
+	_c.Call.Return(recurringScheduleRenewalParams, err)
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_GetRecurringSchedulesNeedingRenewal_Call) RunAndReturn(run func(ctx context.Context, businessID int64, horizonEnd string) ([]param.RecurringScheduleRenewalParam, error)) *MockIServiceSlotRepo_GetRecurringSchedulesNeedingRenewal_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -380,6 +834,74 @@ func (_c *MockIServiceSlotRepo_GetServiceSlotsByBusinessAndDate_Call) Return(ser
 }
 
 func (_c *MockIServiceSlotRepo_GetServiceSlotsByBusinessAndDate_Call) RunAndReturn(run func(ctx context.Context, businessID int64, date string, staffID *int64, serviceID *int64, unassignedOnly bool) ([]param.ServiceSlotParam, error)) *MockIServiceSlotRepo_GetServiceSlotsByBusinessAndDate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetSlotDates provides a mock function for the type MockIServiceSlotRepo
+func (_mock *MockIServiceSlotRepo) GetSlotDates(ctx context.Context, slotIDs []int64) ([]string, error) {
+	ret := _mock.Called(ctx, slotIDs)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetSlotDates")
+	}
+
+	var r0 []string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []int64) ([]string, error)); ok {
+		return returnFunc(ctx, slotIDs)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []int64) []string); ok {
+		r0 = returnFunc(ctx, slotIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []int64) error); ok {
+		r1 = returnFunc(ctx, slotIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIServiceSlotRepo_GetSlotDates_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSlotDates'
+type MockIServiceSlotRepo_GetSlotDates_Call struct {
+	*mock.Call
+}
+
+// GetSlotDates is a helper method to define mock.On call
+//   - ctx context.Context
+//   - slotIDs []int64
+func (_e *MockIServiceSlotRepo_Expecter) GetSlotDates(ctx interface{}, slotIDs interface{}) *MockIServiceSlotRepo_GetSlotDates_Call {
+	return &MockIServiceSlotRepo_GetSlotDates_Call{Call: _e.mock.On("GetSlotDates", ctx, slotIDs)}
+}
+
+func (_c *MockIServiceSlotRepo_GetSlotDates_Call) Run(run func(ctx context.Context, slotIDs []int64)) *MockIServiceSlotRepo_GetSlotDates_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []int64
+		if args[1] != nil {
+			arg1 = args[1].([]int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_GetSlotDates_Call) Return(strings []string, err error) *MockIServiceSlotRepo_GetSlotDates_Call {
+	_c.Call.Return(strings, err)
+	return _c
+}
+
+func (_c *MockIServiceSlotRepo_GetSlotDates_Call) RunAndReturn(run func(ctx context.Context, slotIDs []int64) ([]string, error)) *MockIServiceSlotRepo_GetSlotDates_Call {
 	_c.Call.Return(run)
 	return _c
 }

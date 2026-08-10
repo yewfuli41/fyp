@@ -169,6 +169,86 @@ func (_c *MockIStaffService_GetStaffByBusinessID_Call) RunAndReturn(run func(ctx
 	return _c
 }
 
+// GetStaffHoursConflicts provides a mock function for the type MockIStaffService
+func (_mock *MockIStaffService) GetStaffHoursConflicts(ctx context.Context, businessID int64, staffID int64, workingHours []param.WorkingHourParam) ([]param.ServiceSlotParam, error) {
+	ret := _mock.Called(ctx, businessID, staffID, workingHours)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetStaffHoursConflicts")
+	}
+
+	var r0 []param.ServiceSlotParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, []param.WorkingHourParam) ([]param.ServiceSlotParam, error)); ok {
+		return returnFunc(ctx, businessID, staffID, workingHours)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, []param.WorkingHourParam) []param.ServiceSlotParam); ok {
+		r0 = returnFunc(ctx, businessID, staffID, workingHours)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]param.ServiceSlotParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, int64, []param.WorkingHourParam) error); ok {
+		r1 = returnFunc(ctx, businessID, staffID, workingHours)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIStaffService_GetStaffHoursConflicts_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetStaffHoursConflicts'
+type MockIStaffService_GetStaffHoursConflicts_Call struct {
+	*mock.Call
+}
+
+// GetStaffHoursConflicts is a helper method to define mock.On call
+//   - ctx context.Context
+//   - businessID int64
+//   - staffID int64
+//   - workingHours []param.WorkingHourParam
+func (_e *MockIStaffService_Expecter) GetStaffHoursConflicts(ctx interface{}, businessID interface{}, staffID interface{}, workingHours interface{}) *MockIStaffService_GetStaffHoursConflicts_Call {
+	return &MockIStaffService_GetStaffHoursConflicts_Call{Call: _e.mock.On("GetStaffHoursConflicts", ctx, businessID, staffID, workingHours)}
+}
+
+func (_c *MockIStaffService_GetStaffHoursConflicts_Call) Run(run func(ctx context.Context, businessID int64, staffID int64, workingHours []param.WorkingHourParam)) *MockIStaffService_GetStaffHoursConflicts_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		var arg3 []param.WorkingHourParam
+		if args[3] != nil {
+			arg3 = args[3].([]param.WorkingHourParam)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIStaffService_GetStaffHoursConflicts_Call) Return(serviceSlotParams []param.ServiceSlotParam, err error) *MockIStaffService_GetStaffHoursConflicts_Call {
+	_c.Call.Return(serviceSlotParams, err)
+	return _c
+}
+
+func (_c *MockIStaffService_GetStaffHoursConflicts_Call) RunAndReturn(run func(ctx context.Context, businessID int64, staffID int64, workingHours []param.WorkingHourParam) ([]param.ServiceSlotParam, error)) *MockIStaffService_GetStaffHoursConflicts_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetStaffProfileByUserID provides a mock function for the type MockIStaffService
 func (_mock *MockIStaffService) GetStaffProfileByUserID(ctx context.Context, userID int64) (*param.StaffParam, error) {
 	ret := _mock.Called(ctx, userID)
@@ -370,6 +450,92 @@ func (_c *MockIStaffService_UpdateStaff_Call) Return(staffParam *param.StaffPara
 }
 
 func (_c *MockIStaffService_UpdateStaff_Call) RunAndReturn(run func(ctx context.Context, p param.StaffParam) (*param.StaffParam, error)) *MockIStaffService_UpdateStaff_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateStaffWorkingHours provides a mock function for the type MockIStaffService
+func (_mock *MockIStaffService) UpdateStaffWorkingHours(ctx context.Context, businessID int64, staffID int64, workingHours []param.WorkingHourParam, reassignments []param.SlotReassignmentParam) (*param.StaffParam, error) {
+	ret := _mock.Called(ctx, businessID, staffID, workingHours, reassignments)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateStaffWorkingHours")
+	}
+
+	var r0 *param.StaffParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, []param.WorkingHourParam, []param.SlotReassignmentParam) (*param.StaffParam, error)); ok {
+		return returnFunc(ctx, businessID, staffID, workingHours, reassignments)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, []param.WorkingHourParam, []param.SlotReassignmentParam) *param.StaffParam); ok {
+		r0 = returnFunc(ctx, businessID, staffID, workingHours, reassignments)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*param.StaffParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, int64, []param.WorkingHourParam, []param.SlotReassignmentParam) error); ok {
+		r1 = returnFunc(ctx, businessID, staffID, workingHours, reassignments)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIStaffService_UpdateStaffWorkingHours_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateStaffWorkingHours'
+type MockIStaffService_UpdateStaffWorkingHours_Call struct {
+	*mock.Call
+}
+
+// UpdateStaffWorkingHours is a helper method to define mock.On call
+//   - ctx context.Context
+//   - businessID int64
+//   - staffID int64
+//   - workingHours []param.WorkingHourParam
+//   - reassignments []param.SlotReassignmentParam
+func (_e *MockIStaffService_Expecter) UpdateStaffWorkingHours(ctx interface{}, businessID interface{}, staffID interface{}, workingHours interface{}, reassignments interface{}) *MockIStaffService_UpdateStaffWorkingHours_Call {
+	return &MockIStaffService_UpdateStaffWorkingHours_Call{Call: _e.mock.On("UpdateStaffWorkingHours", ctx, businessID, staffID, workingHours, reassignments)}
+}
+
+func (_c *MockIStaffService_UpdateStaffWorkingHours_Call) Run(run func(ctx context.Context, businessID int64, staffID int64, workingHours []param.WorkingHourParam, reassignments []param.SlotReassignmentParam)) *MockIStaffService_UpdateStaffWorkingHours_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		var arg3 []param.WorkingHourParam
+		if args[3] != nil {
+			arg3 = args[3].([]param.WorkingHourParam)
+		}
+		var arg4 []param.SlotReassignmentParam
+		if args[4] != nil {
+			arg4 = args[4].([]param.SlotReassignmentParam)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIStaffService_UpdateStaffWorkingHours_Call) Return(staffParam *param.StaffParam, err error) *MockIStaffService_UpdateStaffWorkingHours_Call {
+	_c.Call.Return(staffParam, err)
+	return _c
+}
+
+func (_c *MockIStaffService_UpdateStaffWorkingHours_Call) RunAndReturn(run func(ctx context.Context, businessID int64, staffID int64, workingHours []param.WorkingHourParam, reassignments []param.SlotReassignmentParam) (*param.StaffParam, error)) *MockIStaffService_UpdateStaffWorkingHours_Call {
 	_c.Call.Return(run)
 	return _c
 }

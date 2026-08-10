@@ -25,6 +25,7 @@ export default function EditBusinessPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState("");
+    const [formSuccess, setFormSuccess] = useState("");
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
@@ -91,6 +92,7 @@ export default function EditBusinessPage() {
 
         setIsSubmitting(true);
         setFormError("");
+        setFormSuccess("");
         setFieldErrors({});
 
         const input: BusinessProfileInput = {
@@ -111,7 +113,7 @@ export default function EditBusinessPage() {
                 fallbackMessage: "Failed to update business profile",
             })) return;
 
-            navigate("/profile");
+            setFormSuccess("Business profile updated successfully!");
         } catch {
             setFormError("Something went wrong. Please try again.");
         } finally {
@@ -131,7 +133,7 @@ export default function EditBusinessPage() {
         <Container className="py-5">
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <Button variant="link" onClick={() => navigate(-1)}>
-                    <span style={{ fontSize: "1.3rem" }}>&larr; Back</span>
+                    <span style={{ fontSize: "1.3rem" }}></span>
                 </Button>
                 <h1 className="mb-0">Edit Business Profile</h1>
                 <Button variant="link" type="submit" form="edit-business-form" disabled={isSubmitting} className="p-0">
@@ -139,7 +141,9 @@ export default function EditBusinessPage() {
                     <span style={{ fontSize: "1.3rem" }}>Save</span>
                 </Button>
             </div>
+
             {formError && <Alert variant="danger">{formError}</Alert>}
+            {formSuccess && <Alert variant="success">{formSuccess}</Alert>}
 
             <Form id="edit-business-form" onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
@@ -286,15 +290,6 @@ export default function EditBusinessPage() {
                 <Button variant="link" onClick={handleAddWorkingHour} className="mb-4">
                     Add Working Hour
                 </Button>
-
-                <div className="d-flex gap-2 justify-content-end">
-                    <Button variant="outline-secondary" onClick={() => navigate("/profile")}>
-                        Cancel
-                    </Button>
-                    <Button variant="primary" type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? "Saving..." : "Save Changes"}
-                    </Button>
-                </div>
 
             </Form>
         </Container>

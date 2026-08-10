@@ -1,0 +1,161 @@
+@import "./booking-theme.css";
+
+.bk-modal .modal-content {
+    border: none;
+    border-radius: var(--bk-radius-lg);
+    box-shadow: var(--bk-shadow-lg);
+    overflow: hidden;
+}
+
+.bk-modal .modal-header {
+    border-bottom: 1px solid var(--bk-border);
+    padding: 1.35rem 1.5rem;
+}
+
+.bk-modal .modal-header .modal-title {
+    font-weight: 700;
+    color: var(--bk-text);
+    letter-spacing: -0.2px;
+}
+
+.bk-modal .modal-body {
+    padding: 1.5rem;
+}
+
+.bk-modal .modal-footer {
+    border-top: 1px solid var(--bk-border);
+    padding: 1.1rem 1.5rem;
+}
+
+.bk-modal .modal-footer .btn {
+    border-radius: 999px;
+    font-weight: 600;
+    padding-inline: 1.4rem;
+}
+
+.bk-modal .modal-footer .btn-primary {
+    background: var(--bk-gradient);
+    border: none;
+}
+
+.bk-modal .modal-footer .btn-primary:hover {
+    box-shadow: var(--bk-shadow-sm);
+}
+
+/* ── Step header (numbered badge + title) ── */
+
+.bk-step {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.9rem;
+}
+
+.bk-step-badge {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--bk-primary-soft);
+    color: var(--bk-primary-dark);
+    font-size: 0.82rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bk-step-title {
+    font-weight: 700;
+    color: var(--bk-text);
+    font-size: 1rem;
+}
+
+.bk-step-hint {
+    color: var(--bk-text-faint);
+    font-size: 0.82rem;
+    font-weight: 400;
+}
+
+/* ── Service option radio list (non-locked flow) ── */
+
+.bk-option-choice {
+    border: 1px solid var(--bk-border);
+    border-radius: var(--bk-radius-sm);
+    padding: 0.7rem 1rem;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.bk-option-choice:has(input:checked) {
+    border-color: var(--bk-primary);
+    background: var(--bk-primary-soft);
+}
+
+/* ── Time slot chips ── */
+
+.bk-slot-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.bk-slot-chip {
+    border: 1px solid var(--bk-border);
+    background: var(--bk-surface);
+    border-radius: var(--bk-radius-sm);
+    padding: 0.55rem 1rem;
+    min-width: 130px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.bk-slot-chip:hover {
+    border-color: var(--bk-primary);
+    transform: translateY(-1px);
+}
+
+.bk-slot-chip .bk-slot-time {
+    font-weight: 700;
+    color: var(--bk-text);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.bk-slot-chip .bk-slot-staff {
+    font-size: 0.78rem;
+    color: var(--bk-text-muted);
+}
+
+.bk-slot-chip.is-picked {
+    background: var(--bk-gradient);
+    border-color: transparent;
+    box-shadow: var(--bk-shadow-sm);
+}
+
+.bk-slot-chip.is-picked .bk-slot-time,
+.bk-slot-chip.is-picked .bk-slot-staff {
+    color: #fff;
+}
+
+/* ── Selected slots summary ── */
+
+.bk-selected-chip {
+    background: var(--bk-primary-soft) !important;
+    color: var(--bk-primary-dark) !important;
+    border: none !important;
+    font-weight: 600;
+    padding: 0.4rem 0.7rem !important;
+    border-radius: 999px !important;
+}
+
+.bk-selected-chip .bk-remove {
+    opacity: 0.6;
+}
+
+.bk-selected-chip .bk-remove:hover {
+    opacity: 1;
+}

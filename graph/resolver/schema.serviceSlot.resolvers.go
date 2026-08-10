@@ -78,7 +78,7 @@ func (r *mutationResolver) CreateServiceSlot(ctx context.Context, input model.Se
 }
 
 // UpdateServiceSlot is the resolver for the updateServiceSlot field.
-func (r *mutationResolver) UpdateServiceSlot(ctx context.Context, serviceSlotID string, input model.ServiceSlotInput, applyToFutureRecurring bool) (*model.ServiceSlot, error) {
+func (r *mutationResolver) UpdateServiceSlot(ctx context.Context, serviceSlotID string, input model.ServiceSlotInput) (*model.ServiceSlot, error) {
 	currentUser, err := contexts.CurrentUser(ctx)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
@@ -138,7 +138,7 @@ func (r *mutationResolver) UpdateServiceSlot(ctx context.Context, serviceSlotID 
 		CreatedBy:        currentUser.UserID,
 	}
 
-	result, err := r.App.ServiceSlotService.UpdateServiceSlot(ctx, p, applyToFutureRecurring, staffScope)
+	result, err := r.App.ServiceSlotService.UpdateServiceSlot(ctx, p, staffScope)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
 	}

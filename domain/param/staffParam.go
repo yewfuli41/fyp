@@ -14,8 +14,16 @@ type StaffParam struct {
 	StaffEmail         string
 	StaffContactNumber string
 	Position           string
-	MustResetPassword  bool
+	// Password is the owner-chosen temporary password for a brand-new staff
+	// account — only used when no existing user is found for StaffEmail (see
+	// staffService.RegisterStaff); ignored otherwise.
+	Password          string
+	MustResetPassword bool
 	WorkingHours       []WorkingHourParam //from businessParam.go
+	// true once this staff member has an active (pending/accepted/rescheduled)
+	// booking on any of their slots — loaded for display, mirrors
+	// ServiceOptionParam.HasBooking.
+	HasBooking bool
 }
 
 func (p StaffParam) ValidateRegisterStaff() error {
@@ -50,42 +58,16 @@ func (p StaffParam) ValidateRegisterStaff() error {
 		validationErrs = append(validationErrs, errs.ValidationError{Field: "position", Message: "Position is required"})
 	}
 
-	if len(p.WorkingHours) == 0 {
-		validationErrs = append(validationErrs, errs.ValidationError{Field: "workingHours", Message: "At least one working hour is required"})
-	}
-
-	for i, wh := range p.WorkingHours {
-		if !wh.StartTime.Before(wh.EndTime) {
-			validationErrs = append(validationErrs, errs.ValidationError{
-				Field:   fmt.Sprintf("workingHours[%d]", i),
-				Message: "Start time must be before end time",
-			})
-		}
-	}
-
-	byDay := make(map[string][]int)
-	for i, wh := range p.WorkingHours {
-		byDay[wh.Day] = append(byDay[wh.Day], i)
-	}
-	overlapping := make(map[int]bool)
-	for _, indices := range byDay {
-		for i := 0; i < len(indices); i++ {
-			for j := i + 1; j < len(indices); j++ {
-				a := p.WorkingHours[indices[i]]
-				b := p.WorkingHours[indices[j]]
-				if a.StartTime.Before(b.EndTime) && b.StartTime.Before(a.EndTime) {
-					overlapping[indices[i]] = true
-					overlapping[indices[j]] = true
-				}
-			}
-		}
-	}
-	for i := range overlapping {
+	if p.Password == "" {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "password", Message: "Temporary password is required"})
+	} else if len(p.Password) < minPasswordLength {
 		validationErrs = append(validationErrs, errs.ValidationError{
-			Field:   fmt.Sprintf("workingHours[%d]", i),
-			Message: "Working hours overlap with another entry on the same day",
+			Field:   "password",
+			Message: fmt.Sprintf("Temporary password must be at least %d characters", minPasswordLength),
 		})
 	}
+
+	validationErrs = append(validationErrs, ValidateWorkingHoursShape(p.WorkingHours)...)
 
 	if len(validationErrs) > 0 {
 		return validationErrs

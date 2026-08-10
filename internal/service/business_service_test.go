@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
 	"fyp/internal/interfaces/mocks"
@@ -19,11 +20,12 @@ import (
 
 var _ = Describe("BusinessService", func() {
 	var (
-		ctx          context.Context
-		db           *sql.DB
-		dbMock       sqlmock.Sqlmock
-		businessRepo *mocks.MockIBusinessRepo
-		businessSvc  interfaces.IBusinessService
+		ctx             context.Context
+		db              *sql.DB
+		dbMock          sqlmock.Sqlmock
+		businessRepo    *mocks.MockIBusinessRepo
+		serviceSlotRepo *mocks.MockIServiceSlotRepo
+		businessSvc     interfaces.IBusinessService
 	)
 
 	BeforeEach(func() {
@@ -33,7 +35,8 @@ var _ = Describe("BusinessService", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		businessRepo = mocks.NewMockIBusinessRepo(GinkgoT())
-		businessSvc = service.NewBusinessService(db, businessRepo)
+		serviceSlotRepo = mocks.NewMockIServiceSlotRepo(GinkgoT())
+		businessSvc = service.NewBusinessService(db, businessRepo, serviceSlotRepo)
 	})
 
 	AfterEach(func() {
@@ -216,7 +219,7 @@ var _ = Describe("BusinessService", func() {
 				BusinessContactNumber: "0123456789",
 				BusinessEmail:         "updated@example.com",
 				WorkingHours: []param.WorkingHourParam{
-					{Day: "TUESDAY", StartTime: startTime, EndTime: endTime},
+					{Day: "tuesday", StartTime: startTime, EndTime: endTime},
 				},
 			}
 			updatedBiz = &param.BusinessProfileParam{
@@ -235,6 +238,11 @@ var _ = Describe("BusinessService", func() {
 			businessRepo.EXPECT().
 				UpdateBusinessProfile(ctx, mock.AnythingOfType("*sql.Tx"), businessParam).
 				Return(updatedBiz, nil).
+				Once()
+
+			serviceSlotRepo.EXPECT().
+				GetFutureUnassignedSlotWindows(ctx, int64(7), mock.AnythingOfType("string")).
+				Return(nil, nil).
 				Once()
 
 			businessRepo.EXPECT().
@@ -296,6 +304,11 @@ var _ = Describe("BusinessService", func() {
 				Return(updatedBiz, nil).
 				Once()
 
+			serviceSlotRepo.EXPECT().
+				GetFutureUnassignedSlotWindows(ctx, int64(7), mock.AnythingOfType("string")).
+				Return(nil, nil).
+				Once()
+
 			businessRepo.EXPECT().
 				DeleteBusinessWorkingHours(ctx, mock.AnythingOfType("*sql.Tx"), int64(7)).
 				Return(fmt.Errorf("delete error")).
@@ -307,6 +320,34 @@ var _ = Describe("BusinessService", func() {
 
 			Expect(result).To(BeNil())
 			Expect(err).To(MatchError("delete error"))
+		})
+
+		It("rejects the update when an existing owner-managed slot would fall outside the new hours", func() {
+			dbMock.ExpectBegin()
+
+			businessRepo.EXPECT().
+				UpdateBusinessProfile(ctx, mock.AnythingOfType("*sql.Tx"), businessParam).
+				Return(updatedBiz, nil).
+				Once()
+
+			// businessParam only opens Tuesday 09:00-18:00 — an existing slot
+			// on a Wednesday falls outside that entirely.
+			serviceSlotRepo.EXPECT().
+				GetFutureUnassignedSlotWindows(ctx, int64(7), mock.AnythingOfType("string")).
+				Return([]param.SlotWindowParam{
+					{Date: "2026-08-05", StartTime: startTime, EndTime: endTime}, // a Wednesday
+				}, nil).
+				Once()
+
+			dbMock.ExpectRollback()
+
+			result, err := businessSvc.UpdateBusinessProfile(ctx, businessParam)
+
+			Expect(result).To(BeNil())
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve[0].Field).To(Equal("workingHours"))
+			Expect(ve[0].Message).To(ContainSubstring("2026-08-05 (Wednesday)"))
 		})
 	})
 

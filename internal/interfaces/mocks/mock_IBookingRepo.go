@@ -6,6 +6,7 @@ package mocks
 
 import (
 	"context"
+	"database/sql"
 	"fyp/domain/param"
 
 	mock "github.com/stretchr/testify/mock"
@@ -38,9 +39,113 @@ func (_m *MockIBookingRepo) EXPECT() *MockIBookingRepo_Expecter {
 	return &MockIBookingRepo_Expecter{mock: &_m.Mock}
 }
 
+// GetAvailableDates provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) GetAvailableDates(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string) ([]string, error) {
+	ret := _mock.Called(ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAvailableDates")
+	}
+
+	var r0 []string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *int64, *int64, *int64, bool, string, string) ([]string, error)); ok {
+		return returnFunc(ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *int64, *int64, *int64, bool, string, string) []string); ok {
+		r0 = returnFunc(ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *int64, *int64, *int64, bool, string, string) error); ok {
+		r1 = returnFunc(ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBookingRepo_GetAvailableDates_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAvailableDates'
+type MockIBookingRepo_GetAvailableDates_Call struct {
+	*mock.Call
+}
+
+// GetAvailableDates is a helper method to define mock.On call
+//   - ctx context.Context
+//   - businessID int64
+//   - serviceID *int64
+//   - serviceOptionID *int64
+//   - staffID *int64
+//   - unassignedOnly bool
+//   - from string
+//   - until string
+func (_e *MockIBookingRepo_Expecter) GetAvailableDates(ctx interface{}, businessID interface{}, serviceID interface{}, serviceOptionID interface{}, staffID interface{}, unassignedOnly interface{}, from interface{}, until interface{}) *MockIBookingRepo_GetAvailableDates_Call {
+	return &MockIBookingRepo_GetAvailableDates_Call{Call: _e.mock.On("GetAvailableDates", ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until)}
+}
+
+func (_c *MockIBookingRepo_GetAvailableDates_Call) Run(run func(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string)) *MockIBookingRepo_GetAvailableDates_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 *int64
+		if args[2] != nil {
+			arg2 = args[2].(*int64)
+		}
+		var arg3 *int64
+		if args[3] != nil {
+			arg3 = args[3].(*int64)
+		}
+		var arg4 *int64
+		if args[4] != nil {
+			arg4 = args[4].(*int64)
+		}
+		var arg5 bool
+		if args[5] != nil {
+			arg5 = args[5].(bool)
+		}
+		var arg6 string
+		if args[6] != nil {
+			arg6 = args[6].(string)
+		}
+		var arg7 string
+		if args[7] != nil {
+			arg7 = args[7].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+			arg5,
+			arg6,
+			arg7,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetAvailableDates_Call) Return(strings []string, err error) *MockIBookingRepo_GetAvailableDates_Call {
+	_c.Call.Return(strings, err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetAvailableDates_Call) RunAndReturn(run func(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string) ([]string, error)) *MockIBookingRepo_GetAvailableDates_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetAvailableSlots provides a mock function for the type MockIBookingRepo
-func (_mock *MockIBookingRepo) GetAvailableSlots(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64) ([]param.ServiceSlotParam, error) {
-	ret := _mock.Called(ctx, businessID, serviceOptionID, date, staffID)
+func (_mock *MockIBookingRepo) GetAvailableSlots(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool) ([]param.ServiceSlotParam, error) {
+	ret := _mock.Called(ctx, businessID, serviceOptionID, date, staffID, unassignedOnly)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAvailableSlots")
@@ -48,18 +153,18 @@ func (_mock *MockIBookingRepo) GetAvailableSlots(ctx context.Context, businessID
 
 	var r0 []param.ServiceSlotParam
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, string, *int64) ([]param.ServiceSlotParam, error)); ok {
-		return returnFunc(ctx, businessID, serviceOptionID, date, staffID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, string, *int64, bool) ([]param.ServiceSlotParam, error)); ok {
+		return returnFunc(ctx, businessID, serviceOptionID, date, staffID, unassignedOnly)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, string, *int64) []param.ServiceSlotParam); ok {
-		r0 = returnFunc(ctx, businessID, serviceOptionID, date, staffID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, string, *int64, bool) []param.ServiceSlotParam); ok {
+		r0 = returnFunc(ctx, businessID, serviceOptionID, date, staffID, unassignedOnly)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]param.ServiceSlotParam)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, int64, string, *int64) error); ok {
-		r1 = returnFunc(ctx, businessID, serviceOptionID, date, staffID)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, int64, string, *int64, bool) error); ok {
+		r1 = returnFunc(ctx, businessID, serviceOptionID, date, staffID, unassignedOnly)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -77,11 +182,12 @@ type MockIBookingRepo_GetAvailableSlots_Call struct {
 //   - serviceOptionID int64
 //   - date string
 //   - staffID *int64
-func (_e *MockIBookingRepo_Expecter) GetAvailableSlots(ctx interface{}, businessID interface{}, serviceOptionID interface{}, date interface{}, staffID interface{}) *MockIBookingRepo_GetAvailableSlots_Call {
-	return &MockIBookingRepo_GetAvailableSlots_Call{Call: _e.mock.On("GetAvailableSlots", ctx, businessID, serviceOptionID, date, staffID)}
+//   - unassignedOnly bool
+func (_e *MockIBookingRepo_Expecter) GetAvailableSlots(ctx interface{}, businessID interface{}, serviceOptionID interface{}, date interface{}, staffID interface{}, unassignedOnly interface{}) *MockIBookingRepo_GetAvailableSlots_Call {
+	return &MockIBookingRepo_GetAvailableSlots_Call{Call: _e.mock.On("GetAvailableSlots", ctx, businessID, serviceOptionID, date, staffID, unassignedOnly)}
 }
 
-func (_c *MockIBookingRepo_GetAvailableSlots_Call) Run(run func(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64)) *MockIBookingRepo_GetAvailableSlots_Call {
+func (_c *MockIBookingRepo_GetAvailableSlots_Call) Run(run func(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool)) *MockIBookingRepo_GetAvailableSlots_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -103,12 +209,17 @@ func (_c *MockIBookingRepo_GetAvailableSlots_Call) Run(run func(ctx context.Cont
 		if args[4] != nil {
 			arg4 = args[4].(*int64)
 		}
+		var arg5 bool
+		if args[5] != nil {
+			arg5 = args[5].(bool)
+		}
 		run(
 			arg0,
 			arg1,
 			arg2,
 			arg3,
 			arg4,
+			arg5,
 		)
 	})
 	return _c
@@ -119,7 +230,353 @@ func (_c *MockIBookingRepo_GetAvailableSlots_Call) Return(serviceSlotParams []pa
 	return _c
 }
 
-func (_c *MockIBookingRepo_GetAvailableSlots_Call) RunAndReturn(run func(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64) ([]param.ServiceSlotParam, error)) *MockIBookingRepo_GetAvailableSlots_Call {
+func (_c *MockIBookingRepo_GetAvailableSlots_Call) RunAndReturn(run func(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool) ([]param.ServiceSlotParam, error)) *MockIBookingRepo_GetAvailableSlots_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetBookingContext provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) GetBookingContext(ctx context.Context, bookingID int64) (*param.BookingContextParam, error) {
+	ret := _mock.Called(ctx, bookingID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBookingContext")
+	}
+
+	var r0 *param.BookingContextParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (*param.BookingContextParam, error)); ok {
+		return returnFunc(ctx, bookingID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) *param.BookingContextParam); ok {
+		r0 = returnFunc(ctx, bookingID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*param.BookingContextParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, bookingID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBookingRepo_GetBookingContext_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBookingContext'
+type MockIBookingRepo_GetBookingContext_Call struct {
+	*mock.Call
+}
+
+// GetBookingContext is a helper method to define mock.On call
+//   - ctx context.Context
+//   - bookingID int64
+func (_e *MockIBookingRepo_Expecter) GetBookingContext(ctx interface{}, bookingID interface{}) *MockIBookingRepo_GetBookingContext_Call {
+	return &MockIBookingRepo_GetBookingContext_Call{Call: _e.mock.On("GetBookingContext", ctx, bookingID)}
+}
+
+func (_c *MockIBookingRepo_GetBookingContext_Call) Run(run func(ctx context.Context, bookingID int64)) *MockIBookingRepo_GetBookingContext_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetBookingContext_Call) Return(bookingContextParam *param.BookingContextParam, err error) *MockIBookingRepo_GetBookingContext_Call {
+	_c.Call.Return(bookingContextParam, err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetBookingContext_Call) RunAndReturn(run func(ctx context.Context, bookingID int64) (*param.BookingContextParam, error)) *MockIBookingRepo_GetBookingContext_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetBookingContextForSlot provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) GetBookingContextForSlot(ctx context.Context, serviceSlotID int64) (*param.BookingContextParam, error) {
+	ret := _mock.Called(ctx, serviceSlotID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBookingContextForSlot")
+	}
+
+	var r0 *param.BookingContextParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (*param.BookingContextParam, error)); ok {
+		return returnFunc(ctx, serviceSlotID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) *param.BookingContextParam); ok {
+		r0 = returnFunc(ctx, serviceSlotID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*param.BookingContextParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, serviceSlotID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBookingRepo_GetBookingContextForSlot_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBookingContextForSlot'
+type MockIBookingRepo_GetBookingContextForSlot_Call struct {
+	*mock.Call
+}
+
+// GetBookingContextForSlot is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceSlotID int64
+func (_e *MockIBookingRepo_Expecter) GetBookingContextForSlot(ctx interface{}, serviceSlotID interface{}) *MockIBookingRepo_GetBookingContextForSlot_Call {
+	return &MockIBookingRepo_GetBookingContextForSlot_Call{Call: _e.mock.On("GetBookingContextForSlot", ctx, serviceSlotID)}
+}
+
+func (_c *MockIBookingRepo_GetBookingContextForSlot_Call) Run(run func(ctx context.Context, serviceSlotID int64)) *MockIBookingRepo_GetBookingContextForSlot_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetBookingContextForSlot_Call) Return(bookingContextParam *param.BookingContextParam, err error) *MockIBookingRepo_GetBookingContextForSlot_Call {
+	_c.Call.Return(bookingContextParam, err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetBookingContextForSlot_Call) RunAndReturn(run func(ctx context.Context, serviceSlotID int64) (*param.BookingContextParam, error)) *MockIBookingRepo_GetBookingContextForSlot_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetBookingDetail provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) GetBookingDetail(ctx context.Context, bookingID int64) (*param.BookingDetailParam, error) {
+	ret := _mock.Called(ctx, bookingID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBookingDetail")
+	}
+
+	var r0 *param.BookingDetailParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (*param.BookingDetailParam, error)); ok {
+		return returnFunc(ctx, bookingID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) *param.BookingDetailParam); ok {
+		r0 = returnFunc(ctx, bookingID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*param.BookingDetailParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, bookingID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBookingRepo_GetBookingDetail_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBookingDetail'
+type MockIBookingRepo_GetBookingDetail_Call struct {
+	*mock.Call
+}
+
+// GetBookingDetail is a helper method to define mock.On call
+//   - ctx context.Context
+//   - bookingID int64
+func (_e *MockIBookingRepo_Expecter) GetBookingDetail(ctx interface{}, bookingID interface{}) *MockIBookingRepo_GetBookingDetail_Call {
+	return &MockIBookingRepo_GetBookingDetail_Call{Call: _e.mock.On("GetBookingDetail", ctx, bookingID)}
+}
+
+func (_c *MockIBookingRepo_GetBookingDetail_Call) Run(run func(ctx context.Context, bookingID int64)) *MockIBookingRepo_GetBookingDetail_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetBookingDetail_Call) Return(bookingDetailParam *param.BookingDetailParam, err error) *MockIBookingRepo_GetBookingDetail_Call {
+	_c.Call.Return(bookingDetailParam, err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetBookingDetail_Call) RunAndReturn(run func(ctx context.Context, bookingID int64) (*param.BookingDetailParam, error)) *MockIBookingRepo_GetBookingDetail_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetBusinessBookings provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) GetBusinessBookings(ctx context.Context, businessID int64, staffID *int64) ([]param.BookingDetailParam, error) {
+	ret := _mock.Called(ctx, businessID, staffID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBusinessBookings")
+	}
+
+	var r0 []param.BookingDetailParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *int64) ([]param.BookingDetailParam, error)); ok {
+		return returnFunc(ctx, businessID, staffID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *int64) []param.BookingDetailParam); ok {
+		r0 = returnFunc(ctx, businessID, staffID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]param.BookingDetailParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *int64) error); ok {
+		r1 = returnFunc(ctx, businessID, staffID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBookingRepo_GetBusinessBookings_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBusinessBookings'
+type MockIBookingRepo_GetBusinessBookings_Call struct {
+	*mock.Call
+}
+
+// GetBusinessBookings is a helper method to define mock.On call
+//   - ctx context.Context
+//   - businessID int64
+//   - staffID *int64
+func (_e *MockIBookingRepo_Expecter) GetBusinessBookings(ctx interface{}, businessID interface{}, staffID interface{}) *MockIBookingRepo_GetBusinessBookings_Call {
+	return &MockIBookingRepo_GetBusinessBookings_Call{Call: _e.mock.On("GetBusinessBookings", ctx, businessID, staffID)}
+}
+
+func (_c *MockIBookingRepo_GetBusinessBookings_Call) Run(run func(ctx context.Context, businessID int64, staffID *int64)) *MockIBookingRepo_GetBusinessBookings_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 *int64
+		if args[2] != nil {
+			arg2 = args[2].(*int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetBusinessBookings_Call) Return(bookingDetailParams []param.BookingDetailParam, err error) *MockIBookingRepo_GetBusinessBookings_Call {
+	_c.Call.Return(bookingDetailParams, err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetBusinessBookings_Call) RunAndReturn(run func(ctx context.Context, businessID int64, staffID *int64) ([]param.BookingDetailParam, error)) *MockIBookingRepo_GetBusinessBookings_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetCustomerBookings provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) GetCustomerBookings(ctx context.Context, userID int64) ([]param.BookingDetailParam, error) {
+	ret := _mock.Called(ctx, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCustomerBookings")
+	}
+
+	var r0 []param.BookingDetailParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) ([]param.BookingDetailParam, error)); ok {
+		return returnFunc(ctx, userID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) []param.BookingDetailParam); ok {
+		r0 = returnFunc(ctx, userID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]param.BookingDetailParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBookingRepo_GetCustomerBookings_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCustomerBookings'
+type MockIBookingRepo_GetCustomerBookings_Call struct {
+	*mock.Call
+}
+
+// GetCustomerBookings is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID int64
+func (_e *MockIBookingRepo_Expecter) GetCustomerBookings(ctx interface{}, userID interface{}) *MockIBookingRepo_GetCustomerBookings_Call {
+	return &MockIBookingRepo_GetCustomerBookings_Call{Call: _e.mock.On("GetCustomerBookings", ctx, userID)}
+}
+
+func (_c *MockIBookingRepo_GetCustomerBookings_Call) Run(run func(ctx context.Context, userID int64)) *MockIBookingRepo_GetCustomerBookings_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetCustomerBookings_Call) Return(bookingDetailParams []param.BookingDetailParam, err error) *MockIBookingRepo_GetCustomerBookings_Call {
+	_c.Call.Return(bookingDetailParams, err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetCustomerBookings_Call) RunAndReturn(run func(ctx context.Context, userID int64) ([]param.BookingDetailParam, error)) *MockIBookingRepo_GetCustomerBookings_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -192,12 +649,160 @@ func (_c *MockIBookingRepo_GetRecentlyBookedBusinesses_Call) RunAndReturn(run fu
 	return _c
 }
 
+// GetSlotOptionStaffUserID provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) GetSlotOptionStaffUserID(ctx context.Context, slotOptionID int64) (*int64, error) {
+	ret := _mock.Called(ctx, slotOptionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetSlotOptionStaffUserID")
+	}
+
+	var r0 *int64
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (*int64, error)); ok {
+		return returnFunc(ctx, slotOptionID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) *int64); ok {
+		r0 = returnFunc(ctx, slotOptionID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*int64)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, slotOptionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBookingRepo_GetSlotOptionStaffUserID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSlotOptionStaffUserID'
+type MockIBookingRepo_GetSlotOptionStaffUserID_Call struct {
+	*mock.Call
+}
+
+// GetSlotOptionStaffUserID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - slotOptionID int64
+func (_e *MockIBookingRepo_Expecter) GetSlotOptionStaffUserID(ctx interface{}, slotOptionID interface{}) *MockIBookingRepo_GetSlotOptionStaffUserID_Call {
+	return &MockIBookingRepo_GetSlotOptionStaffUserID_Call{Call: _e.mock.On("GetSlotOptionStaffUserID", ctx, slotOptionID)}
+}
+
+func (_c *MockIBookingRepo_GetSlotOptionStaffUserID_Call) Run(run func(ctx context.Context, slotOptionID int64)) *MockIBookingRepo_GetSlotOptionStaffUserID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetSlotOptionStaffUserID_Call) Return(n *int64, err error) *MockIBookingRepo_GetSlotOptionStaffUserID_Call {
+	_c.Call.Return(n, err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetSlotOptionStaffUserID_Call) RunAndReturn(run func(ctx context.Context, slotOptionID int64) (*int64, error)) *MockIBookingRepo_GetSlotOptionStaffUserID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // InsertBooking provides a mock function for the type MockIBookingRepo
-func (_mock *MockIBookingRepo) InsertBooking(ctx context.Context, userID int64, slotOptionID int64) (*param.BookingParam, error) {
-	ret := _mock.Called(ctx, userID, slotOptionID)
+func (_mock *MockIBookingRepo) InsertBooking(ctx context.Context, userID int64, slotOptionID int64, description *string) (*param.BookingParam, error) {
+	ret := _mock.Called(ctx, userID, slotOptionID, description)
 
 	if len(ret) == 0 {
 		panic("no return value specified for InsertBooking")
+	}
+
+	var r0 *param.BookingParam
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, *string) (*param.BookingParam, error)); ok {
+		return returnFunc(ctx, userID, slotOptionID, description)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, *string) *param.BookingParam); ok {
+		r0 = returnFunc(ctx, userID, slotOptionID, description)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*param.BookingParam)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, int64, *string) error); ok {
+		r1 = returnFunc(ctx, userID, slotOptionID, description)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBookingRepo_InsertBooking_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertBooking'
+type MockIBookingRepo_InsertBooking_Call struct {
+	*mock.Call
+}
+
+// InsertBooking is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID int64
+//   - slotOptionID int64
+//   - description *string
+func (_e *MockIBookingRepo_Expecter) InsertBooking(ctx interface{}, userID interface{}, slotOptionID interface{}, description interface{}) *MockIBookingRepo_InsertBooking_Call {
+	return &MockIBookingRepo_InsertBooking_Call{Call: _e.mock.On("InsertBooking", ctx, userID, slotOptionID, description)}
+}
+
+func (_c *MockIBookingRepo_InsertBooking_Call) Run(run func(ctx context.Context, userID int64, slotOptionID int64, description *string)) *MockIBookingRepo_InsertBooking_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		var arg3 *string
+		if args[3] != nil {
+			arg3 = args[3].(*string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_InsertBooking_Call) Return(bookingParam *param.BookingParam, err error) *MockIBookingRepo_InsertBooking_Call {
+	_c.Call.Return(bookingParam, err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_InsertBooking_Call) RunAndReturn(run func(ctx context.Context, userID int64, slotOptionID int64, description *string) (*param.BookingParam, error)) *MockIBookingRepo_InsertBooking_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// InsertWalkInBooking provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) InsertWalkInBooking(ctx context.Context, userID int64, slotOptionID int64) (*param.BookingParam, error) {
+	ret := _mock.Called(ctx, userID, slotOptionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertWalkInBooking")
 	}
 
 	var r0 *param.BookingParam
@@ -220,20 +825,20 @@ func (_mock *MockIBookingRepo) InsertBooking(ctx context.Context, userID int64, 
 	return r0, r1
 }
 
-// MockIBookingRepo_InsertBooking_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertBooking'
-type MockIBookingRepo_InsertBooking_Call struct {
+// MockIBookingRepo_InsertWalkInBooking_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertWalkInBooking'
+type MockIBookingRepo_InsertWalkInBooking_Call struct {
 	*mock.Call
 }
 
-// InsertBooking is a helper method to define mock.On call
+// InsertWalkInBooking is a helper method to define mock.On call
 //   - ctx context.Context
 //   - userID int64
 //   - slotOptionID int64
-func (_e *MockIBookingRepo_Expecter) InsertBooking(ctx interface{}, userID interface{}, slotOptionID interface{}) *MockIBookingRepo_InsertBooking_Call {
-	return &MockIBookingRepo_InsertBooking_Call{Call: _e.mock.On("InsertBooking", ctx, userID, slotOptionID)}
+func (_e *MockIBookingRepo_Expecter) InsertWalkInBooking(ctx interface{}, userID interface{}, slotOptionID interface{}) *MockIBookingRepo_InsertWalkInBooking_Call {
+	return &MockIBookingRepo_InsertWalkInBooking_Call{Call: _e.mock.On("InsertWalkInBooking", ctx, userID, slotOptionID)}
 }
 
-func (_c *MockIBookingRepo_InsertBooking_Call) Run(run func(ctx context.Context, userID int64, slotOptionID int64)) *MockIBookingRepo_InsertBooking_Call {
+func (_c *MockIBookingRepo_InsertWalkInBooking_Call) Run(run func(ctx context.Context, userID int64, slotOptionID int64)) *MockIBookingRepo_InsertWalkInBooking_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -256,12 +861,489 @@ func (_c *MockIBookingRepo_InsertBooking_Call) Run(run func(ctx context.Context,
 	return _c
 }
 
-func (_c *MockIBookingRepo_InsertBooking_Call) Return(bookingParam *param.BookingParam, err error) *MockIBookingRepo_InsertBooking_Call {
+func (_c *MockIBookingRepo_InsertWalkInBooking_Call) Return(bookingParam *param.BookingParam, err error) *MockIBookingRepo_InsertWalkInBooking_Call {
 	_c.Call.Return(bookingParam, err)
 	return _c
 }
 
-func (_c *MockIBookingRepo_InsertBooking_Call) RunAndReturn(run func(ctx context.Context, userID int64, slotOptionID int64) (*param.BookingParam, error)) *MockIBookingRepo_InsertBooking_Call {
+func (_c *MockIBookingRepo_InsertWalkInBooking_Call) RunAndReturn(run func(ctx context.Context, userID int64, slotOptionID int64) (*param.BookingParam, error)) *MockIBookingRepo_InsertWalkInBooking_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// IsSlotOptionOwnedByUser provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) IsSlotOptionOwnedByUser(ctx context.Context, slotOptionID int64, userID int64) (bool, error) {
+	ret := _mock.Called(ctx, slotOptionID, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for IsSlotOptionOwnedByUser")
+	}
+
+	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64) (bool, error)); ok {
+		return returnFunc(ctx, slotOptionID, userID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64) bool); ok {
+		r0 = returnFunc(ctx, slotOptionID, userID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, int64) error); ok {
+		r1 = returnFunc(ctx, slotOptionID, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBookingRepo_IsSlotOptionOwnedByUser_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsSlotOptionOwnedByUser'
+type MockIBookingRepo_IsSlotOptionOwnedByUser_Call struct {
+	*mock.Call
+}
+
+// IsSlotOptionOwnedByUser is a helper method to define mock.On call
+//   - ctx context.Context
+//   - slotOptionID int64
+//   - userID int64
+func (_e *MockIBookingRepo_Expecter) IsSlotOptionOwnedByUser(ctx interface{}, slotOptionID interface{}, userID interface{}) *MockIBookingRepo_IsSlotOptionOwnedByUser_Call {
+	return &MockIBookingRepo_IsSlotOptionOwnedByUser_Call{Call: _e.mock.On("IsSlotOptionOwnedByUser", ctx, slotOptionID, userID)}
+}
+
+func (_c *MockIBookingRepo_IsSlotOptionOwnedByUser_Call) Run(run func(ctx context.Context, slotOptionID int64, userID int64)) *MockIBookingRepo_IsSlotOptionOwnedByUser_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_IsSlotOptionOwnedByUser_Call) Return(b bool, err error) *MockIBookingRepo_IsSlotOptionOwnedByUser_Call {
+	_c.Call.Return(b, err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_IsSlotOptionOwnedByUser_Call) RunAndReturn(run func(ctx context.Context, slotOptionID int64, userID int64) (bool, error)) *MockIBookingRepo_IsSlotOptionOwnedByUser_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RejectOtherPendingBookingsForSlot provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) RejectOtherPendingBookingsForSlot(ctx context.Context, tx *sql.Tx, serviceSlotID int64, exceptBookingID int64) error {
+	ret := _mock.Called(ctx, tx, serviceSlotID, exceptBookingID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RejectOtherPendingBookingsForSlot")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, int64, int64) error); ok {
+		r0 = returnFunc(ctx, tx, serviceSlotID, exceptBookingID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIBookingRepo_RejectOtherPendingBookingsForSlot_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RejectOtherPendingBookingsForSlot'
+type MockIBookingRepo_RejectOtherPendingBookingsForSlot_Call struct {
+	*mock.Call
+}
+
+// RejectOtherPendingBookingsForSlot is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx *sql.Tx
+//   - serviceSlotID int64
+//   - exceptBookingID int64
+func (_e *MockIBookingRepo_Expecter) RejectOtherPendingBookingsForSlot(ctx interface{}, tx interface{}, serviceSlotID interface{}, exceptBookingID interface{}) *MockIBookingRepo_RejectOtherPendingBookingsForSlot_Call {
+	return &MockIBookingRepo_RejectOtherPendingBookingsForSlot_Call{Call: _e.mock.On("RejectOtherPendingBookingsForSlot", ctx, tx, serviceSlotID, exceptBookingID)}
+}
+
+func (_c *MockIBookingRepo_RejectOtherPendingBookingsForSlot_Call) Run(run func(ctx context.Context, tx *sql.Tx, serviceSlotID int64, exceptBookingID int64)) *MockIBookingRepo_RejectOtherPendingBookingsForSlot_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *sql.Tx
+		if args[1] != nil {
+			arg1 = args[1].(*sql.Tx)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		var arg3 int64
+		if args[3] != nil {
+			arg3 = args[3].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_RejectOtherPendingBookingsForSlot_Call) Return(err error) *MockIBookingRepo_RejectOtherPendingBookingsForSlot_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_RejectOtherPendingBookingsForSlot_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, serviceSlotID int64, exceptBookingID int64) error) *MockIBookingRepo_RejectOtherPendingBookingsForSlot_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SlotOptionIsAvailable provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) SlotOptionIsAvailable(ctx context.Context, slotOptionID int64) (bool, error) {
+	ret := _mock.Called(ctx, slotOptionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SlotOptionIsAvailable")
+	}
+
+	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (bool, error)); ok {
+		return returnFunc(ctx, slotOptionID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) bool); ok {
+		r0 = returnFunc(ctx, slotOptionID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, slotOptionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockIBookingRepo_SlotOptionIsAvailable_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SlotOptionIsAvailable'
+type MockIBookingRepo_SlotOptionIsAvailable_Call struct {
+	*mock.Call
+}
+
+// SlotOptionIsAvailable is a helper method to define mock.On call
+//   - ctx context.Context
+//   - slotOptionID int64
+func (_e *MockIBookingRepo_Expecter) SlotOptionIsAvailable(ctx interface{}, slotOptionID interface{}) *MockIBookingRepo_SlotOptionIsAvailable_Call {
+	return &MockIBookingRepo_SlotOptionIsAvailable_Call{Call: _e.mock.On("SlotOptionIsAvailable", ctx, slotOptionID)}
+}
+
+func (_c *MockIBookingRepo_SlotOptionIsAvailable_Call) Run(run func(ctx context.Context, slotOptionID int64)) *MockIBookingRepo_SlotOptionIsAvailable_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_SlotOptionIsAvailable_Call) Return(b bool, err error) *MockIBookingRepo_SlotOptionIsAvailable_Call {
+	_c.Call.Return(b, err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_SlotOptionIsAvailable_Call) RunAndReturn(run func(ctx context.Context, slotOptionID int64) (bool, error)) *MockIBookingRepo_SlotOptionIsAvailable_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SweepPastBookings provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) SweepPastBookings(ctx context.Context) error {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SweepPastBookings")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIBookingRepo_SweepPastBookings_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SweepPastBookings'
+type MockIBookingRepo_SweepPastBookings_Call struct {
+	*mock.Call
+}
+
+// SweepPastBookings is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockIBookingRepo_Expecter) SweepPastBookings(ctx interface{}) *MockIBookingRepo_SweepPastBookings_Call {
+	return &MockIBookingRepo_SweepPastBookings_Call{Call: _e.mock.On("SweepPastBookings", ctx)}
+}
+
+func (_c *MockIBookingRepo_SweepPastBookings_Call) Run(run func(ctx context.Context)) *MockIBookingRepo_SweepPastBookings_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_SweepPastBookings_Call) Return(err error) *MockIBookingRepo_SweepPastBookings_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_SweepPastBookings_Call) RunAndReturn(run func(ctx context.Context) error) *MockIBookingRepo_SweepPastBookings_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateBookingDescription provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) UpdateBookingDescription(ctx context.Context, tx *sql.Tx, bookingID int64, description *string) error {
+	ret := _mock.Called(ctx, tx, bookingID, description)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateBookingDescription")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, int64, *string) error); ok {
+		r0 = returnFunc(ctx, tx, bookingID, description)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIBookingRepo_UpdateBookingDescription_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateBookingDescription'
+type MockIBookingRepo_UpdateBookingDescription_Call struct {
+	*mock.Call
+}
+
+// UpdateBookingDescription is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx *sql.Tx
+//   - bookingID int64
+//   - description *string
+func (_e *MockIBookingRepo_Expecter) UpdateBookingDescription(ctx interface{}, tx interface{}, bookingID interface{}, description interface{}) *MockIBookingRepo_UpdateBookingDescription_Call {
+	return &MockIBookingRepo_UpdateBookingDescription_Call{Call: _e.mock.On("UpdateBookingDescription", ctx, tx, bookingID, description)}
+}
+
+func (_c *MockIBookingRepo_UpdateBookingDescription_Call) Run(run func(ctx context.Context, tx *sql.Tx, bookingID int64, description *string)) *MockIBookingRepo_UpdateBookingDescription_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *sql.Tx
+		if args[1] != nil {
+			arg1 = args[1].(*sql.Tx)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		var arg3 *string
+		if args[3] != nil {
+			arg3 = args[3].(*string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_UpdateBookingDescription_Call) Return(err error) *MockIBookingRepo_UpdateBookingDescription_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_UpdateBookingDescription_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, bookingID int64, description *string) error) *MockIBookingRepo_UpdateBookingDescription_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateBookingSlotOption provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) UpdateBookingSlotOption(ctx context.Context, tx *sql.Tx, bookingID int64, newSlotOptionID int64, status string) error {
+	ret := _mock.Called(ctx, tx, bookingID, newSlotOptionID, status)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateBookingSlotOption")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, int64, int64, string) error); ok {
+		r0 = returnFunc(ctx, tx, bookingID, newSlotOptionID, status)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIBookingRepo_UpdateBookingSlotOption_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateBookingSlotOption'
+type MockIBookingRepo_UpdateBookingSlotOption_Call struct {
+	*mock.Call
+}
+
+// UpdateBookingSlotOption is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx *sql.Tx
+//   - bookingID int64
+//   - newSlotOptionID int64
+//   - status string
+func (_e *MockIBookingRepo_Expecter) UpdateBookingSlotOption(ctx interface{}, tx interface{}, bookingID interface{}, newSlotOptionID interface{}, status interface{}) *MockIBookingRepo_UpdateBookingSlotOption_Call {
+	return &MockIBookingRepo_UpdateBookingSlotOption_Call{Call: _e.mock.On("UpdateBookingSlotOption", ctx, tx, bookingID, newSlotOptionID, status)}
+}
+
+func (_c *MockIBookingRepo_UpdateBookingSlotOption_Call) Run(run func(ctx context.Context, tx *sql.Tx, bookingID int64, newSlotOptionID int64, status string)) *MockIBookingRepo_UpdateBookingSlotOption_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *sql.Tx
+		if args[1] != nil {
+			arg1 = args[1].(*sql.Tx)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		var arg3 int64
+		if args[3] != nil {
+			arg3 = args[3].(int64)
+		}
+		var arg4 string
+		if args[4] != nil {
+			arg4 = args[4].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_UpdateBookingSlotOption_Call) Return(err error) *MockIBookingRepo_UpdateBookingSlotOption_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_UpdateBookingSlotOption_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, bookingID int64, newSlotOptionID int64, status string) error) *MockIBookingRepo_UpdateBookingSlotOption_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateBookingStatus provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) UpdateBookingStatus(ctx context.Context, tx *sql.Tx, bookingID int64, status string, decidedBy int64) error {
+	ret := _mock.Called(ctx, tx, bookingID, status, decidedBy)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateBookingStatus")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *sql.Tx, int64, string, int64) error); ok {
+		r0 = returnFunc(ctx, tx, bookingID, status, decidedBy)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIBookingRepo_UpdateBookingStatus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateBookingStatus'
+type MockIBookingRepo_UpdateBookingStatus_Call struct {
+	*mock.Call
+}
+
+// UpdateBookingStatus is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx *sql.Tx
+//   - bookingID int64
+//   - status string
+//   - decidedBy int64
+func (_e *MockIBookingRepo_Expecter) UpdateBookingStatus(ctx interface{}, tx interface{}, bookingID interface{}, status interface{}, decidedBy interface{}) *MockIBookingRepo_UpdateBookingStatus_Call {
+	return &MockIBookingRepo_UpdateBookingStatus_Call{Call: _e.mock.On("UpdateBookingStatus", ctx, tx, bookingID, status, decidedBy)}
+}
+
+func (_c *MockIBookingRepo_UpdateBookingStatus_Call) Run(run func(ctx context.Context, tx *sql.Tx, bookingID int64, status string, decidedBy int64)) *MockIBookingRepo_UpdateBookingStatus_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *sql.Tx
+		if args[1] != nil {
+			arg1 = args[1].(*sql.Tx)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		var arg4 int64
+		if args[4] != nil {
+			arg4 = args[4].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_UpdateBookingStatus_Call) Return(err error) *MockIBookingRepo_UpdateBookingStatus_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_UpdateBookingStatus_Call) RunAndReturn(run func(ctx context.Context, tx *sql.Tx, bookingID int64, status string, decidedBy int64) error) *MockIBookingRepo_UpdateBookingStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }

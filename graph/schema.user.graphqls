@@ -42,5 +42,8 @@ extend type Mutation {
   signUp(user: SignUpInput!): AuthPayload!
   logIn(user: LogInInput!): AuthPayload!
   resetPassword(newPassword: String!): Boolean!
+  # A logged-in user voluntarily changing their own password from the
+  # profile page — requires the current password, unlike resetPassword.
+  changePassword(currentPassword: String!, newPassword: String!): Boolean!
   updateProfile(user: UpdateProfileInput!): User!
 }

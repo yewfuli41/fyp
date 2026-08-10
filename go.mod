@@ -36,6 +36,7 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/resend/resend-go/v2 v2.28.0 // indirect
 	github.com/sendgrid/rest v2.6.9+incompatible // indirect
 	github.com/sosodev/duration v1.4.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect

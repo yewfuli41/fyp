@@ -428,8 +428,8 @@ func (_c *MockIServiceSlotService_ReassignServiceSlotStaff_Call) RunAndReturn(ru
 }
 
 // UpdateServiceSlot provides a mock function for the type MockIServiceSlotService
-func (_mock *MockIServiceSlotService) UpdateServiceSlot(ctx context.Context, p param.ServiceSlotParam, applyToFutureRecurring bool, staffScope *int64) (*param.ServiceSlotParam, error) {
-	ret := _mock.Called(ctx, p, applyToFutureRecurring, staffScope)
+func (_mock *MockIServiceSlotService) UpdateServiceSlot(ctx context.Context, p param.ServiceSlotParam, staffScope *int64) (*param.ServiceSlotParam, error) {
+	ret := _mock.Called(ctx, p, staffScope)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateServiceSlot")
@@ -437,18 +437,18 @@ func (_mock *MockIServiceSlotService) UpdateServiceSlot(ctx context.Context, p p
 
 	var r0 *param.ServiceSlotParam
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, param.ServiceSlotParam, bool, *int64) (*param.ServiceSlotParam, error)); ok {
-		return returnFunc(ctx, p, applyToFutureRecurring, staffScope)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, param.ServiceSlotParam, *int64) (*param.ServiceSlotParam, error)); ok {
+		return returnFunc(ctx, p, staffScope)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, param.ServiceSlotParam, bool, *int64) *param.ServiceSlotParam); ok {
-		r0 = returnFunc(ctx, p, applyToFutureRecurring, staffScope)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, param.ServiceSlotParam, *int64) *param.ServiceSlotParam); ok {
+		r0 = returnFunc(ctx, p, staffScope)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*param.ServiceSlotParam)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, param.ServiceSlotParam, bool, *int64) error); ok {
-		r1 = returnFunc(ctx, p, applyToFutureRecurring, staffScope)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, param.ServiceSlotParam, *int64) error); ok {
+		r1 = returnFunc(ctx, p, staffScope)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -463,13 +463,12 @@ type MockIServiceSlotService_UpdateServiceSlot_Call struct {
 // UpdateServiceSlot is a helper method to define mock.On call
 //   - ctx context.Context
 //   - p param.ServiceSlotParam
-//   - applyToFutureRecurring bool
 //   - staffScope *int64
-func (_e *MockIServiceSlotService_Expecter) UpdateServiceSlot(ctx interface{}, p interface{}, applyToFutureRecurring interface{}, staffScope interface{}) *MockIServiceSlotService_UpdateServiceSlot_Call {
-	return &MockIServiceSlotService_UpdateServiceSlot_Call{Call: _e.mock.On("UpdateServiceSlot", ctx, p, applyToFutureRecurring, staffScope)}
+func (_e *MockIServiceSlotService_Expecter) UpdateServiceSlot(ctx interface{}, p interface{}, staffScope interface{}) *MockIServiceSlotService_UpdateServiceSlot_Call {
+	return &MockIServiceSlotService_UpdateServiceSlot_Call{Call: _e.mock.On("UpdateServiceSlot", ctx, p, staffScope)}
 }
 
-func (_c *MockIServiceSlotService_UpdateServiceSlot_Call) Run(run func(ctx context.Context, p param.ServiceSlotParam, applyToFutureRecurring bool, staffScope *int64)) *MockIServiceSlotService_UpdateServiceSlot_Call {
+func (_c *MockIServiceSlotService_UpdateServiceSlot_Call) Run(run func(ctx context.Context, p param.ServiceSlotParam, staffScope *int64)) *MockIServiceSlotService_UpdateServiceSlot_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -479,19 +478,14 @@ func (_c *MockIServiceSlotService_UpdateServiceSlot_Call) Run(run func(ctx conte
 		if args[1] != nil {
 			arg1 = args[1].(param.ServiceSlotParam)
 		}
-		var arg2 bool
+		var arg2 *int64
 		if args[2] != nil {
-			arg2 = args[2].(bool)
-		}
-		var arg3 *int64
-		if args[3] != nil {
-			arg3 = args[3].(*int64)
+			arg2 = args[2].(*int64)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
-			arg3,
 		)
 	})
 	return _c
@@ -502,7 +496,7 @@ func (_c *MockIServiceSlotService_UpdateServiceSlot_Call) Return(serviceSlotPara
 	return _c
 }
 
-func (_c *MockIServiceSlotService_UpdateServiceSlot_Call) RunAndReturn(run func(ctx context.Context, p param.ServiceSlotParam, applyToFutureRecurring bool, staffScope *int64) (*param.ServiceSlotParam, error)) *MockIServiceSlotService_UpdateServiceSlot_Call {
+func (_c *MockIServiceSlotService_UpdateServiceSlot_Call) RunAndReturn(run func(ctx context.Context, p param.ServiceSlotParam, staffScope *int64) (*param.ServiceSlotParam, error)) *MockIServiceSlotService_UpdateServiceSlot_Call {
 	_c.Call.Return(run)
 	return _c
 }

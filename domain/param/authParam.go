@@ -25,6 +25,40 @@ type ResetPasswordParam struct {
 	NewPassword string
 }
 
+// ChangePasswordParam is a logged-in user voluntarily changing their own
+// password from the profile page — unlike ResetPasswordParam (which only
+// applies when MustResetPassword is set), this requires proving knowledge of
+// the current password and works regardless of that flag.
+type ChangePasswordParam struct {
+	UserID          int64
+	Email           string
+	CurrentPassword string
+	NewPassword     string
+}
+
+func (p ChangePasswordParam) ValidateChangePassword() error {
+	var validationErrs errs.ValidationErrors
+
+	if p.CurrentPassword == "" {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "currentPassword", Message: "Current password is required"})
+	}
+
+	if p.NewPassword == "" {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "newPassword", Message: "New password is required"})
+	} else if len(p.NewPassword) < minPasswordLength {
+		validationErrs = append(validationErrs, errs.ValidationError{
+			Field:   "newPassword",
+			Message: fmt.Sprintf("New password must be at least %d characters", minPasswordLength),
+		})
+	}
+
+	if len(validationErrs) > 0 {
+		return validationErrs
+	}
+
+	return nil
+}
+
 func (p SignUpParam) ValidateSignUp() error {
 	var validationErrs errs.ValidationErrors
 

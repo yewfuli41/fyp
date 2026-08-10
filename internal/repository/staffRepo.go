@@ -4,9 +4,23 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
 )
+
+// staffHasBookingSQL returns an EXISTS clause reporting whether staffAlias has
+// a genuinely active booking (pending/accepted/rescheduled) — for use as a
+// computed column, mirroring optionHasBookingSQL in serviceRepo.go.
+func staffHasBookingSQL(staffAlias string) string {
+	return fmt.Sprintf(`EXISTS (
+		SELECT 1 FROM bookings b
+		JOIN service_slot_options sso ON b.slot_option_id = sso.slot_option_id
+		JOIN service_slots ss ON sso.service_slot_id = ss.service_slot_id
+		WHERE ss.staff_id = %s.staff_id AND b.deleted_at IS NULL
+			AND b.status IN ('pending', 'accepted', 'rescheduled')
+	)`, staffAlias)
+}
 
 type staffRepo struct {
 	DB *sql.DB
@@ -137,7 +151,7 @@ func (s *staffRepo) GetStaffWorkingHours(ctx context.Context, staffID int64) ([]
 }
 
 func (s *staffRepo) GetStaffByBusinessID(ctx context.Context, businessID int64) ([]param.StaffParam, error) {
-	rows, err := s.DB.QueryContext(ctx, `
+	rows, err := s.DB.QueryContext(ctx, fmt.Sprintf(`
 		SELECT
 			st.staff_id,
 			st.user_id,
@@ -146,13 +160,14 @@ func (s *staffRepo) GetStaffByBusinessID(ctx context.Context, businessID int64) 
 			u.email,
 			u.must_reset_password,
 			st.staff_contact_number,
-			st.position
+			st.position,
+			%s
 		FROM staff st
 		JOIN users u ON u.user_id = st.user_id
 		WHERE st.business_id = $1
 			AND st.deleted_at IS NULL
 		ORDER BY st.staff_id
-	`, businessID)
+	`, staffHasBookingSQL("st")), businessID)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +197,7 @@ func (s *staffRepo) UpdateStaff(ctx context.Context, tx *sql.Tx, p param.StaffPa
 }
 
 func (s *staffRepo) GetStaffByIDTx(ctx context.Context, tx *sql.Tx, staffID int64, businessID int64) (*param.StaffParam, error) {
-	row := tx.QueryRowContext(ctx, `
+	row := tx.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT
 			st.staff_id,
 			st.user_id,
@@ -191,13 +206,14 @@ func (s *staffRepo) GetStaffByIDTx(ctx context.Context, tx *sql.Tx, staffID int6
 			u.email,
 			u.must_reset_password,
 			st.staff_contact_number,
-			st.position
+			st.position,
+			%s
 		FROM staff st
 		JOIN users u ON u.user_id = st.user_id
 		WHERE st.staff_id = $1
 			AND st.business_id = $2
 			AND st.deleted_at IS NULL
-	`, staffID, businessID)
+	`, staffHasBookingSQL("st")), staffID, businessID)
 	return scanStaffRow(row)
 }
 
@@ -209,6 +225,8 @@ func (s *staffRepo) SoftDeleteStaff(ctx context.Context, tx *sql.Tx, staffID int
 	return err
 }
 
+// HasBookingForStaff reports whether staffID has a genuinely active booking —
+// past, cancelled, and rejected bookings don't block deleting the staff member.
 func (s *staffRepo) HasBookingForStaff(ctx context.Context, staffID int64) (bool, error) {
 	var count int
 	err := s.DB.QueryRowContext(ctx, `
@@ -216,6 +234,7 @@ func (s *staffRepo) HasBookingForStaff(ctx context.Context, staffID int64) (bool
 		JOIN service_slot_options sso ON b.slot_option_id = sso.slot_option_id
 		JOIN service_slots ss ON sso.service_slot_id = ss.service_slot_id
 		WHERE ss.staff_id = $1 AND b.deleted_at IS NULL
+			AND b.status IN ('pending', 'accepted', 'rescheduled')
 	`, staffID).Scan(&count)
 	if err != nil {
 		return false, err
@@ -236,6 +255,7 @@ func scanStaffRow(row rowScannerService) (*param.StaffParam, error) {
 		&staff.MustResetPassword,
 		&contactNumber,
 		&position,
+		&staff.HasBooking,
 	); err != nil {
 		return nil, err
 	}

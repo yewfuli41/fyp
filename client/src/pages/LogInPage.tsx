@@ -21,7 +21,7 @@ export default function LogInPage() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      navigate(user?.staffProfile && user.mustResetPassword ? "/reset-password" : "/");
+      navigate(user?.staffProfile && user.mustResetPassword ? "/reset-password" : "/book");
     }
     const msg = sessionStorage.getItem("authMessage");
     if(msg){
@@ -82,8 +82,6 @@ export default function LogInPage() {
       <div className="auth-card">
         <h1 className="mb-4">Log in</h1>
 
-        {formError && <Alert variant="danger">{formError}</Alert>}
-
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3" controlId="email">
             <Form.Label>Email</Form.Label>
@@ -115,6 +113,8 @@ export default function LogInPage() {
             errorMessage={fieldErrors.password}
             className="mb-4"
           />
+
+          {formError && <Alert variant="danger">{formError}</Alert>}
 
           <Button type="submit" variant="primary" className="w-100" disabled={isSubmitting}>
             {isSubmitting ? "Logging in..." : "Log in"}

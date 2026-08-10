@@ -58,3 +58,16 @@ export const updateProfile = async (token: string, username: string, email: stri
     const updateData = await doGraphQL<{updateProfile: User}>(query, token);
     return updateData
 }
+
+export const changePassword = async (token: string, currentPassword: string, newPassword: string) => {
+    const query = `
+        mutation {
+            changePassword(
+                currentPassword: ${JSON.stringify(currentPassword)},
+                newPassword: ${JSON.stringify(newPassword)}
+            )
+        }
+    `
+
+    return await doGraphQL<{ changePassword: boolean }>(query, token);
+}

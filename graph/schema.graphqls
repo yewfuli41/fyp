@@ -86,6 +86,7 @@ type Booking {
   slotOption: ServiceSlotOption!
   status: BookingStatus
   bookingType: BookingType!
+  description: String
   deletedAt: DateTime
   createdAt: DateTime!
   decidedAt: DateTime

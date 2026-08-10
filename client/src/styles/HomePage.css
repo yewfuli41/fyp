@@ -1,0 +1,207 @@
+@import "./booking-theme.css";
+
+/* ── Hero ─────────────────────────────────────────────────────────────── */
+
+.home-hero {
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    padding: 5rem 1.5rem 4.5rem;
+    border-radius: var(--bk-radius-lg);
+    background:
+        radial-gradient(60% 90% at 15% 0%, rgba(91, 141, 239, 0.16), transparent 60%),
+        radial-gradient(50% 80% at 90% 10%, rgba(47, 111, 235, 0.12), transparent 65%),
+        var(--bk-surface-muted);
+    margin-bottom: 4.5rem;
+}
+
+.home-eyebrow {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--bk-primary-dark);
+    background: var(--bk-primary-soft);
+    border-radius: 999px;
+    padding: 0.4rem 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.home-hero h1 {
+    font-size: 3.2rem;
+    font-weight: 800;
+    letter-spacing: -1.4px;
+    line-height: 1.1;
+    margin-bottom: 1.1rem;
+    color: var(--bk-text);
+}
+
+.home-hero h1 .accent {
+    background: var(--bk-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.home-hero-subtitle {
+    font-size: 1.15rem;
+    color: var(--bk-text-muted);
+    max-width: 560px;
+    margin: 0 auto 2.25rem;
+}
+
+.home-hero-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.home-hero-actions .btn {
+    height: 52px;
+    padding-inline: 2rem;
+    font-weight: 600;
+    border-radius: 999px;
+}
+
+.home-hero-actions .btn-primary {
+    background: var(--bk-gradient);
+    border: none;
+    box-shadow: var(--bk-shadow-sm);
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.home-hero-actions .btn-primary:hover {
+    box-shadow: var(--bk-shadow-md);
+    transform: translateY(-1px);
+}
+
+.home-hero-actions .btn-outline-secondary {
+    border-color: var(--bk-border);
+    color: var(--bk-text);
+    background: var(--bk-surface);
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.home-hero-actions .btn-outline-secondary:hover,
+.home-hero-actions .btn-outline-secondary:focus,
+.home-hero-actions .btn-outline-secondary:active {
+    background: var(--bk-primary-soft);
+    border-color: var(--bk-primary);
+    color: var(--bk-primary-dark);
+    transform: translateY(-1px);
+}
+
+.home-hero-login {
+    font-size: 0.9rem;
+    color: var(--bk-text-muted);
+}
+
+.home-hero-login a {
+    color: var(--bk-primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.home-hero-login a:hover {
+    text-decoration: underline;
+}
+
+/* ── Feature grid ─────────────────────────────────────────────────────── */
+
+.home-section-title {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+    color: var(--bk-text);
+    margin-bottom: 0.5rem;
+}
+
+.home-section-subtitle {
+    text-align: center;
+    color: var(--bk-text-muted);
+    max-width: 480px;
+    margin: 0 auto 2.75rem;
+}
+
+.home-feature-card {
+    background: var(--bk-surface);
+    border: 1px solid var(--bk-border);
+    border-radius: var(--bk-radius-md);
+    padding: 1.75rem 1.6rem;
+    height: 100%;
+    box-shadow: var(--bk-shadow-sm);
+    transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.home-feature-card:hover {
+    box-shadow: var(--bk-shadow-md);
+    transform: translateY(-3px);
+    border-color: rgba(47, 111, 235, 0.25);
+}
+
+.home-feature-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: var(--bk-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: var(--bk-gradient);
+    margin-bottom: 1.1rem;
+    box-shadow: 0 6px 16px -6px rgba(47, 111, 235, 0.55);
+}
+
+.home-feature-title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--bk-text);
+    margin-bottom: 0.4rem;
+}
+
+.home-feature-description {
+    color: var(--bk-text-muted);
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+/* ── Closing CTA ──────────────────────────────────────────────────────── */
+
+.home-cta {
+    text-align: center;
+    border-radius: var(--bk-radius-lg);
+    background: linear-gradient(135deg, #4f8df7, #6aa5f8);
+    padding: 3.5rem 1.5rem;
+    margin: 5rem 0 2rem;
+    color: #fff;
+}
+
+.home-cta h2 {
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: -0.6px;
+    margin-bottom: 0.6rem;
+}
+
+.home-cta p {
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 1.75rem;
+}
+
+.home-cta .btn {
+    height: 52px;
+    padding-inline: 2.2rem;
+    font-weight: 700;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--bk-primary-dark);
+    border: none;
+}
+
+.home-cta .btn:hover {
+    background: var(--bk-surface-muted);
+}

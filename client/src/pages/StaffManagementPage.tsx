@@ -23,7 +23,6 @@ export default function StaffManagementPage() {
     const activeToken = token ?? localStorage.getItem("token");
 
     const [hasBusiness, setHasBusiness] = useState<boolean | null>(null);
-    const [businessName, setBusinessName] = useState("");
     const [staff, setStaff] = useState<Staff[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [pageError, setPageError] = useState("");
@@ -65,7 +64,6 @@ export default function StaffManagementPage() {
                 const business = profileResult.data?.userProfile?.businessProfile;
                 setHasBusiness(!!business);
                 if (business) {
-                    setBusinessName(business.businessName ?? "");
                     await fetchStaff();
                 }
             } catch {

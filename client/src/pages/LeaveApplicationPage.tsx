@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { Alert, Badge, Button, Card, Container, Form, Modal, Spinner, Table } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import {
     applyLeave, myLeaveApplications, updateLeaveApplication, deleteLeaveApplication,
@@ -18,7 +17,6 @@ const STATUS_VARIANT: Record<LeaveStatus, string> = {
 };
 
 export default function LeaveApplicationPage() {
-    const navigate = useNavigate();
     const { token } = useAuth();
     const activeToken = token ?? localStorage.getItem("token");
 

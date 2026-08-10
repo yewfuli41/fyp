@@ -1,0 +1,69 @@
+type BookingDetail {
+  bookingId: ID!
+  status: BookingStatus!
+  bookingType: BookingType!
+  serviceSlotId: ID!
+  slotOptionId: ID!
+  serviceOptionId: ID!
+  date: Date!
+  startTime: Time!
+  endTime: Time!
+  serviceName: String!
+  optionName: String!
+  staffName: String
+  customerName: String!
+  customerEmail: String!
+  businessId: ID!
+  businessName: String!
+  description: String
+  createdAt: DateTime!
+}
+
+extend type Query {
+  publicBusinesses: [BusinessProfile!]!
+  publicServices(businessId: ID!): [Service!]!
+  publicStaff(businessId: ID!): [Staff!]!
+  # staffId narrows to one staff member; unassignedOnly (true) narrows instead
+  # to owner-managed slots (no staff assigned) and takes precedence over
+  # staffId if both are somehow passed. Both omitted/false = any.
+  availableSlots(businessId: ID!, serviceOptionId: ID!, date: Date!, staffId: ID, unassignedOnly: Boolean): [ServiceSlot!]!
+  # Dates within [from, until] that have at least one bookable slot, used to
+  # colour a date picker. serviceId narrows to one service (omitted = any
+  # service in the business, e.g. for reschedule); serviceOptionId narrows
+  # further to one specific option of that service (e.g. once the customer
+  # has already picked an option and only its own slots should colour the
+  # calendar); staffId narrows to one staff member (omitted = any staff — an
+  # owner rescheduling sees every staff's slots, while a staff member's own
+  # reschedule picker passes their own id so only their slots show as
+  # available); unassignedOnly (true) narrows instead to owner-managed slots
+  # and takes precedence over staffId if both are somehow passed.
+  availableDates(businessId: ID!, serviceId: ID, serviceOptionId: ID, staffId: ID, unassignedOnly: Boolean, from: Date!, until: Date!): [Date!]!
+  recentlyBookedBusinesses: [BusinessProfile!]!
+  businessBookings: [BookingDetail!]!
+  myAppointments: [BookingDetail!]!
+}
+
+input WalkInInput {
+  serviceOptionId: ID!
+  # Omitted/null => owner-managed (unassigned). Ignored for a staff caller,
+  # who is always forced onto their own staff id.
+  staffId: ID
+  date: Date!
+  startTime: Time!
+  endTime: Time!
+}
+
+extend type Mutation {
+  createBooking(slotOptionId: ID!, description: String): Booking!
+  acceptBooking(bookingId: ID!): BookingDetail!
+  rejectBooking(bookingId: ID!): BookingDetail!
+  cancelBooking(bookingId: ID!): BookingDetail!
+  rescheduleBooking(bookingId: ID!, newSlotOptionId: ID!): BookingDetail!
+  acceptReschedule(bookingId: ID!): BookingDetail!
+  # Lets the customer edit just their note — date/time/option stay fixed.
+  updateBookingDescription(bookingId: ID!, description: String): BookingDetail!
+  # Records an already-accepted walk-in booking on a brand-new slot for the
+  # caller's own business — owner-managed unless the caller is a staff
+  # member, in which case it's forced onto their own staff id.
+  recordWalkIn(input: WalkInInput!): BookingDetail!
+}

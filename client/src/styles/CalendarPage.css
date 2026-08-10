@@ -1,0 +1,255 @@
+.calendar-loading {
+  min-height: 50vh;
+}
+
+.calendar-page-alert {
+  max-width: 1200px;
+}
+
+.calendar-date-label {
+  min-width: 150px;
+  text-align: center;
+}
+
+.calendar-filter-select {
+  width: 200px;
+}
+
+/* The native date input is only ever opened via the calendar button's
+   showPicker() call, so it stays fully hidden and out of the flow — the
+   "Sun, 05 Jul 2026" label is the only thing shown for the current date. */
+.calendar-date-picker-hidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.calendar-date-picker-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.calendar-grid-wrapper {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 260px);
+  min-height: 320px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+}
+
+.calendar-grid {
+  display: grid;
+}
+
+/* top-left corner (sticky on both axes) */
+.calendar-corner {
+  grid-column: 1;
+  grid-row: 1;
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  background: #fff;
+  border-bottom: 1px solid #dee2e6;
+  border-right: 1px solid #eee;
+}
+
+/* staff header row (sticky to top while scrolling) */
+.calendar-header-cell {
+  grid-row: 1;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #fff;
+  border-bottom: 1px solid #dee2e6;
+  border-left: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+/* small pill under a staff's name when they're on approved leave that day */
+.calendar-header-leave-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #b02a37;
+  background: rgba(220, 53, 69, 0.12);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-top: 2px;
+}
+
+/* time labels (sticky to left while scrolling) */
+.calendar-time-label {
+  grid-column: 1;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+  border-right: 1px solid #eee;
+  padding-top: 2px;
+  padding-right: 6px;
+  text-align: right;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* background cells (clickable to add) */
+.calendar-bg-cell {
+  border-top: 1px solid #f0f0f0;
+  border-left: 1px solid #eee;
+  cursor: pointer;
+}
+
+/* outside the column's working hours for the selected day */
+.calendar-bg-cell-closed {
+  background: repeating-linear-gradient(
+    45deg,
+    #e9ecef,
+    #e9ecef 6px,
+    #dfe2e6 6px,
+    #dfe2e6 12px
+  );
+}
+
+/* staff is on approved leave for the selected day — takes priority over the
+   plain "outside working hours" look and isn't clickable to add a slot. */
+.calendar-bg-cell-leave {
+  background: repeating-linear-gradient(
+    45deg,
+    #f8d7da,
+    #f8d7da 6px,
+    #f3c2c7 6px,
+    #f3c2c7 12px
+  );
+  cursor: not-allowed;
+}
+
+/* Positioned ancestor for a column's slot blocks — see CalendarGrid.tsx for
+   why blocks are absolutely positioned by exact minute instead of snapped to
+   30-min grid lines. */
+.calendar-col-slots {
+  position: relative;
+}
+
+/* slot blocks — background/text colour comes from the status modifier below,
+   one per legend entry (see CalendarLegend). */
+.calendar-slot-block {
+  position: absolute;
+  margin: 2px;
+  padding: 4px 22px 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  font-size: 12px;
+  overflow: hidden;
+  z-index: 1;
+  transition: filter 0.15s ease;
+}
+
+.calendar-slot-block:hover {
+  filter: brightness(0.95);
+}
+
+.calendar-slot-accepted {
+  background: linear-gradient(135deg, #33b1a6, #2f9c92);
+  color: #fff;
+}
+
+.calendar-slot-reschedule-pending {
+  background: rgba(51, 177, 166, 0.15);
+  border-color: #33b1a6;
+  color: #1d6b63;
+}
+
+.calendar-slot-pending {
+  background: rgba(255, 193, 7, 0.18);
+  border-color: #d39e00;
+  color: #7a5b00;
+}
+
+.calendar-slot-available {
+  background: #fff;
+  border-style: dashed;
+  border-color: #adb5bd;
+  color: #495057;
+}
+
+.calendar-slot-time {
+  font-weight: 600;
+}
+
+.calendar-slot-more {
+  opacity: 0.85;
+}
+
+.calendar-slot-edit-icon {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 12px;
+  height: 12px;
+  opacity: 0.6;
+}
+
+.calendar-slot-block:hover .calendar-slot-edit-icon {
+  opacity: 1;
+}
+
+/* legend */
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-top: 1px solid #e6e8eb;
+  border-bottom: 1px solid #e6e8eb;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.calendar-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Deliberately omits border-color/style here (only width) — the status
+   classes below each own their own border-color and (for "available")
+   border-style, and this shorthand would otherwise clobber them whenever it
+   happens to land later in the cascade at equal specificity. */
+.calendar-legend-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border-width: 2px;
+  border-style: solid;
+  flex-shrink: 0;
+}
+
+/* The solid-fill "accepted" slot style has no border of its own (it doesn't
+   need one against a coloured block), but the legend dot needs a visible
+   ring like the other three, so give it one here specifically. */
+.calendar-legend-dot.calendar-slot-accepted {
+  border-color: #237f77;
+}
+
+/* Same reasoning as above, but for border-style: the "available" slot style
+   sets dashed at equal specificity to .calendar-legend-dot's solid, so pin
+   it down explicitly here too rather than depending on source order. */
+.calendar-legend-dot.calendar-slot-available {
+  border-style: dashed;
+}

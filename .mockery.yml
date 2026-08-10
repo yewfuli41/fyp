@@ -1,0 +1,11 @@
+structname: "Mock{{.InterfaceName}}"
+filename: "mock_{{.InterfaceName}}.go"
+template: testify
+
+packages:
+  fyp/internal/interfaces:
+    config:
+      all: true
+      inpackage: false
+      pkgname: mocks
+      dir: "{{.InterfaceDir}}/mocks"

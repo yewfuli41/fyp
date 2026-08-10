@@ -1,0 +1,352 @@
+@import "./booking-theme.css";
+
+.book-hero {
+    position: relative;
+    text-align: center;
+    padding: 4.5rem 1.5rem 3.5rem;
+    border-radius: var(--bk-radius-lg);
+    /* No overflow:hidden here — the gradient background already respects
+       border-radius on its own, and hiding overflow would clip the
+       autocomplete dropdown, which is an absolutely-positioned descendant
+       that needs to extend past the hero's bottom edge. */
+    background:
+        radial-gradient(60% 90% at 15% 0%, rgba(91, 141, 239, 0.16), transparent 60%),
+        radial-gradient(50% 80% at 90% 10%, rgba(47, 111, 235, 0.12), transparent 65%),
+        var(--bk-surface-muted);
+    margin-bottom: 0.5rem;
+}
+
+.book-hero h1 {
+    font-size: 3.4rem;
+    font-weight: 800;
+    letter-spacing: -1.6px;
+    margin-bottom: 0.75rem;
+    color: var(--bk-text);
+    background: var(--bk-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.book-hero .book-tagline {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--bk-text-muted);
+    margin-bottom: 2.25rem;
+}
+
+/* Faint decorative icons behind the hero copy — a lightweight accent that
+   reuses the existing icon set and gradient palette instead of pulling in
+   stock illustration art. Clipped to its own layer (not .book-hero itself,
+   which must stay overflow:visible for the autocomplete dropdown above). */
+.book-hero-decor {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.book-hero-decor svg {
+    position: absolute;
+    color: var(--bk-primary);
+    opacity: 0.1;
+}
+
+.book-hero-decor svg:nth-child(1) { top: 14%; left: 7%; transform: rotate(-12deg); }
+.book-hero-decor svg:nth-child(2) { top: 16%; right: 9%; transform: rotate(14deg); }
+.book-hero-decor svg:nth-child(3) { bottom: 12%; left: 11%; transform: rotate(9deg); }
+.book-hero-decor svg:nth-child(4) { bottom: 9%; right: 7%; transform: rotate(-10deg); }
+
+@media (max-width: 640px) {
+    .book-hero-decor { display: none; }
+}
+
+.book-hero > h1,
+.book-hero > .book-tagline,
+.book-hero > .book-search {
+    position: relative;
+    z-index: 1;
+}
+
+.book-search {
+    max-width: 620px;
+    margin: 0 auto;
+    display: flex;
+    gap: 0.6rem;
+}
+
+.book-search-field {
+    position: relative;
+    flex: 1;
+}
+
+.book-search-icon {
+    position: absolute;
+    left: 1.1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--bk-text-faint);
+    pointer-events: none;
+    display: flex;
+}
+
+.book-search .form-control {
+    height: 54px;
+    font-size: 1rem;
+    padding-left: 2.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--bk-border);
+    background: var(--bk-surface);
+    box-shadow: var(--bk-shadow-sm);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.book-search .form-control:focus {
+    border-color: var(--bk-primary);
+    box-shadow: 0 0 0 4px var(--bk-primary-soft);
+}
+
+.book-search .btn {
+    height: 54px;
+    padding-inline: 2.1rem;
+    font-weight: 600;
+    border-radius: 999px;
+    background: var(--bk-gradient);
+    border: none;
+    box-shadow: var(--bk-shadow-sm);
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.book-search .btn:hover {
+    box-shadow: var(--bk-shadow-md);
+    transform: translateY(-1px);
+}
+
+.book-autocomplete {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    background: var(--bk-surface);
+    border: 1px solid var(--bk-border);
+    border-radius: var(--bk-radius-sm);
+    box-shadow: var(--bk-shadow-md);
+    list-style: none;
+    margin: 0;
+    padding: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+    text-align: left;
+}
+
+.book-autocomplete li {
+    padding: 0.6rem 0.85rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--bk-text);
+}
+
+.book-autocomplete li:hover {
+    background: var(--bk-primary-soft);
+    color: var(--bk-primary-dark);
+}
+
+.book-suggestion-name {
+    font-weight: 700;
+}
+
+.book-suggestion-desc {
+    font-weight: 400;
+    font-size: 0.82rem;
+    color: var(--bk-text-muted);
+    margin-top: 0.15rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.book-suggestion-options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.4rem;
+}
+
+.book-suggestion-option-pill {
+    background: var(--bk-surface-muted);
+    border: 1px solid var(--bk-border);
+    color: var(--bk-text-muted);
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+}
+
+.book-autocomplete li:hover .book-suggestion-option-pill {
+    background: var(--bk-surface);
+}
+
+/* Generic reusable search field (toolbar contexts, smaller than the hero's) */
+
+.search-field {
+    position: relative;
+}
+
+.search-field .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--bk-text-faint);
+    pointer-events: none;
+    display: flex;
+}
+
+.search-input {
+    height: 46px;
+    font-size: 0.95rem;
+    padding-left: 2.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--bk-border);
+    background: var(--bk-surface);
+    box-shadow: var(--bk-shadow-sm);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.search-input:focus {
+    border-color: var(--bk-primary);
+    box-shadow: 0 0 0 4px var(--bk-primary-soft);
+}
+
+.book-section-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--bk-text);
+    margin-bottom: 1.1rem;
+}
+
+.book-results {
+    background: transparent;
+    padding: 2rem 0 0.5rem;
+}
+
+/* ── Business cards (shared by BookLandingPage and BusinessListPage) ── */
+
+.biz-card {
+    background: var(--bk-surface);
+    border: 1px solid var(--bk-border);
+    border-radius: var(--bk-radius-md);
+    padding: 1.5rem 1.6rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--bk-shadow-sm);
+    transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.biz-contact {
+    line-height: 1.6;
+    min-width: 0;
+}
+
+.biz-contact-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.biz-contact-row svg {
+    flex-shrink: 0;
+    color: var(--bk-text-faint);
+}
+
+.biz-contact span {
+    overflow-wrap: anywhere;
+}
+
+.biz-card:hover {
+    box-shadow: var(--bk-shadow-md);
+    transform: translateY(-3px);
+    border-color: rgba(47, 111, 235, 0.25);
+}
+
+.biz-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--bk-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+    background: var(--bk-gradient);
+    flex-shrink: 0;
+    object-fit: cover;
+    overflow: hidden;
+    box-shadow: 0 6px 16px -6px rgba(47, 111, 235, 0.55);
+}
+
+.biz-name {
+    font-weight: 700;
+    font-size: 1.08rem;
+    color: var(--bk-text);
+    margin-bottom: 0.15rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: color 0.15s ease;
+}
+
+.biz-name[role="button"]:hover {
+    color: var(--bk-primary);
+}
+
+.biz-address {
+    color: var(--bk-text-muted);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.biz-address svg {
+    flex-shrink: 0;
+    color: var(--bk-text-faint);
+}
+
+.biz-book {
+    color: var(--bk-primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.biz-book:hover {
+    color: var(--bk-primary-dark);
+    text-decoration: underline;
+}
+
+.biz-services-label {
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--bk-text-faint);
+    margin-bottom: 0.6rem;
+}
+
+.biz-service-pill {
+    background: var(--bk-primary-soft);
+    color: var(--bk-primary-dark);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+}

@@ -1,0 +1,22 @@
+input ServiceSlotInput {
+  staffId: ID
+  date: Date                 # a single specific date, OR ...
+  daysOfWeek: [DayOfWeek!]   # ... recurring weekdays (mutually exclusive)
+  startTime: Time!
+  endTime: Time!
+  serviceOptionIds: [ID!]!
+}
+
+extend type Query {
+  displayServiceSlots(date: Date!, staffId: ID, serviceId: ID, unassignedOnly: Boolean): [ServiceSlot!]!
+  availableStaffForSlot(serviceSlotId: ID!): [Staff!]!
+}
+
+extend type Mutation {
+  createServiceSlot(input: ServiceSlotInput!): ServiceSlot!
+  # Edits just this one occurrence — blocked entirely once it already has a
+  # booking (only reassignServiceSlotStaff remains available for that case).
+  updateServiceSlot(serviceSlotId: ID!, input: ServiceSlotInput!): ServiceSlot!
+  reassignServiceSlotStaff(serviceSlotId: ID!, staffId: ID): ServiceSlot!
+  deleteServiceSlot(serviceSlotId: ID!, deleteFutureRecurring: Boolean!): Boolean!
+}

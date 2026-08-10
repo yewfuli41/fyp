@@ -1,0 +1,142 @@
+package param
+
+import (
+	"fmt"
+	"fyp/domain/errs"
+	"strings"
+)
+
+type SignUpParam struct {
+	Username          string
+	Email             string
+	ContactNumber     string
+	Password          string
+	MustResetPassword bool
+}
+
+type LogInParam struct {
+	Email    string
+	Password string
+}
+
+type ResetPasswordParam struct {
+	UserID      int64
+	Email       string
+	NewPassword string
+}
+
+// ChangePasswordParam is a logged-in user voluntarily changing their own
+// password from the profile page — unlike ResetPasswordParam (which only
+// applies when MustResetPassword is set), this requires proving knowledge of
+// the current password and works regardless of that flag.
+type ChangePasswordParam struct {
+	UserID          int64
+	Email           string
+	CurrentPassword string
+	NewPassword     string
+}
+
+func (p ChangePasswordParam) ValidateChangePassword() error {
+	var validationErrs errs.ValidationErrors
+
+	if p.CurrentPassword == "" {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "currentPassword", Message: "Current password is required"})
+	}
+
+	if p.NewPassword == "" {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "newPassword", Message: "New password is required"})
+	} else if len(p.NewPassword) < minPasswordLength {
+		validationErrs = append(validationErrs, errs.ValidationError{
+			Field:   "newPassword",
+			Message: fmt.Sprintf("New password must be at least %d characters", minPasswordLength),
+		})
+	}
+
+	if len(validationErrs) > 0 {
+		return validationErrs
+	}
+
+	return nil
+}
+
+func (p SignUpParam) ValidateSignUp() error {
+	var validationErrs errs.ValidationErrors
+
+	if strings.TrimSpace(p.Username) == "" {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "username", Message: "Username is required"})
+	} else if e, ok := maxLengthError("username", "username", p.Username, maxUsernameLength); ok {
+		validationErrs = append(validationErrs, e)
+	}
+
+	email := strings.TrimSpace(p.Email)
+	if email == "" {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "email", Message: "Email is required"})
+	} else if !emailRegex.MatchString(email) {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "email", Message: "Email format is invalid"})
+	} else if e, ok := maxLengthError("email", "email", email, maxEmailLength); ok {
+		validationErrs = append(validationErrs, e)
+	}
+
+	if strings.TrimSpace(p.ContactNumber) == "" {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "contactNumber", Message: "Contact number is required"})
+	} else if len(p.ContactNumber) < minContactNumberDigits {
+		validationErrs = append(validationErrs, errs.ValidationError{
+			Field:   "contactNumber",
+			Message: fmt.Sprintf("Contact number must have at least %d digits", minContactNumberDigits),
+		})
+	} else if e, ok := maxLengthError("contactNumber", "contact number", p.ContactNumber, maxContactNumberLength); ok {
+		validationErrs = append(validationErrs, e)
+	}
+
+	if p.Password == "" {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "password", Message: "Password is required"})
+	} else if len(p.Password) < minPasswordLength {
+		validationErrs = append(validationErrs, errs.ValidationError{
+			Field:   "password",
+			Message: fmt.Sprintf("Password must be at least %d characters", minPasswordLength),
+		})
+	}
+
+	if len(validationErrs) > 0 {
+		return validationErrs
+	}
+
+	return nil
+}
+
+func (p LogInParam) ValidateLogIn() error {
+	var validationErrs errs.ValidationErrors
+
+	if strings.TrimSpace(p.Email) == "" {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "email", Message: "Email is required"})
+	}
+
+	if p.Password == "" {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "password", Message: "Password is required"})
+	}
+
+	if len(validationErrs) > 0 {
+		return validationErrs
+	}
+
+	return nil
+}
+
+func (p ResetPasswordParam) ValidateResetPassword() error {
+	var validationErrs errs.ValidationErrors
+
+	if p.NewPassword == "" {
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "password", Message: "Password is required"})
+	} else if len(p.NewPassword) < minPasswordLength {
+		validationErrs = append(validationErrs, errs.ValidationError{
+			Field:   "password",
+			Message: fmt.Sprintf("Password must be at least %d characters", minPasswordLength),
+		})
+	}
+
+	if len(validationErrs) > 0 {
+		return validationErrs
+	}
+
+	return nil
+}

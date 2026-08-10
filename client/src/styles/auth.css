@@ -1,0 +1,32 @@
+.auth-page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 2rem;
+  border: 1px solid var(--border, #e5e4e7);
+  border-radius: 0.5rem;
+  background: var(--bg, #fff);
+}
+
+.auth-card h1 {
+  font-size: 2rem;
+  margin: 0 0 1rem;
+  text-align: center;
+}
+
+.auth-footer {
+  text-align: center;
+}
+
+.password-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0.75rem;
+}

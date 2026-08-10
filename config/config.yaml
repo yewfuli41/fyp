@@ -1,0 +1,7 @@
+auth:
+  max_failed_login_attempts: 5
+  lock_duration_minutes: 2
+  jwt_expiration_hours: 12
+
+service_slot:
+  recurring_horizon_weeks: 12

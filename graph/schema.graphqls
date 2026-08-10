@@ -1,0 +1,95 @@
+scalar Date
+scalar Time
+scalar DateTime
+
+enum DayOfWeek {
+  monday
+  tuesday
+  wednesday
+  thursday
+  friday
+  saturday
+  sunday
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BookingStatus {
+  ACCEPTED
+  RESCHEDULED
+  CANCELLED
+  PAST
+  REJECTED
+  PENDING
+}
+
+enum BookingType {
+  ONLINE
+  WALK_IN
+}
+
+input WorkingHourInput {
+  day: DayOfWeek!
+  startTime: Time!
+  endTime: Time!
+}
+
+type ServiceSlot {
+  serviceSlotId: ID!
+  staffId: ID
+  staff: Staff
+  date: Date!
+  startTime: Time!
+  endTime: Time!
+  serviceSlotOptions: [ServiceSlotOption!]!
+  hasBooking: Boolean!
+  deletedAt: DateTime
+  createdAt: DateTime!
+  createdBy: ID
+  creator: User
+}
+
+type ServiceSlotOption {
+  slotOptionId: ID!
+  serviceOptionId: ID!
+  serviceOption: ServiceOption!
+  serviceSlotId: ID!
+  serviceSlot: ServiceSlot!
+  bookings: [Booking!]!
+  deletedAt: DateTime
+}
+
+type RecurringSchedule {
+  recurringScheduleId: ID!
+  staffId: ID!
+  staff: Staff!
+  serviceOptionId: ID!
+  serviceOption: ServiceOption!
+  day: DayOfWeek!
+  startTime: Time!
+  endTime: Time!
+  deletedAt: DateTime
+  createdAt: DateTime!
+  createdBy: ID
+  creator: User
+}
+
+type Booking {
+  bookingId: ID!
+  userId: ID!
+  user: User!
+  slotOptionId: ID!
+  slotOption: ServiceSlotOption!
+  status: BookingStatus
+  bookingType: BookingType!
+  description: String
+  deletedAt: DateTime
+  createdAt: DateTime!
+  decidedAt: DateTime
+  decidedBy: ID
+  decidedByUser: User
+}

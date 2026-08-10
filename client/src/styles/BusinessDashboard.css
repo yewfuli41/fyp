@@ -1,0 +1,171 @@
+/* Chart palette — validated default instance from the dataviz skill
+   (references/palette.md). Categorical order is fixed and never cycled. */
+.dashboard-page {
+  --chart-surface: #fcfcfb;
+  --chart-text-primary: #0b0b0b;
+  --chart-text-secondary: #52514e;
+  --chart-muted: #898781;
+  --chart-grid: #e1e0d9;
+  --chart-axis: #c3c2b7;
+  --series-1: #2a78d6; /* blue */
+  --series-2: #eb6834; /* orange */
+  --series-3: #1baf7a; /* aqua */
+  --series-4: #eda100; /* yellow */
+  --series-5: #e87ba4; /* magenta */
+  --series-6: #008300; /* green */
+  --series-7: #4a3aa7; /* violet */
+  --series-8: #e34948; /* red */
+  --seq-100: #cde2fb;
+  --seq-250: #86b6ef;
+  --seq-400: #3987e5;
+  --seq-550: #1c5cab;
+  --seq-700: #0d366b;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dashboard-page {
+    --chart-surface: #1a1a19;
+    --chart-text-primary: #ffffff;
+    --chart-text-secondary: #c3c2b7;
+    --chart-muted: #898781;
+    --chart-grid: #2c2c2a;
+    --chart-axis: #383835;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+  }
+}
+
+.dashboard-card {
+  height: 100%;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 12px;
+}
+
+/* ── Date-range filter bar ───────────────────────────────────────────── */
+.dashboard-filter-bar {
+  background: var(--bs-tertiary-bg, #f8f9fa);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 10px;
+  padding: 0.4rem 0.75rem;
+}
+
+.dashboard-filter-input {
+  width: auto;
+}
+
+.dashboard-card .card-title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.dashboard-subheading {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--chart-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-empty {
+  color: var(--chart-muted);
+  font-size: 0.9rem;
+  padding: 2rem 0;
+  text-align: center;
+}
+
+/* ── Stat tiles (Booking Summary, Cancellation Analysis) ────────────────── */
+.dashboard-stat-tile {
+  background: var(--bs-tertiary-bg, #f8f9fa);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+}
+
+.dashboard-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.dashboard-stat-label {
+  font-size: 0.78rem;
+  color: var(--bs-secondary-color);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dashboard-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--bs-tertiary-bg, #f8f9fa);
+}
+
+.dashboard-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Slot utilization heatmap strip — one cell per weekday/date/month/year,
+   no hour axis. "date"/"month" groupings render multiple sections (one per
+   month/year), each with its own subtitle heading above its strip. ───────── */
+.dashboard-heatmap-sections {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px; /* room for the scrollbar so it doesn't overlap cells */
+}
+
+.dashboard-heatmap-sections > * + * {
+  margin-top: 0.85rem;
+}
+
+.dashboard-heatmap-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dashboard-heatmap-strip-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 44px;
+}
+
+.dashboard-heatmap-cell {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  min-height: 28px;
+}
+
+.dashboard-heatmap-strip-label {
+  font-size: 0.65rem;
+  color: var(--chart-muted);
+  margin-top: 3px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.dashboard-heatmap-legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+}
+

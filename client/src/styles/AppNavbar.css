@@ -1,0 +1,7 @@
+/* Lighter active-pill styling for the role-based nav links — Bootstrap's
+   default nav-pills active state is a bold solid primary color, which reads
+   too heavy for a persistent top nav. */
+.navbar .nav-pills .nav-link.active {
+    background-color: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary-text-emphasis);
+}

@@ -19,6 +19,7 @@ import AddServiceSlotModal, { type TimeRange } from "../modals/AddServiceSlotMod
 import ManageServiceSlotModal from "../modals/ManageServiceSlotModal";
 import RescheduleBookingModal from "../modals/RescheduleBookingModal";
 import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
+import ConfirmActionModal from "../modals/ConfirmActionModal";
 import RecordWalkInModal, { type WalkInSubmission } from "../modals/RecordWalkInModal";
 import CalendarToolbar from "../components/CalendarToolbar";
 import CalendarGrid from "../components/CalendarGrid";
@@ -143,27 +144,64 @@ export default function CalendarPage() {
         return map;
     }, [bookings]);
 
+    // onError, when given, receives the failure message instead of it going
+    // to the page-level alert — used by the confirm-dialog flow below so the
+    // error shows inline in the dialog instead of behind it.
     const runBookingAction = async (
         b: BookingDetail,
         fn: (token: string, id: string) => Promise<{ errors?: { message: string }[] }>,
-    ) => {
-        if (!activeToken) return;
+        onError?: (message: string) => void,
+    ): Promise<boolean> => {
+        if (!activeToken) return false;
         setBookingBusyId(b.bookingId);
         setPageError("");
         try {
             const result = await fn(activeToken, b.bookingId);
             if (result.errors?.length) {
-                setPageError(result.errors[0].message);
-                return;
+                const message = result.errors[0].message;
+                if (onError) onError(message); else setPageError(message);
+                return false;
             }
             setManaging(null);
             await Promise.all([fetchBookings(), fetchSlots()]);
             notifyPendingCountsChanged();
+            return true;
         } catch {
-            setPageError("Something went wrong. Please try again.");
+            const message = "Something went wrong. Please try again.";
+            if (onError) onError(message); else setPageError(message);
+            return false;
         } finally {
             setBookingBusyId(null);
         }
+    };
+
+    // Reject/cancel confirmation — gates the three destructive booking
+    // actions (reject a request, reject a reschedule proposal, cancel a
+    // booking) behind a "are you sure?" step instead of firing immediately.
+    const [pendingBookingAction, setPendingBookingAction] = useState<{
+        booking: BookingDetail;
+        fn: (token: string, id: string) => Promise<{ errors?: { message: string }[] }>;
+        title: string;
+        body: string;
+        confirmLabel: string;
+    } | null>(null);
+    const [pendingBookingActionError, setPendingBookingActionError] = useState("");
+
+    const confirmBookingAction = (
+        booking: BookingDetail,
+        fn: (token: string, id: string) => Promise<{ errors?: { message: string }[] }>,
+        title: string,
+        body: string,
+        confirmLabel: string,
+    ) => {
+        setPendingBookingActionError("");
+        setPendingBookingAction({ booking, fn, title, body, confirmLabel });
+    };
+
+    const handleConfirmedBookingAction = async () => {
+        if (!pendingBookingAction) return;
+        const ok = await runBookingAction(pendingBookingAction.booking, pendingBookingAction.fn, setPendingBookingActionError);
+        if (ok) setPendingBookingAction(null);
     };
 
     useEffect(() => {
@@ -478,7 +516,11 @@ export default function CalendarPage() {
                 pending={pendingBookings}
                 busyId={bookingBusyId}
                 onAccept={b => runBookingAction(b, acceptBooking)}
-                onReject={b => runBookingAction(b, rejectBooking)}
+                onReject={b => confirmBookingAction(
+                    b, rejectBooking, "Reject booking request",
+                    `Reject the booking request from ${b.customerName}? This can't be undone.`,
+                    "Reject",
+                )}
                 onReschedule={b => setReschedulingBooking(b)}
             />
 
@@ -553,7 +595,7 @@ export default function CalendarPage() {
             />
 
             <ManageServiceSlotModal
-                show={!!managing && !confirmingDeleteSlot}
+                show={!!managing && !confirmingDeleteSlot && !pendingBookingAction}
                 onHide={() => setManaging(null)}
                 managing={managing}
                 manageError={manageError}
@@ -583,7 +625,11 @@ export default function CalendarPage() {
                 booking={managing ? bookingBySlot[managing.serviceSlotId] : null}
                 onCancelBooking={() => {
                     const b = managing && bookingBySlot[managing.serviceSlotId];
-                    if (b) runBookingAction(b, cancelBooking);
+                    if (b) confirmBookingAction(
+                        b, cancelBooking, "Cancel booking",
+                        `Cancel ${b.customerName}'s booking? This can't be undone.`,
+                        "Yes, cancel",
+                    );
                 }}
                 onRescheduleBooking={() => {
                     const b = managing && bookingBySlot[managing.serviceSlotId];
@@ -591,7 +637,11 @@ export default function CalendarPage() {
                 }}
                 onRejectBooking={() => {
                     const b = managing && bookingBySlot[managing.serviceSlotId];
-                    if (b) runBookingAction(b, rejectBooking);
+                    if (b) confirmBookingAction(
+                        b, rejectBooking, "Reject reschedule",
+                        "Reject this reschedule proposal? This can't be undone.",
+                        "Reject",
+                    );
                 }}
             />
 
@@ -607,6 +657,18 @@ export default function CalendarPage() {
                     setManaging(null);
                 }}
                 onConfirm={handleDelete}
+            />
+
+            <ConfirmActionModal
+                show={!!pendingBookingAction}
+                title={pendingBookingAction?.title ?? ""}
+                body={pendingBookingAction?.body ?? ""}
+                confirmLabel={pendingBookingAction?.confirmLabel ?? "Confirm"}
+                confirmingLabel="Working..."
+                error={pendingBookingActionError}
+                isBusy={!!pendingBookingAction && bookingBusyId === pendingBookingAction.booking.bookingId}
+                onCancel={() => setPendingBookingAction(null)}
+                onConfirm={handleConfirmedBookingAction}
             />
 
             <RescheduleBookingModal

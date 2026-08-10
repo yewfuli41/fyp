@@ -18,6 +18,6 @@ func NewProfileRepo(db *sql.DB) interfaces.IProfileRepo {
 }
 
 func (p *profileRepo) UpdateUser(ctx context.Context, param param.ProfileParam) error {
-	_, err := p.DB.ExecContext(ctx, `UPDATE users SET username = $1, email = $2, contact_number = $3 WHERE user_id = $4`, param.Username, param.Email, param.ContactNumber, param.UserId)
+	_, err := p.DB.ExecContext(ctx, `UPDATE fyp_fuli_users SET username = $1, email = $2, contact_number = $3 WHERE user_id = $4`, param.Username, param.Email, param.ContactNumber, param.UserId)
 	return err
 }

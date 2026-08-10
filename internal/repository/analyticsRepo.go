@@ -25,11 +25,11 @@ func NewAnalyticsRepo(db *sql.DB) interfaces.IAnalyticsRepo {
 // that owns them, plus the appointment slot — reused by every widget below.
 // Mirrors bookingDetailSelect's join shape in bookingRepo.go.
 const bookingBusinessJoin = `
-	FROM bookings b
-	JOIN service_slot_options sso ON b.slot_option_id = sso.slot_option_id
-	JOIN service_options so ON so.service_option_id = sso.service_option_id
-	JOIN services s ON s.service_id = so.service_id
-	JOIN service_slots ss ON ss.service_slot_id = sso.service_slot_id
+	FROM fyp_fuli_bookings b
+	JOIN fyp_fuli_service_slot_options sso ON b.slot_option_id = sso.slot_option_id
+	JOIN fyp_fuli_service_options so ON so.service_option_id = sso.service_option_id
+	JOIN fyp_fuli_services s ON s.service_id = so.service_id
+	JOIN fyp_fuli_service_slots ss ON ss.service_slot_id = sso.service_slot_id
 	WHERE s.business_id = $1
 		AND b.deleted_at IS NULL
 		AND ss.date BETWEEN $2 AND $3
@@ -39,11 +39,11 @@ const bookingBusinessJoin = `
 // filter — for the two BookingSummary figures that are always live
 // ("today", "all pending") rather than scoped to the selected range.
 const bookingBusinessJoinNoRange = `
-	FROM bookings b
-	JOIN service_slot_options sso ON b.slot_option_id = sso.slot_option_id
-	JOIN service_options so ON so.service_option_id = sso.service_option_id
-	JOIN services s ON s.service_id = so.service_id
-	JOIN service_slots ss ON ss.service_slot_id = sso.service_slot_id
+	FROM fyp_fuli_bookings b
+	JOIN fyp_fuli_service_slot_options sso ON b.slot_option_id = sso.slot_option_id
+	JOIN fyp_fuli_service_options so ON so.service_option_id = sso.service_option_id
+	JOIN fyp_fuli_services s ON s.service_id = so.service_id
+	JOIN fyp_fuli_service_slots ss ON ss.service_slot_id = sso.service_slot_id
 	WHERE s.business_id = $1
 		AND b.deleted_at IS NULL
 `
@@ -199,20 +199,20 @@ func (r *analyticsRepo) getSlotUtilRows(ctx context.Context, businessID int64, f
 			ss.start_time,
 			ss.end_time,
 			EXISTS (
-				SELECT 1 FROM bookings b
-				JOIN service_slot_options sso2 ON b.slot_option_id = sso2.slot_option_id
+				SELECT 1 FROM fyp_fuli_bookings b
+				JOIN fyp_fuli_service_slot_options sso2 ON b.slot_option_id = sso2.slot_option_id
 				WHERE sso2.service_slot_id = ss.service_slot_id
 					AND b.deleted_at IS NULL
 					AND b.status NOT IN ('cancelled', 'rejected')
 			)
-		FROM service_slots ss
-		LEFT JOIN staff st ON st.staff_id = ss.staff_id
+		FROM fyp_fuli_service_slots ss
+		LEFT JOIN fyp_fuli_staff st ON st.staff_id = ss.staff_id
 		WHERE ss.deleted_at IS NULL
 			AND ss.date BETWEEN $2 AND $3
 			AND EXISTS (
-				SELECT 1 FROM service_slot_options ssp
-				JOIN service_options so ON so.service_option_id = ssp.service_option_id
-				JOIN services s ON s.service_id = so.service_id
+				SELECT 1 FROM fyp_fuli_service_slot_options ssp
+				JOIN fyp_fuli_service_options so ON so.service_option_id = ssp.service_option_id
+				JOIN fyp_fuli_services s ON s.service_id = so.service_id
 				WHERE ssp.service_slot_id = ss.service_slot_id
 					AND s.business_id = $1
 					AND ssp.deleted_at IS NULL
@@ -347,7 +347,7 @@ func buildSection(subtitle string, fullPoints []string, actual map[string]*param
 func (r *analyticsRepo) GetBusinessCreatedAt(ctx context.Context, businessID int64) (string, error) {
 	var createdAt string
 	err := r.DB.QueryRowContext(ctx, `
-		SELECT to_char(created_at, 'YYYY-MM-DD') FROM business_profiles WHERE business_id = $1
+		SELECT to_char(created_at, 'YYYY-MM-DD') FROM fyp_fuli_business_profiles WHERE business_id = $1
 	`, businessID).Scan(&createdAt)
 	return createdAt, err
 }
@@ -487,19 +487,19 @@ func (r *analyticsRepo) GetCustomerRetention(ctx context.Context, businessID int
 	err := r.DB.QueryRowContext(ctx, `
 		WITH customers AS (
 			SELECT b.user_id, MIN(b.created_at) AS first_booking_at
-			FROM bookings b
-			JOIN service_slot_options sso ON b.slot_option_id = sso.slot_option_id
-			JOIN service_options so ON so.service_option_id = sso.service_option_id
-			JOIN services s ON s.service_id = so.service_id
+			FROM fyp_fuli_bookings b
+			JOIN fyp_fuli_service_slot_options sso ON b.slot_option_id = sso.slot_option_id
+			JOIN fyp_fuli_service_options so ON so.service_option_id = sso.service_option_id
+			JOIN fyp_fuli_services s ON s.service_id = so.service_id
 			WHERE s.business_id = $1 AND b.deleted_at IS NULL AND b.booking_type != 'walk_in'
 			GROUP BY b.user_id
 		),
 		active AS (
 			SELECT DISTINCT b.user_id
-			FROM bookings b
-			JOIN service_slot_options sso ON b.slot_option_id = sso.slot_option_id
-			JOIN service_options so ON so.service_option_id = sso.service_option_id
-			JOIN services s ON s.service_id = so.service_id
+			FROM fyp_fuli_bookings b
+			JOIN fyp_fuli_service_slot_options sso ON b.slot_option_id = sso.slot_option_id
+			JOIN fyp_fuli_service_options so ON so.service_option_id = sso.service_option_id
+			JOIN fyp_fuli_services s ON s.service_id = so.service_id
 			WHERE s.business_id = $1 AND b.deleted_at IS NULL AND b.booking_type != 'walk_in'
 				AND b.created_at::date BETWEEN $2::date AND $3::date
 		)
@@ -586,12 +586,12 @@ func (r *analyticsRepo) GetCancellationAnalysis(ctx context.Context, businessID 
 			COALESCE(st.staff_name, 'Owner-managed') AS staff_name,
 			COUNT(*) FILTER (WHERE `+customerInitiated+`) AS customer_count,
 			COUNT(*) FILTER (WHERE `+staffInitiated+`) AS staff_count
-		FROM bookings b
-		JOIN service_slot_options sso ON b.slot_option_id = sso.slot_option_id
-		JOIN service_options so ON so.service_option_id = sso.service_option_id
-		JOIN services s ON s.service_id = so.service_id
-		JOIN service_slots ss ON ss.service_slot_id = sso.service_slot_id
-		LEFT JOIN staff st ON st.staff_id = ss.staff_id
+		FROM fyp_fuli_bookings b
+		JOIN fyp_fuli_service_slot_options sso ON b.slot_option_id = sso.slot_option_id
+		JOIN fyp_fuli_service_options so ON so.service_option_id = sso.service_option_id
+		JOIN fyp_fuli_services s ON s.service_id = so.service_id
+		JOIN fyp_fuli_service_slots ss ON ss.service_slot_id = sso.service_slot_id
+		LEFT JOIN fyp_fuli_staff st ON st.staff_id = ss.staff_id
 		WHERE s.business_id = $1
 			AND b.deleted_at IS NULL
 			AND ss.date BETWEEN $2 AND $3
@@ -630,7 +630,7 @@ func (r *analyticsRepo) GetCancellationAnalysis(ctx context.Context, businessID 
 func (r *analyticsRepo) GetServiceFilterOptions(ctx context.Context, businessID int64) ([]param.ServiceFilterOptionParam, error) {
 	rows, err := r.DB.QueryContext(ctx, `
 		SELECT service_name, array_agg(service_id ORDER BY service_id), bool_and(deleted_at IS NOT NULL)
-		FROM services
+		FROM fyp_fuli_services
 		WHERE business_id = $1
 		GROUP BY service_name
 		ORDER BY service_name

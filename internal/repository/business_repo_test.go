@@ -52,7 +52,7 @@ var _ = Describe("BusinessRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO business_profiles")).
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_business_profiles")).
 				WithArgs(
 					businessParam.OwnerUserID,
 					businessParam.BusinessName,
@@ -89,7 +89,7 @@ var _ = Describe("BusinessRepo", func() {
 			tx, _ := db.Begin()
 
 			for _, wh := range businessParam.WorkingHours {
-				mock.ExpectExec(regexp.QuoteMeta("INSERT INTO business_working_hours")).
+				mock.ExpectExec(regexp.QuoteMeta("INSERT INTO fyp_fuli_business_working_hours")).
 					WithArgs(
 						int64(7),
 						wh.Day,
@@ -118,7 +118,7 @@ var _ = Describe("BusinessRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("UPDATE business_profiles")).
+			mock.ExpectQuery(regexp.QuoteMeta("UPDATE fyp_fuli_business_profiles")).
 				WithArgs(
 					p.BusinessName,
 					p.Description,
@@ -144,7 +144,7 @@ var _ = Describe("BusinessRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("DELETE FROM business_working_hours")).
+			mock.ExpectExec(regexp.QuoteMeta("DELETE FROM fyp_fuli_business_working_hours")).
 				WithArgs(int64(7)).
 				WillReturnResult(sqlmock.NewResult(1, 2))
 

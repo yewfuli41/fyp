@@ -48,7 +48,7 @@ var _ = Describe("ServiceRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO services")).
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_services")).
 				WithArgs(p.BusinessID, p.ServiceName, p.Description).
 				WillReturnRows(sqlmock.NewRows(serviceCols).
 					AddRow(10, 1, "Massage", nil))
@@ -69,7 +69,7 @@ var _ = Describe("ServiceRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO service_options")).
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_service_options")).
 				WithArgs(p.ServiceID, p.ServiceOptionName, p.Description, nil, nil, false).
 				WillReturnRows(sqlmock.NewRows(pkgCols).
 					AddRow(20, 10, "Deep Tissue", nil, "2026-01-01", nil, false))
@@ -90,7 +90,7 @@ var _ = Describe("ServiceRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("INSERT INTO service_option_items")).
+			mock.ExpectExec(regexp.QuoteMeta("INSERT INTO fyp_fuli_service_option_items")).
 				WithArgs(p.ServiceOptionID, p.ServiceOptionItemName).
 				WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -110,7 +110,7 @@ var _ = Describe("ServiceRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("UPDATE services")).
+			mock.ExpectQuery(regexp.QuoteMeta("UPDATE fyp_fuli_services")).
 				WithArgs(p.ServiceName, p.Description, p.ServiceID, p.BusinessID).
 				WillReturnRows(sqlmock.NewRows(serviceCols).
 					AddRow(10, 1, "Updated Massage", nil))
@@ -126,11 +126,11 @@ var _ = Describe("ServiceRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE service_option_items SET deleted_at = NOW()")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_service_option_items SET deleted_at = NOW()")).
 				WithArgs(int64(20)).
 				WillReturnResult(sqlmock.NewResult(1, 1))
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE service_options SET deleted_at = NOW()")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_service_options SET deleted_at = NOW()")).
 				WithArgs(int64(20)).
 				WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -167,7 +167,7 @@ var _ = Describe("ServiceRepo", func() {
 			tx, _ := db.Begin()
 
 			until := "2026-06-30"
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE service_options")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_service_options")).
 				WithArgs(int64(20), "2026-01-01", &until).
 				WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -181,7 +181,7 @@ var _ = Describe("ServiceRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE services SET deleted_at = NOW()")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_services SET deleted_at = NOW()")).
 				WithArgs(int64(10), int64(1)).
 				WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -192,7 +192,7 @@ var _ = Describe("ServiceRepo", func() {
 
 	Describe("GetServicesByBusinessID", func() {
 		It("returns services for a business", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_id, business_id, service_name, description FROM services")).
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_id, business_id, service_name, description FROM fyp_fuli_services")).
 				WithArgs(int64(1)).
 				WillReturnRows(sqlmock.NewRows(serviceCols).
 					AddRow(10, 1, "Massage", nil).
@@ -213,7 +213,7 @@ var _ = Describe("ServiceRepo", func() {
 		}
 
 		It("returns packages for a service", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_options")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_options")).
 				WithArgs(int64(10)).
 				WillReturnRows(sqlmock.NewRows(pkgColsWithBooking).
 					AddRow(20, 10, "Deep Tissue", nil, "2026-01-01", nil, true, false).
@@ -228,7 +228,7 @@ var _ = Describe("ServiceRepo", func() {
 		})
 
 		It("returns future live options as removed for temporary removal display", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_options")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_options")).
 				WithArgs(int64(10)).
 				WillReturnRows(sqlmock.NewRows(pkgColsWithBooking).
 					AddRow(20, 10, "Deep Tissue", nil, "2030-01-01", nil, true, false))
@@ -240,7 +240,7 @@ var _ = Describe("ServiceRepo", func() {
 		})
 
 		It("returns empty slice when no packages exist", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_options")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_options")).
 				WithArgs(int64(99)).
 				WillReturnRows(sqlmock.NewRows(pkgColsWithBooking))
 
@@ -254,7 +254,7 @@ var _ = Describe("ServiceRepo", func() {
 		It("returns items for a package", func() {
 			itemCols := []string{"service_option_item_id", "service_option_id", "service_option_item_name"}
 
-			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_option_item_id, service_option_id, service_option_item_name FROM service_option_items")).
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_option_item_id, service_option_id, service_option_item_name FROM fyp_fuli_service_option_items")).
 				WithArgs(int64(20)).
 				WillReturnRows(sqlmock.NewRows(itemCols).
 					AddRow(1, 20, "Oil").
@@ -269,7 +269,7 @@ var _ = Describe("ServiceRepo", func() {
 		It("returns empty slice when no items exist", func() {
 			itemCols := []string{"service_option_item_id", "service_option_id", "service_option_item_name"}
 
-			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_option_item_id, service_option_id, service_option_item_name FROM service_option_items")).
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_option_item_id, service_option_id, service_option_item_name FROM fyp_fuli_service_option_items")).
 				WithArgs(int64(99)).
 				WillReturnRows(sqlmock.NewRows(itemCols))
 
@@ -316,7 +316,7 @@ var _ = Describe("ServiceRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE service_slot_options sso")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_service_slot_options sso")).
 				WithArgs(int64(777)).
 				WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -330,11 +330,11 @@ var _ = Describe("ServiceRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE service_slot_options sso")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_service_slot_options sso")).
 				WithArgs(int64(10)).
 				WillReturnResult(sqlmock.NewResult(0, 2))
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE service_slots ss")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_service_slots ss")).
 				WithArgs(int64(10)).
 				WillReturnResult(sqlmock.NewResult(0, 1))
 

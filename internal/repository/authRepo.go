@@ -19,7 +19,7 @@ func NewAuthRepo(db *sql.DB) interfaces.IAuthRepo {
 
 func (a *authRepo) SignUp(ctx context.Context, param param.SignUpParam) (*param.AuthUserParam, error) {
 	row := a.DB.QueryRowContext(ctx, `
-		INSERT INTO users (
+		INSERT INTO fyp_fuli_users (
 			username,
 			email,
 			contact_number,
@@ -51,7 +51,7 @@ func (a *authRepo) SignUp(ctx context.Context, param param.SignUpParam) (*param.
 
 func (a *authRepo) SignUpTx(ctx context.Context, tx *sql.Tx, param param.SignUpParam) (*param.AuthUserParam, error) {
 	row := tx.QueryRowContext(ctx, `
-		INSERT INTO users (
+		INSERT INTO fyp_fuli_users (
 			username,
 			email,
 			contact_number,
@@ -83,7 +83,7 @@ func (a *authRepo) SignUpTx(ctx context.Context, tx *sql.Tx, param param.SignUpP
 
 func (a *authRepo) GetUser(ctx context.Context, email string) (*param.AuthUserParam, error) {
 	row := a.DB.QueryRowContext(ctx, `	
-		SELECT * FROM users WHERE email = $1
+		SELECT * FROM fyp_fuli_users WHERE email = $1
 	`, email)
 	user, err := ScanUser(row)
 	if err != nil {
@@ -95,16 +95,16 @@ func (a *authRepo) GetUser(ctx context.Context, email string) (*param.AuthUserPa
 }
 
 func (a *authRepo) UpdateUserLogInStatus(ctx context.Context, param param.AuthUserParam) error {
-	_, err := a.DB.ExecContext(ctx, `UPDATE users SET failed_login_attempts = $1, locked_until = $2 WHERE user_id = $3`, param.FailedLoginAttempts, param.LockedUntil, param.UserID)
+	_, err := a.DB.ExecContext(ctx, `UPDATE fyp_fuli_users SET failed_login_attempts = $1, locked_until = $2 WHERE user_id = $3`, param.FailedLoginAttempts, param.LockedUntil, param.UserID)
 	return err
 }
 
 func (a *authRepo) UpdatePassword(ctx context.Context, userID int64, hashedPassword string) error {
-	_, err := a.DB.ExecContext(ctx, `UPDATE users SET password = $1, must_reset_password = FALSE WHERE user_id = $2`, hashedPassword, userID)
+	_, err := a.DB.ExecContext(ctx, `UPDATE fyp_fuli_users SET password = $1, must_reset_password = FALSE WHERE user_id = $2`, hashedPassword, userID)
 	return err
 }
 
 func (a *authRepo) UpdateUserEmailTx(ctx context.Context, tx *sql.Tx, userID int64, email string) error {
-	_, err := tx.ExecContext(ctx, `UPDATE users SET email = $1 WHERE user_id = $2`, email, userID)
+	_, err := tx.ExecContext(ctx, `UPDATE fyp_fuli_users SET email = $1 WHERE user_id = $2`, email, userID)
 	return err
 }

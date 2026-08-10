@@ -21,7 +21,7 @@ func NewBusinessRepo(db *sql.DB) interfaces.IBusinessRepo {
 
 func (b *businessRepo) InsertBusinessProfile(ctx context.Context, tx *sql.Tx, param param.BusinessProfileParam) (*param.BusinessProfileParam, error) {
 	row := tx.QueryRowContext(ctx, `
-		INSERT INTO business_profiles (
+		INSERT INTO fyp_fuli_business_profiles (
 			owner_user_id,
 			business_name,
 			description,
@@ -61,7 +61,7 @@ func (b *businessRepo) InsertBusinessProfile(ctx context.Context, tx *sql.Tx, pa
 func (b *businessRepo) InsertBusinessWorkingHours(ctx context.Context, tx *sql.Tx, param param.BusinessProfileParam) error {
 	for _, wh := range param.WorkingHours {
 		_, err := tx.ExecContext(ctx, `
-			INSERT INTO business_working_hours (
+			INSERT INTO fyp_fuli_business_working_hours (
 				business_id,
 				day,
 				start_time,
@@ -83,7 +83,7 @@ func (b *businessRepo) InsertBusinessWorkingHours(ctx context.Context, tx *sql.T
 
 func (b *businessRepo) UpdateBusinessProfile(ctx context.Context, tx *sql.Tx, param param.BusinessProfileParam) (*param.BusinessProfileParam, error) {
 	row := tx.QueryRowContext(ctx, `
-		UPDATE business_profiles
+		UPDATE fyp_fuli_business_profiles
 		SET
 			business_name = $1,
 			description = $2,
@@ -121,7 +121,7 @@ func (b *businessRepo) UpdateBusinessProfile(ctx context.Context, tx *sql.Tx, pa
 
 func (b *businessRepo) DeleteBusinessWorkingHours(ctx context.Context, tx *sql.Tx, businessID int64) error {
 	_, err := tx.ExecContext(ctx, `
-		DELETE FROM business_working_hours
+		DELETE FROM fyp_fuli_business_working_hours
 		WHERE business_id = $1
 	`, businessID)
 	return err
@@ -138,7 +138,7 @@ func (b *businessRepo) GetBusinessProfileByOwnerID(ctx context.Context, ownerID 
 			image_url,
 			business_contact_number,
 			business_email
-		FROM business_profiles
+		FROM fyp_fuli_business_profiles
 		WHERE owner_user_id = $1
 	`, ownerID)
 
@@ -152,7 +152,7 @@ func (b *businessRepo) GetBusinessProfileByOwnerID(ctx context.Context, ownerID 
 
 func (b *businessRepo) BusinessEmailExists(ctx context.Context, businessEmail string) (bool, error) {
 	var exists bool
-	err := b.DB.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM business_profiles WHERE business_email = $1)`, businessEmail).Scan(&exists)
+	err := b.DB.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM fyp_fuli_business_profiles WHERE business_email = $1)`, businessEmail).Scan(&exists)
 	if err != nil {
 		return false, nil
 	}
@@ -165,7 +165,7 @@ func (b *businessRepo) GetBusinessWorkingHours(ctx context.Context, businessID i
 			day,
 			start_time,
 			end_time
-		FROM business_working_hours
+		FROM fyp_fuli_business_working_hours
 		WHERE business_id = $1
 	`, businessID)
 	if err != nil {
@@ -189,7 +189,7 @@ func (b *businessRepo) GetBusinesses(ctx context.Context, search string) ([]para
 	query := `
 		SELECT business_id, owner_user_id, business_name, description, address,
 		       image_url, business_contact_number, business_email
-		FROM business_profiles
+		FROM fyp_fuli_business_profiles
 		WHERE 1=1`
 	args := []any{}
 	if search != "" {
@@ -219,7 +219,7 @@ func (b *businessRepo) GetBusinessByID(ctx context.Context, businessID int64) (*
 	row := b.DB.QueryRowContext(ctx, `
 		SELECT business_id, owner_user_id, business_name, description, address,
 		       image_url, business_contact_number, business_email
-		FROM business_profiles
+		FROM fyp_fuli_business_profiles
 		WHERE business_id = $1
 	`, businessID)
 	return ScanBusinessProfile(row)

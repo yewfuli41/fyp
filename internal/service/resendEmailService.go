@@ -45,10 +45,10 @@ func (e *resendEmailService) SendStaffWelcomeEmail(toEmail string) error {
 	return e.send(toEmail, subject, plainText, htmlContent)
 }
 
-func (e *resendEmailService) SendBookingStatusEmail(toEmail, recipientName, businessName, statusLabel, whenText string) error {
-	subject := fmt.Sprintf("Your booking with %s is now %s", businessName, statusLabel)
-	plainText := fmt.Sprintf("Hi %s,\n\nYour booking with %s (%s) is now %s.\n\nThank you.", recipientName, businessName, whenText, statusLabel)
-	htmlContent := fmt.Sprintf("<p>Hi %s,</p><p>Your booking with <strong>%s</strong> (%s) is now <strong>%s</strong>.</p><p>Thank you.</p>", recipientName, businessName, whenText, statusLabel)
+func (e *resendEmailService) SendBookingStatusEmail(toEmail, recipientName, withName, statusLabel, whenText string) error {
+	subject := fmt.Sprintf("Your booking with %s is now %s", withName, statusLabel)
+	plainText := fmt.Sprintf("Hi %s,\n\nYour booking with %s (%s) is now %s.\n\nThank you.", recipientName, withName, whenText, statusLabel)
+	htmlContent := fmt.Sprintf("<p>Hi %s,</p><p>Your booking with <strong>%s</strong> (%s) is now <strong>%s</strong>.</p><p>Thank you.</p>", recipientName, withName, whenText, statusLabel)
 	return e.send(toEmail, subject, plainText, htmlContent)
 }
 

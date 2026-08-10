@@ -101,7 +101,7 @@ var _ = Describe("BookingService", func() {
 			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(&postUpdateCtx, nil).Once()
 
 			emailService.EXPECT().
-				SendBookingStatusEmail("owner@example.com", "Owner", "Biz", "a reschedule request", "today").
+				SendBookingStatusEmail("owner@example.com", "Owner", "Cust", "a reschedule request", "today").
 				Return(nil).Once()
 
 			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "pending"}
@@ -232,7 +232,7 @@ var _ = Describe("BookingService", func() {
 			dbMock.ExpectCommit()
 
 			emailService.EXPECT().
-				SendBookingStatusEmail("owner@example.com", "Owner", "Biz", "accepted", "today").
+				SendBookingStatusEmail("owner@example.com", "Owner", "Cust", "accepted", "today").
 				Return(nil).Once()
 
 			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "accepted"}

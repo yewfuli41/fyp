@@ -165,28 +165,32 @@ func statusIn(status string, allowed ...string) bool {
 	return false
 }
 
-// notify emails the party that did NOT perform the action.
+// notify emails the party that did NOT perform the action. The "with" name
+// in the email is whoever the OTHER side of the booking is from the
+// recipient's point of view — the business name for a customer (their
+// booking is "with" the business), but the customer's name for the owner/staff
+// (their booking is "with" that customer, not with their own business).
 func (s *bookingService) notify(c *param.BookingContextParam, actorIsBusiness bool, statusLabel string) {
-	send := func(email, name string) {
+	send := func(email, name, withName string) {
 		if email == "" {
 			return
 		}
-		if err := s.emailService.SendBookingStatusEmail(email, name, c.BusinessName, statusLabel, c.WhenText); err != nil {
+		if err := s.emailService.SendBookingStatusEmail(email, name, withName, statusLabel, c.WhenText); err != nil {
 			log.Errorf("failed to send booking status email to %s: %v", email, err)
 		}
 	}
 	if actorIsBusiness {
-		send(c.CustomerEmail, c.CustomerName)
+		send(c.CustomerEmail, c.CustomerName, c.BusinessName)
 		return
 	}
 	// customer acted → notify the business (owner and, if assigned, the staff)
-	send(c.OwnerEmail, c.OwnerName)
+	send(c.OwnerEmail, c.OwnerName, c.CustomerName)
 	if c.StaffEmail != nil {
 		staffName := ""
 		if c.StaffName != nil {
 			staffName = *c.StaffName
 		}
-		send(*c.StaffEmail, staffName)
+		send(*c.StaffEmail, staffName, c.CustomerName)
 	}
 }
 

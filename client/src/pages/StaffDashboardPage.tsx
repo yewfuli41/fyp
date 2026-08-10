@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Col, Container, Form, Row, Spinner } from "react-bootstrap";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Badge, Button, Card, Col, Container, Form, Row, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getBusinessBookings, type BookingDetail } from "../services/BookingService";
@@ -8,6 +8,8 @@ import { myLeaveApplications } from "../services/LeaveService";
 import { extractTime } from "../services/ServiceSlotService";
 import { todayISO } from "../utils/serviceSlotHelpers";
 import { IconCalendar, IconClock } from "../components/icons";
+import "../styles/BusinessDashboard.css";
+import "../styles/BookingRequestsPanel.css";
 
 const formatDate = (iso: string) => {
     const d = new Date(`${iso}T00:00:00`);
@@ -21,40 +23,55 @@ const to12h = (rfc: string) => {
     return `${hour}.${String(m).padStart(2, "0")} ${period}`;
 };
 
-// Small notification-dot badge for the corner of a button — same visual
-// treatment AppNavbar's NavCountBadge uses for nav links, just inline here
-// since these buttons live on the page instead of the nav bar.
-function CornerBadge({ count }: { count: number }) {
-    if (count === 0) return null;
+const initials = (name: string) =>
+    name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase() ?? "").join("") || "?";
+
+// A primary nav-shortcut button with a notification badge pinned to its
+// corner — used for the two staff-only shortcuts (My Leave / My Booking),
+// kept visually distinct from the read-only stat tiles below.
+function ShortcutButton({ label, icon, badge, onClick }: { label: string; icon: ReactNode; badge: number; onClick: () => void }) {
     return (
-        <Badge
-            bg="danger"
-            pill
-            className="position-absolute top-0 start-100 translate-middle"
-            style={{ fontSize: "0.7rem" }}
-            title={`${count} pending`}
-        >
-            {count}
-        </Badge>
+        <span className="position-relative">
+            <Button variant="primary" onClick={onClick} className="d-inline-flex align-items-center gap-2">
+                {icon}{label}
+            </Button>
+            {badge > 0 && (
+                <Badge bg="danger" pill className="position-absolute top-0 start-100 translate-middle" style={{ fontSize: "0.7rem" }}>
+                    {badge}
+                </Badge>
+            )}
+        </span>
+    );
+}
+
+function StatTile({ value, label }: { value: number; label: string }) {
+    return (
+        <div className="dashboard-stat-tile h-100">
+            <div className="dashboard-stat-value">{value}</div>
+            <div className="dashboard-stat-label">{label}</div>
+        </div>
     );
 }
 
 function AppointmentRow({ booking, showDate }: { booking: BookingDetail; showDate: boolean }) {
     return (
-        <div className="d-flex justify-content-between align-items-center py-3 border-bottom">
-            <div>
-                <div className="fw-semibold">{booking.customerName}</div>
-                <div className="text-muted small">{booking.optionName}</div>
+        <div className="d-flex align-items-center gap-3 py-3 border-bottom">
+            <div className="req-avatar" style={{ width: 40, height: 40, fontSize: "0.8rem" }}>
+                {initials(booking.customerName)}
             </div>
-            <div className="text-end">
+            <div className="flex-grow-1 min-w-0">
+                <div className="fw-semibold text-truncate">{booking.customerName}</div>
+                <div className="text-muted small text-truncate">{booking.optionName}</div>
+            </div>
+            <div className="text-end flex-shrink-0">
                 {showDate && (
-                    <div className="d-flex align-items-center justify-content-end gap-2 mb-1">
-                        <IconCalendar size={16} />
+                    <div className="d-flex align-items-center justify-content-end gap-2 mb-1 text-muted small">
+                        <IconCalendar size={14} />
                         <span>{formatDate(booking.date)}</span>
                     </div>
                 )}
-                <div className="d-flex align-items-center justify-content-end gap-2">
-                    <IconClock size={16} />
+                <div className="d-flex align-items-center justify-content-end gap-2 fw-semibold small">
+                    <IconClock size={14} />
                     <span>{to12h(booking.startTime)} - {to12h(booking.endTime)}</span>
                 </div>
             </div>
@@ -66,7 +83,7 @@ function AppointmentRow({ booking, showDate }: { booking: BookingDetail; showDat
 // at the same "/" route) — a quick-glance summary instead of dropping staff
 // straight into the full calendar. Pending-action counts (leave awaiting the
 // owner's decision, bookings awaiting the staff's own accept/reject) surface
-// as badges on the two shortcut buttons rather than a separate notification
+// as badges on the two shortcut tiles rather than a separate notification
 // bell, so there's one consistent place to look instead of two.
 export default function StaffDashboardPage() {
     const { token } = useAuth();
@@ -114,14 +131,14 @@ export default function StaffDashboardPage() {
         () => confirmed.filter(b => b.date === today).sort((a, b) => a.startTime.localeCompare(b.startTime)),
         [confirmed, today],
     );
+    const upcomingAll = useMemo(() => confirmed.filter(b => b.date > today), [confirmed, today]);
 
     const selectedServiceName = services.find(s => s.serviceId === selectedServiceId)?.serviceName;
-    const upcomingAppointments = useMemo(() => confirmed
-        .filter(b => b.date > today)
+    const upcomingAppointments = useMemo(() => upcomingAll
         .filter(b => !selectedDate || b.date === selectedDate)
         .filter(b => !selectedServiceName || b.serviceName === selectedServiceName)
         .sort((a, b) => a.date === b.date ? a.startTime.localeCompare(b.startTime) : a.date.localeCompare(b.date)),
-        [confirmed, today, selectedDate, selectedServiceName],
+        [upcomingAll, selectedDate, selectedServiceName],
     );
 
     if (loading) {
@@ -133,52 +150,64 @@ export default function StaffDashboardPage() {
     }
 
     return (
-        <Container className="py-4 text-start" style={{ maxWidth: 900 }}>
+        <Container className="dashboard-page py-4" style={{ maxWidth: 960 }}>
             <h1 className="fs-2 fw-bold mb-4">Staff Dashboard</h1>
 
-            <div className="d-flex gap-3 mb-4">
-                <span className="position-relative">
-                    <Button variant="primary" onClick={() => navigate("/leave")}>My Leave</Button>
-                    <CornerBadge count={decidedLeaveCount} />
-                </span>
-                <span className="position-relative">
-                    <Button variant="primary" onClick={() => navigate("/my-calendar")}>My Booking</Button>
-                    <CornerBadge count={pendingBookingCount} />
-                </span>
-            </div>
-
-            <h2 className="fs-4 fw-bold mb-2">Today Appointments</h2>
-            {todayAppointments.length === 0 ? (
-                <p className="text-muted">No appointments today.</p>
-            ) : (
-                <div className="mb-4">
-                    {todayAppointments.map(b => <AppointmentRow key={b.bookingId} booking={b} showDate={false} />)}
-                </div>
-            )}
-
-            <Row className="align-items-end mb-2 g-3">
-                <Col xs="auto">
-                    <h2 className="fs-4 fw-bold mb-0">Upcoming Appointments</h2>
+            <Row className="g-3 mb-4 align-items-stretch">
+                <Col xs={6} md={3}>
+                    <StatTile value={todayAppointments.length} label="Today" />
                 </Col>
-                <Col xs={12} md="auto" className="ms-md-auto">
-                    <Form.Label className="fw-semibold small mb-1">Select Date</Form.Label>
-                    <Form.Control type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
+                <Col xs={6} md={3}>
+                    <StatTile value={upcomingAll.length} label="Upcoming" />
                 </Col>
-                <Col xs={12} md="auto">
-                    <Form.Label className="fw-semibold small mb-1">Select Service</Form.Label>
-                    <Form.Select value={selectedServiceId} onChange={e => setSelectedServiceId(e.target.value)}>
-                        <option value="">— Select Service —</option>
-                        {services.map(s => <option key={s.serviceId} value={s.serviceId}>{s.serviceName}</option>)}
-                    </Form.Select>
+                <Col xs={12} md={6} className="d-flex align-items-center justify-content-md-end gap-2 flex-wrap">
+                    <ShortcutButton label="My Leave" icon={<IconCalendar size={16} />} badge={decidedLeaveCount} onClick={() => navigate("/leave")} />
+                    <ShortcutButton label="My Booking" icon={<IconClock size={16} />} badge={pendingBookingCount} onClick={() => navigate("/my-calendar")} />
                 </Col>
             </Row>
-            {upcomingAppointments.length === 0 ? (
-                <p className="text-muted">No upcoming appointments{selectedDate || selectedServiceId ? " match your filters." : "."}</p>
-            ) : (
-                <div>
-                    {upcomingAppointments.map(b => <AppointmentRow key={b.bookingId} booking={b} showDate />)}
-                </div>
-            )}
+
+            <Card className="dashboard-card mb-4">
+                <Card.Body>
+                    <div className="dashboard-subheading mb-3">Today's Appointments</div>
+                    {todayAppointments.length === 0 ? (
+                        <div className="dashboard-empty">No appointments today.</div>
+                    ) : (
+                        <div>
+                            {todayAppointments.map(b => <AppointmentRow key={b.bookingId} booking={b} showDate={false} />)}
+                        </div>
+                    )}
+                </Card.Body>
+            </Card>
+
+            <Card className="dashboard-card">
+                <Card.Body>
+                    <Row className="align-items-end mb-3 g-3">
+                        <Col xs="auto">
+                            <div className="dashboard-subheading mb-0">Upcoming Appointments</div>
+                        </Col>
+                        <Col xs={12} md="auto" className="ms-md-auto">
+                            <Form.Label className="fw-semibold small mb-1">Select Date</Form.Label>
+                            <Form.Control size="sm" type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
+                        </Col>
+                        <Col xs={12} md="auto">
+                            <Form.Label className="fw-semibold small mb-1">Select Service</Form.Label>
+                            <Form.Select size="sm" value={selectedServiceId} onChange={e => setSelectedServiceId(e.target.value)}>
+                                <option value="">— Select Service —</option>
+                                {services.map(s => <option key={s.serviceId} value={s.serviceId}>{s.serviceName}</option>)}
+                            </Form.Select>
+                        </Col>
+                    </Row>
+                    {upcomingAppointments.length === 0 ? (
+                        <div className="dashboard-empty">
+                            No upcoming appointments{selectedDate || selectedServiceId ? " match your filters." : "."}
+                        </div>
+                    ) : (
+                        <div>
+                            {upcomingAppointments.map(b => <AppointmentRow key={b.bookingId} booking={b} showDate />)}
+                        </div>
+                    )}
+                </Card.Body>
+            </Card>
         </Container>
     );
 }

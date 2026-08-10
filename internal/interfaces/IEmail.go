@@ -2,7 +2,10 @@ package interfaces
 
 type IEmailService interface {
 	SendStaffWelcomeEmail(toEmail string) error
-	SendBookingStatusEmail(toEmail, recipientName, businessName, statusLabel, whenText string) error
+	// SendBookingStatusEmail — withName is whoever the booking is "with" from
+	// the recipient's side: the business name for a customer, or the
+	// customer's name for the owner/staff (never their own business name).
+	SendBookingStatusEmail(toEmail, recipientName, withName, statusLabel, whenText string) error
 	// SendNewBookingRequestEmail notifies the business side (owner and, if
 	// assigned, the staff member) that a customer just placed a new booking
 	// request — sent once, right when CreateBooking succeeds, before anyone

@@ -14,9 +14,9 @@ import (
 // computed column, mirroring optionHasBookingSQL in serviceRepo.go.
 func staffHasBookingSQL(staffAlias string) string {
 	return fmt.Sprintf(`EXISTS (
-		SELECT 1 FROM bookings b
-		JOIN service_slot_options sso ON b.slot_option_id = sso.slot_option_id
-		JOIN service_slots ss ON sso.service_slot_id = ss.service_slot_id
+		SELECT 1 FROM fyp_fuli_bookings b
+		JOIN fyp_fuli_service_slot_options sso ON b.slot_option_id = sso.slot_option_id
+		JOIN fyp_fuli_service_slots ss ON sso.service_slot_id = ss.service_slot_id
 		WHERE ss.staff_id = %s.staff_id AND b.deleted_at IS NULL
 			AND b.status IN ('pending', 'accepted', 'rescheduled')
 	)`, staffAlias)
@@ -34,7 +34,7 @@ func (s *staffRepo) InsertStaff(ctx context.Context, tx *sql.Tx, p param.StaffPa
 	// Restore a previously soft-deleted record if one exists for this user.
 	var staffID int64
 	err := tx.QueryRowContext(ctx, `
-		UPDATE staff SET
+		UPDATE fyp_fuli_staff SET
 			business_id          = $2,
 			staff_name           = $3,
 			staff_contact_number = $4,
@@ -51,7 +51,7 @@ func (s *staffRepo) InsertStaff(ctx context.Context, tx *sql.Tx, p param.StaffPa
 	}
 	// No soft-deleted record — normal insert (unique violation = active staff).
 	row := tx.QueryRowContext(ctx, `
-		INSERT INTO staff (user_id, business_id, staff_name, staff_contact_number, position)
+		INSERT INTO fyp_fuli_staff (user_id, business_id, staff_name, staff_contact_number, position)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING staff_id
 	`, p.UserID, p.BusinessID, p.StaffName, p.StaffContactNumber, p.Position)
@@ -60,7 +60,7 @@ func (s *staffRepo) InsertStaff(ctx context.Context, tx *sql.Tx, p param.StaffPa
 
 func (s *staffRepo) DeleteStaffWorkingHours(ctx context.Context, tx *sql.Tx, staffID int64) error {
 	_, err := tx.ExecContext(ctx, `
-		UPDATE staff_working_hours SET deleted_at = NOW()
+		UPDATE fyp_fuli_staff_working_hours SET deleted_at = NOW()
 		WHERE staff_id = $1 AND deleted_at IS NULL
 	`, staffID)
 	return err
@@ -69,7 +69,7 @@ func (s *staffRepo) DeleteStaffWorkingHours(ctx context.Context, tx *sql.Tx, sta
 func (s *staffRepo) InsertStaffWorkingHours(ctx context.Context, tx *sql.Tx, param param.StaffParam) error {
 	for _, wh := range param.WorkingHours {
 		_, err := tx.ExecContext(ctx, `
-			INSERT INTO staff_working_hours (
+			INSERT INTO fyp_fuli_staff_working_hours (
 				staff_id,
 				day,
 				start_time,
@@ -98,7 +98,7 @@ func (s *staffRepo) GetStaffByUserID(ctx context.Context, userID int64) (*param.
 			staff_name,
 			staff_contact_number,
 			position
-		FROM staff
+		FROM fyp_fuli_staff
 		WHERE user_id = $1
 			AND deleted_at IS NULL
 	`, userID)
@@ -130,7 +130,7 @@ func (s *staffRepo) GetStaffByUserID(ctx context.Context, userID int64) (*param.
 func (s *staffRepo) GetStaffWorkingHours(ctx context.Context, staffID int64) ([]param.WorkingHourParam, error) {
 	rows, err := s.DB.QueryContext(ctx, `
 		SELECT day, start_time, end_time
-		FROM staff_working_hours
+		FROM fyp_fuli_staff_working_hours
 		WHERE staff_id = $1 AND deleted_at IS NULL
 		ORDER BY start_time
 	`, staffID)
@@ -162,8 +162,8 @@ func (s *staffRepo) GetStaffByBusinessID(ctx context.Context, businessID int64) 
 			st.staff_contact_number,
 			st.position,
 			%s
-		FROM staff st
-		JOIN users u ON u.user_id = st.user_id
+		FROM fyp_fuli_staff st
+		JOIN fyp_fuli_users u ON u.user_id = st.user_id
 		WHERE st.business_id = $1
 			AND st.deleted_at IS NULL
 		ORDER BY st.staff_id
@@ -186,7 +186,7 @@ func (s *staffRepo) GetStaffByBusinessID(ctx context.Context, businessID int64) 
 
 func (s *staffRepo) UpdateStaff(ctx context.Context, tx *sql.Tx, p param.StaffParam) (*param.StaffParam, error) {
 	_, err := tx.ExecContext(ctx, `
-		UPDATE staff
+		UPDATE fyp_fuli_staff
 		SET staff_name = $1, staff_contact_number = $2, position = $3
 		WHERE staff_id = $4 AND business_id = $5 AND deleted_at IS NULL
 	`, p.StaffName, p.StaffContactNumber, p.Position, p.StaffID, p.BusinessID)
@@ -208,8 +208,8 @@ func (s *staffRepo) GetStaffByIDTx(ctx context.Context, tx *sql.Tx, staffID int6
 			st.staff_contact_number,
 			st.position,
 			%s
-		FROM staff st
-		JOIN users u ON u.user_id = st.user_id
+		FROM fyp_fuli_staff st
+		JOIN fyp_fuli_users u ON u.user_id = st.user_id
 		WHERE st.staff_id = $1
 			AND st.business_id = $2
 			AND st.deleted_at IS NULL
@@ -219,7 +219,7 @@ func (s *staffRepo) GetStaffByIDTx(ctx context.Context, tx *sql.Tx, staffID int6
 
 func (s *staffRepo) SoftDeleteStaff(ctx context.Context, tx *sql.Tx, staffID int64, businessID int64) error {
 	_, err := tx.ExecContext(ctx, `
-		UPDATE staff SET deleted_at = NOW()
+		UPDATE fyp_fuli_staff SET deleted_at = NOW()
 		WHERE staff_id = $1 AND business_id = $2 AND deleted_at IS NULL
 	`, staffID, businessID)
 	return err
@@ -230,9 +230,9 @@ func (s *staffRepo) SoftDeleteStaff(ctx context.Context, tx *sql.Tx, staffID int
 func (s *staffRepo) HasBookingForStaff(ctx context.Context, staffID int64) (bool, error) {
 	var count int
 	err := s.DB.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM bookings b
-		JOIN service_slot_options sso ON b.slot_option_id = sso.slot_option_id
-		JOIN service_slots ss ON sso.service_slot_id = ss.service_slot_id
+		SELECT COUNT(*) FROM fyp_fuli_bookings b
+		JOIN fyp_fuli_service_slot_options sso ON b.slot_option_id = sso.slot_option_id
+		JOIN fyp_fuli_service_slots ss ON sso.service_slot_id = ss.service_slot_id
 		WHERE ss.staff_id = $1 AND b.deleted_at IS NULL
 			AND b.status IN ('pending', 'accepted', 'rescheduled')
 	`, staffID).Scan(&count)

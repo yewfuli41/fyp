@@ -44,7 +44,7 @@ var _ = Describe("ProfileRepo", func() {
 				ContactNumber: "0123456789",
 			}
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET username = $1, email = $2, contact_number = $3 WHERE user_id = $4")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_users SET username = $1, email = $2, contact_number = $3 WHERE user_id = $4")).
 				WithArgs(profileParam.Username, profileParam.Email, profileParam.ContactNumber, profileParam.UserId).
 				WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -58,7 +58,7 @@ var _ = Describe("ProfileRepo", func() {
 				UserId: 1,
 			}
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_users SET")).
 				WillReturnError(errors.New("db error"))
 
 			err := repo.UpdateUser(ctx, profileParam)

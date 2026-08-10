@@ -20,8 +20,8 @@ const leaveApplicationSelect = `
 	SELECT la.leave_id, la.staff_id, st.business_id, st.staff_name, st.position,
 		to_char(la.start_date, 'YYYY-MM-DD'), to_char(la.end_date, 'YYYY-MM-DD'),
 		la.justification, la.status, la.remark, la.decided_at, la.created_at
-	FROM leave_applications la
-	JOIN staff st ON st.staff_id = la.staff_id
+	FROM fyp_fuli_leave_applications la
+	JOIN fyp_fuli_staff st ON st.staff_id = la.staff_id
 `
 
 func scanLeaveApplication(row rowScannerService) (*param.LeaveApplicationParam, error) {
@@ -54,7 +54,7 @@ func scanLeaveApplication(row rowScannerService) (*param.LeaveApplicationParam, 
 func (r *leaveRepo) InsertLeaveApplication(ctx context.Context, tx *sql.Tx, p param.LeaveApplicationParam) (int64, error) {
 	var leaveID int64
 	err := tx.QueryRowContext(ctx, `
-		INSERT INTO leave_applications (staff_id, start_date, end_date, justification)
+		INSERT INTO fyp_fuli_leave_applications (staff_id, start_date, end_date, justification)
 		VALUES ($1, $2::date, $3::date, $4)
 		RETURNING leave_id
 	`, p.StaffID, p.StartDate, p.EndDate, p.Justification).Scan(&leaveID)
@@ -112,7 +112,7 @@ func (r *leaveRepo) GetLeaveApplicationByID(ctx context.Context, leaveID int64) 
 
 func (r *leaveRepo) UpdateLeaveStatus(ctx context.Context, tx *sql.Tx, leaveID int64, status string, remark *string) error {
 	_, err := tx.ExecContext(ctx, `
-		UPDATE leave_applications
+		UPDATE fyp_fuli_leave_applications
 		SET status = $1, remark = $2, decided_at = NOW()
 		WHERE leave_id = $3 AND deleted_at IS NULL
 	`, status, remark, leaveID)
@@ -121,7 +121,7 @@ func (r *leaveRepo) UpdateLeaveStatus(ctx context.Context, tx *sql.Tx, leaveID i
 
 func (r *leaveRepo) UpdateLeaveJustification(ctx context.Context, tx *sql.Tx, leaveID int64, justification *string) error {
 	_, err := tx.ExecContext(ctx, `
-		UPDATE leave_applications
+		UPDATE fyp_fuli_leave_applications
 		SET justification = $1
 		WHERE leave_id = $2 AND deleted_at IS NULL
 	`, justification, leaveID)
@@ -130,7 +130,7 @@ func (r *leaveRepo) UpdateLeaveJustification(ctx context.Context, tx *sql.Tx, le
 
 func (r *leaveRepo) SoftDeleteLeaveApplication(ctx context.Context, tx *sql.Tx, leaveID int64) error {
 	_, err := tx.ExecContext(ctx, `
-		UPDATE leave_applications SET deleted_at = NOW()
+		UPDATE fyp_fuli_leave_applications SET deleted_at = NOW()
 		WHERE leave_id = $1 AND deleted_at IS NULL
 	`, leaveID)
 	return err
@@ -140,7 +140,7 @@ func (r *leaveRepo) HasOverlappingLeave(ctx context.Context, staffID int64, star
 	var exists bool
 	err := r.DB.QueryRowContext(ctx, `
 		SELECT EXISTS(
-			SELECT 1 FROM leave_applications
+			SELECT 1 FROM fyp_fuli_leave_applications
 			WHERE staff_id = $1 AND deleted_at IS NULL
 				AND status IN ('pending', 'approved')
 				AND start_date <= $3::date AND end_date >= $2::date
@@ -153,7 +153,7 @@ func (r *leaveRepo) IsStaffOnLeave(ctx context.Context, staffID int64, date stri
 	var exists bool
 	err := r.DB.QueryRowContext(ctx, `
 		SELECT EXISTS(
-			SELECT 1 FROM leave_applications
+			SELECT 1 FROM fyp_fuli_leave_applications
 			WHERE staff_id = $1 AND deleted_at IS NULL
 				AND status = 'approved'
 				AND start_date <= $2::date AND end_date >= $2::date

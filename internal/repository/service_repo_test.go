@@ -181,7 +181,7 @@ var _ = Describe("ServiceRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE service_options")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_service_options")).
 				WithArgs(int64(10), int64(20)).
 				WillReturnResult(sqlmock.NewResult(0, 3))
 
@@ -297,7 +297,7 @@ var _ = Describe("ServiceRepo", func() {
 		It("returns items for a package including soft-deleted ones", func() {
 			itemCols := []string{"service_option_item_id", "service_option_id", "service_option_item_name"}
 
-			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_option_item_id, service_option_id, service_option_item_name FROM service_option_items")).
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_option_item_id, service_option_id, service_option_item_name FROM fyp_fuli_service_option_items")).
 				WithArgs(int64(20)).
 				WillReturnRows(sqlmock.NewRows(itemCols).
 					AddRow(1, 20, "Oil").
@@ -314,7 +314,7 @@ var _ = Describe("ServiceRepo", func() {
 		It("returns empty slice when no items exist", func() {
 			itemCols := []string{"service_option_item_id", "service_option_id", "service_option_item_name"}
 
-			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_option_item_id, service_option_id, service_option_item_name FROM service_option_items")).
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_option_item_id, service_option_id, service_option_item_name FROM fyp_fuli_service_option_items")).
 				WithArgs(int64(99)).
 				WillReturnRows(sqlmock.NewRows(itemCols))
 

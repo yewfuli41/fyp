@@ -59,7 +59,7 @@ var _ = Describe("StaffRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("UPDATE staff SET")).
+			mock.ExpectQuery(regexp.QuoteMeta("UPDATE fyp_fuli_staff SET")).
 				WithArgs(p.UserID, p.BusinessID, p.StaffName, p.StaffContactNumber, p.Position).
 				WillReturnRows(sqlmock.NewRows([]string{"staff_id"}).AddRow(9))
 
@@ -73,11 +73,11 @@ var _ = Describe("StaffRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("UPDATE staff SET")).
+			mock.ExpectQuery(regexp.QuoteMeta("UPDATE fyp_fuli_staff SET")).
 				WithArgs(p.UserID, p.BusinessID, p.StaffName, p.StaffContactNumber, p.Position).
 				WillReturnError(sql.ErrNoRows)
 
-			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO staff")).
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_staff")).
 				WithArgs(p.UserID, p.BusinessID, p.StaffName, p.StaffContactNumber, p.Position).
 				WillReturnRows(sqlmock.NewRows([]string{"staff_id"}).AddRow(10))
 
@@ -91,7 +91,7 @@ var _ = Describe("StaffRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("UPDATE staff SET")).
+			mock.ExpectQuery(regexp.QuoteMeta("UPDATE fyp_fuli_staff SET")).
 				WithArgs(p.UserID, p.BusinessID, p.StaffName, p.StaffContactNumber, p.Position).
 				WillReturnError(sql.ErrConnDone)
 
@@ -105,11 +105,11 @@ var _ = Describe("StaffRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("UPDATE staff SET")).
+			mock.ExpectQuery(regexp.QuoteMeta("UPDATE fyp_fuli_staff SET")).
 				WithArgs(p.UserID, p.BusinessID, p.StaffName, p.StaffContactNumber, p.Position).
 				WillReturnError(sql.ErrNoRows)
 
-			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO staff")).
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_staff")).
 				WithArgs(p.UserID, p.BusinessID, p.StaffName, p.StaffContactNumber, p.Position).
 				WillReturnError(sql.ErrConnDone)
 
@@ -137,7 +137,7 @@ var _ = Describe("StaffRepo", func() {
 			tx, _ := db.Begin()
 
 			for _, wh := range p.WorkingHours {
-				mock.ExpectExec(regexp.QuoteMeta("INSERT INTO staff_working_hours")).
+				mock.ExpectExec(regexp.QuoteMeta("INSERT INTO fyp_fuli_staff_working_hours")).
 					WithArgs(
 						p.StaffID,
 						wh.Day,
@@ -163,7 +163,7 @@ var _ = Describe("StaffRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("INSERT INTO staff_working_hours")).
+			mock.ExpectExec(regexp.QuoteMeta("INSERT INTO fyp_fuli_staff_working_hours")).
 				WithArgs(p.StaffID, "MONDAY", startTime.Format("15:04:05"), endTime.Format("15:04:05")).
 				WillReturnError(sql.ErrConnDone)
 
@@ -178,7 +178,7 @@ var _ = Describe("StaffRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE staff_working_hours SET deleted_at = NOW()")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_staff_working_hours SET deleted_at = NOW()")).
 				WithArgs(int64(9)).
 				WillReturnResult(sqlmock.NewResult(0, 2))
 
@@ -191,7 +191,7 @@ var _ = Describe("StaffRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE staff_working_hours SET deleted_at = NOW()")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_staff_working_hours SET deleted_at = NOW()")).
 				WithArgs(int64(9)).
 				WillReturnError(sql.ErrConnDone)
 
@@ -203,7 +203,7 @@ var _ = Describe("StaffRepo", func() {
 
 	Describe("GetStaffByUserID", func() {
 		It("returns the staff profile for the given user", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM staff")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_staff")).
 				WithArgs(int64(1)).
 				WillReturnRows(sqlmock.NewRows(staffCols).
 					AddRow(9, 1, 2, "Alice", "0123456789", "Therapist"))
@@ -217,7 +217,7 @@ var _ = Describe("StaffRepo", func() {
 		})
 
 		It("returns sql.ErrNoRows when the staff member is not found", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM staff")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_staff")).
 				WithArgs(int64(999)).
 				WillReturnError(sql.ErrNoRows)
 
@@ -228,7 +228,7 @@ var _ = Describe("StaffRepo", func() {
 		})
 
 		It("propagates a database error", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM staff")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_staff")).
 				WithArgs(int64(1)).
 				WillReturnError(sql.ErrConnDone)
 
@@ -245,7 +245,7 @@ var _ = Describe("StaffRepo", func() {
 			startTime := time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC)
 			endTime := time.Date(0, 1, 1, 18, 0, 0, 0, time.UTC)
 
-			mock.ExpectQuery(regexp.QuoteMeta("FROM staff_working_hours")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_staff_working_hours")).
 				WithArgs(int64(9)).
 				WillReturnRows(sqlmock.NewRows(whCols).
 					AddRow("MONDAY", startTime, endTime).
@@ -261,7 +261,7 @@ var _ = Describe("StaffRepo", func() {
 		It("returns an empty slice when no working hours exist", func() {
 			whCols := []string{"day", "start_time", "end_time"}
 
-			mock.ExpectQuery(regexp.QuoteMeta("FROM staff_working_hours")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_staff_working_hours")).
 				WithArgs(int64(99)).
 				WillReturnRows(sqlmock.NewRows(whCols))
 
@@ -272,7 +272,7 @@ var _ = Describe("StaffRepo", func() {
 		})
 
 		It("propagates a database error", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM staff_working_hours")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_staff_working_hours")).
 				WithArgs(int64(9)).
 				WillReturnError(sql.ErrConnDone)
 
@@ -285,7 +285,7 @@ var _ = Describe("StaffRepo", func() {
 
 	Describe("GetStaffByBusinessID", func() {
 		It("returns staff for a business", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM staff st")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_staff st")).
 				WithArgs(int64(2)).
 				WillReturnRows(sqlmock.NewRows(staffColsWithBooking).
 					AddRow(9, 1, 2, "Alice", "alice@example.com", false, "0123456789", "Therapist", false).
@@ -303,7 +303,7 @@ var _ = Describe("StaffRepo", func() {
 		})
 
 		It("returns an empty slice when no staff exist", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM staff st")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_staff st")).
 				WithArgs(int64(999)).
 				WillReturnRows(sqlmock.NewRows(staffColsWithBooking))
 
@@ -314,7 +314,7 @@ var _ = Describe("StaffRepo", func() {
 		})
 
 		It("propagates a database error", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM staff st")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_staff st")).
 				WithArgs(int64(2)).
 				WillReturnError(sql.ErrConnDone)
 
@@ -338,11 +338,11 @@ var _ = Describe("StaffRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE staff")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_staff")).
 				WithArgs(p.StaffName, p.StaffContactNumber, p.Position, p.StaffID, p.BusinessID).
 				WillReturnResult(sqlmock.NewResult(0, 1))
 
-			mock.ExpectQuery(regexp.QuoteMeta("FROM staff st")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_staff st")).
 				WithArgs(p.StaffID, p.BusinessID).
 				WillReturnRows(sqlmock.NewRows(staffColsWithBooking).
 					AddRow(9, 1, 2, "Alice Updated", "alice@example.com", false, "0198765432", "Senior Therapist", false))
@@ -357,7 +357,7 @@ var _ = Describe("StaffRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE staff")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_staff")).
 				WithArgs(p.StaffName, p.StaffContactNumber, p.Position, p.StaffID, p.BusinessID).
 				WillReturnError(sql.ErrConnDone)
 
@@ -371,11 +371,11 @@ var _ = Describe("StaffRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE staff")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_staff")).
 				WithArgs(p.StaffName, p.StaffContactNumber, p.Position, p.StaffID, p.BusinessID).
 				WillReturnResult(sqlmock.NewResult(0, 1))
 
-			mock.ExpectQuery(regexp.QuoteMeta("FROM staff st")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_staff st")).
 				WithArgs(p.StaffID, p.BusinessID).
 				WillReturnError(sql.ErrNoRows)
 
@@ -391,7 +391,7 @@ var _ = Describe("StaffRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("FROM staff st")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_staff st")).
 				WithArgs(int64(9), int64(2)).
 				WillReturnRows(sqlmock.NewRows(staffColsWithBooking).
 					AddRow(9, 1, 2, "Alice", "alice@example.com", false, "0123456789", "Therapist", false))
@@ -406,7 +406,7 @@ var _ = Describe("StaffRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("FROM staff st")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_staff st")).
 				WithArgs(int64(999), int64(2)).
 				WillReturnError(sql.ErrNoRows)
 
@@ -422,7 +422,7 @@ var _ = Describe("StaffRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE staff SET deleted_at = NOW()")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_staff SET deleted_at = NOW()")).
 				WithArgs(int64(9), int64(2)).
 				WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -435,7 +435,7 @@ var _ = Describe("StaffRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE staff SET deleted_at = NOW()")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_staff SET deleted_at = NOW()")).
 				WithArgs(int64(9), int64(2)).
 				WillReturnError(sql.ErrConnDone)
 

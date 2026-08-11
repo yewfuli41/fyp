@@ -170,7 +170,7 @@ var _ = Describe("BusinessRepo", func() {
 
 	Describe("BusinessEmailExists", func() {
 		It("returns true when the business email already exists", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("SELECT EXISTS(SELECT 1 FROM business_profiles WHERE business_email = $1)")).
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT EXISTS(SELECT 1 FROM fyp_fuli_business_profiles WHERE business_email = $1)")).
 				WithArgs("taken@example.com").
 				WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
 
@@ -181,7 +181,7 @@ var _ = Describe("BusinessRepo", func() {
 		})
 
 		It("returns false when the business email does not exist", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("SELECT EXISTS(SELECT 1 FROM business_profiles WHERE business_email = $1)")).
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT EXISTS(SELECT 1 FROM fyp_fuli_business_profiles WHERE business_email = $1)")).
 				WithArgs("free@example.com").
 				WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(false))
 
@@ -192,7 +192,7 @@ var _ = Describe("BusinessRepo", func() {
 		})
 
 		It("propagates a DB error instead of reporting the email as free", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("SELECT EXISTS(SELECT 1 FROM business_profiles WHERE business_email = $1)")).
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT EXISTS(SELECT 1 FROM fyp_fuli_business_profiles WHERE business_email = $1)")).
 				WithArgs("error@example.com").
 				WillReturnError(sql.ErrConnDone)
 

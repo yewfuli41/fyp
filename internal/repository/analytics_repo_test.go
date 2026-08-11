@@ -138,7 +138,7 @@ var _ = Describe("AnalyticsRepo", func() {
 		endTime := time.Date(0, 1, 1, 10, 0, 0, 0, time.UTC)
 
 		It("buckets slots by weekday, using the requested range as-is", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots ss")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slots ss")).
 				WithArgs(int64(1), "2026-08-01", "2026-08-31").
 				WillReturnRows(sqlmock.NewRows(slotCols).
 					AddRow(nil, nil, "2026-08-10", 1, startTime, endTime, true).
@@ -171,11 +171,11 @@ var _ = Describe("AnalyticsRepo", func() {
 		})
 
 		It("looks up the business's creation date and spans full months when grouping by date", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM business_profiles")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_business_profiles")).
 				WithArgs(int64(1)).
 				WillReturnRows(sqlmock.NewRows([]string{"created_at"}).AddRow("2026-08-01"))
 
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots ss")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slots ss")).
 				WithArgs(int64(1), "2026-08-01", "2026-08-31").
 				WillReturnRows(sqlmock.NewRows(slotCols).
 					AddRow(nil, nil, "2026-08-15", 6, startTime, endTime, true))
@@ -198,11 +198,11 @@ var _ = Describe("AnalyticsRepo", func() {
 		})
 
 		It("looks up the business's creation date and spans full years, sectioned by year, when grouping by month", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM business_profiles")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_business_profiles")).
 				WithArgs(int64(1)).
 				WillReturnRows(sqlmock.NewRows([]string{"created_at"}).AddRow("2025-11-01"))
 
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots ss")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slots ss")).
 				WithArgs(int64(1), "2025-11-01", "2026-08-31").
 				WillReturnRows(sqlmock.NewRows(slotCols).
 					AddRow(nil, nil, "2025-12-05", 5, startTime, endTime, true).
@@ -234,11 +234,11 @@ var _ = Describe("AnalyticsRepo", func() {
 		})
 
 		It("looks up the business's creation date and spans full calendar years, unsectioned, when grouping by year", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM business_profiles")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_business_profiles")).
 				WithArgs(int64(1)).
 				WillReturnRows(sqlmock.NewRows([]string{"created_at"}).AddRow("2024-05-01"))
 
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots ss")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slots ss")).
 				WithArgs(int64(1), "2024-05-01", "2026-08-31").
 				WillReturnRows(sqlmock.NewRows(slotCols).
 					AddRow(nil, nil, "2025-06-10", 2, startTime, endTime, true).
@@ -263,11 +263,11 @@ var _ = Describe("AnalyticsRepo", func() {
 		})
 
 		It("clamps to a single year when the business's creation date is after the selected range's end", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM business_profiles")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_business_profiles")).
 				WithArgs(int64(1)).
 				WillReturnRows(sqlmock.NewRows([]string{"created_at"}).AddRow("2027-01-01"))
 
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots ss")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slots ss")).
 				WithArgs(int64(1), "2027-01-01", "2026-08-31").
 				WillReturnRows(sqlmock.NewRows(slotCols))
 
@@ -287,7 +287,7 @@ var _ = Describe("AnalyticsRepo", func() {
 			endTime := time.Date(0, 1, 1, 11, 0, 0, 0, time.UTC)
 			slotCols := []string{"staff_id", "staff_name", "date", "dow", "start_time", "end_time", "booked"}
 
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots ss")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slots ss")).
 				WithArgs(int64(1), "2026-08-01", "2026-08-31").
 				WillReturnRows(sqlmock.NewRows(slotCols).
 					AddRow(nil, nil, "2026-08-10", 1, startTime, endTime, true).
@@ -404,7 +404,7 @@ var _ = Describe("AnalyticsRepo", func() {
 
 	Describe("GetServiceFilterOptions", func() {
 		It("returns services grouped by name, including soft-deleted ones", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM services")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_services")).
 				WithArgs(int64(1)).
 				WillReturnRows(sqlmock.NewRows([]string{"service_name", "service_ids", "deleted"}).
 					AddRow("Massage", "{10,12}", false).
@@ -425,7 +425,7 @@ var _ = Describe("AnalyticsRepo", func() {
 
 	Describe("GetBusinessCreatedAt", func() {
 		It("returns the business's creation date", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM business_profiles")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_business_profiles")).
 				WithArgs(int64(1)).
 				WillReturnRows(sqlmock.NewRows([]string{"created_at"}).AddRow("2026-01-15"))
 
@@ -436,7 +436,7 @@ var _ = Describe("AnalyticsRepo", func() {
 		})
 
 		It("propagates a DB error", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM business_profiles")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_business_profiles")).
 				WithArgs(int64(1)).
 				WillReturnError(errors.New("boom"))
 

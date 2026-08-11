@@ -54,7 +54,7 @@ var _ = Describe("LeaveRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO leave_applications")).
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_leave_applications")).
 				WithArgs(p.StaffID, p.StartDate, p.EndDate, p.Justification).
 				WillReturnRows(sqlmock.NewRows([]string{"leave_id"}).AddRow(42))
 
@@ -74,7 +74,7 @@ var _ = Describe("LeaveRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO leave_applications")).
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_leave_applications")).
 				WithArgs(p.StaffID, p.StartDate, p.EndDate, p.Justification).
 				WillReturnError(sql.ErrConnDone)
 
@@ -90,7 +90,7 @@ var _ = Describe("LeaveRepo", func() {
 			decidedAt := time.Date(2026, 8, 5, 10, 0, 0, 0, time.UTC)
 			createdAt := time.Date(2026, 8, 1, 9, 0, 0, 0, time.UTC)
 
-			mock.ExpectQuery(regexp.QuoteMeta("FROM leave_applications la")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_leave_applications la")).
 				WithArgs(int64(5)).
 				WillReturnRows(sqlmock.NewRows(leaveCols).
 					AddRow(1, 5, 2, "Alice", "Therapist", "2026-08-10", "2026-08-12", "Family trip", "approved", nil, decidedAt, createdAt).
@@ -109,7 +109,7 @@ var _ = Describe("LeaveRepo", func() {
 		})
 
 		It("returns an empty slice when no applications exist", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM leave_applications la")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_leave_applications la")).
 				WithArgs(int64(99)).
 				WillReturnRows(sqlmock.NewRows(leaveCols))
 
@@ -120,7 +120,7 @@ var _ = Describe("LeaveRepo", func() {
 		})
 
 		It("propagates a database error", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM leave_applications la")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_leave_applications la")).
 				WithArgs(int64(5)).
 				WillReturnError(sql.ErrConnDone)
 
@@ -135,7 +135,7 @@ var _ = Describe("LeaveRepo", func() {
 		It("returns leave applications for a business", func() {
 			createdAt := time.Date(2026, 8, 1, 9, 0, 0, 0, time.UTC)
 
-			mock.ExpectQuery(regexp.QuoteMeta("FROM leave_applications la")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_leave_applications la")).
 				WithArgs(int64(2)).
 				WillReturnRows(sqlmock.NewRows(leaveCols).
 					AddRow(1, 5, 2, "Alice", "Therapist", "2026-08-10", "2026-08-12", "Family trip", "pending", nil, nil, createdAt))
@@ -149,7 +149,7 @@ var _ = Describe("LeaveRepo", func() {
 		})
 
 		It("returns an empty slice when no applications exist", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM leave_applications la")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_leave_applications la")).
 				WithArgs(int64(999)).
 				WillReturnRows(sqlmock.NewRows(leaveCols))
 
@@ -160,7 +160,7 @@ var _ = Describe("LeaveRepo", func() {
 		})
 
 		It("propagates a database error", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM leave_applications la")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_leave_applications la")).
 				WithArgs(int64(2)).
 				WillReturnError(sql.ErrConnDone)
 
@@ -175,7 +175,7 @@ var _ = Describe("LeaveRepo", func() {
 		It("returns the leave application for a given ID", func() {
 			createdAt := time.Date(2026, 8, 1, 9, 0, 0, 0, time.UTC)
 
-			mock.ExpectQuery(regexp.QuoteMeta("FROM leave_applications la")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_leave_applications la")).
 				WithArgs(int64(1)).
 				WillReturnRows(sqlmock.NewRows(leaveCols).
 					AddRow(1, 5, 2, "Alice", "Therapist", "2026-08-10", "2026-08-12", "Family trip", "pending", nil, nil, createdAt))
@@ -188,7 +188,7 @@ var _ = Describe("LeaveRepo", func() {
 		})
 
 		It("returns sql.ErrNoRows when the application is not found", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM leave_applications la")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_leave_applications la")).
 				WithArgs(int64(999)).
 				WillReturnError(sql.ErrNoRows)
 
@@ -206,7 +206,7 @@ var _ = Describe("LeaveRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE leave_applications")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_leave_applications")).
 				WithArgs("approved", &remark, int64(1)).
 				WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -219,7 +219,7 @@ var _ = Describe("LeaveRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE leave_applications")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_leave_applications")).
 				WithArgs("rejected", (*string)(nil), int64(1)).
 				WillReturnError(sql.ErrConnDone)
 
@@ -236,7 +236,7 @@ var _ = Describe("LeaveRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE leave_applications")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_leave_applications")).
 				WithArgs(&justification, int64(1)).
 				WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -249,7 +249,7 @@ var _ = Describe("LeaveRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE leave_applications")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_leave_applications")).
 				WithArgs((*string)(nil), int64(1)).
 				WillReturnError(sql.ErrConnDone)
 
@@ -264,7 +264,7 @@ var _ = Describe("LeaveRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE leave_applications SET deleted_at = NOW()")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_leave_applications SET deleted_at = NOW()")).
 				WithArgs(int64(1)).
 				WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -277,7 +277,7 @@ var _ = Describe("LeaveRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE leave_applications SET deleted_at = NOW()")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_leave_applications SET deleted_at = NOW()")).
 				WithArgs(int64(1)).
 				WillReturnError(sql.ErrConnDone)
 

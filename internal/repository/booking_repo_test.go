@@ -71,7 +71,7 @@ var _ = Describe("BookingRepo", func() {
 		It("inserts a pending online booking with a description", func() {
 			desc := "please be gentle"
 
-			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO bookings")).
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_bookings")).
 				WithArgs(int64(1), int64(20), &desc).
 				WillReturnRows(sqlmock.NewRows(
 					[]string{"booking_id", "user_id", "slot_option_id", "status", "booking_type", "description", "created_at"},
@@ -86,7 +86,7 @@ var _ = Describe("BookingRepo", func() {
 		})
 
 		It("inserts a booking with a nil description", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO bookings")).
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_bookings")).
 				WithArgs(int64(1), int64(20), nil).
 				WillReturnRows(sqlmock.NewRows(
 					[]string{"booking_id", "user_id", "slot_option_id", "status", "booking_type", "description", "created_at"},
@@ -99,7 +99,7 @@ var _ = Describe("BookingRepo", func() {
 		})
 
 		It("propagates a unique-constraint violation from the database as-is", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO bookings")).
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_bookings")).
 				WithArgs(int64(1), int64(20), nil).
 				WillReturnError(fmt.Errorf(`pq: duplicate key value violates unique constraint "bookings_slot_option_id_key"`))
 
@@ -111,7 +111,7 @@ var _ = Describe("BookingRepo", func() {
 
 	Describe("InsertWalkInBooking", func() {
 		It("inserts an already-accepted walk-in booking", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO bookings")).
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_bookings")).
 				WithArgs(int64(1), int64(20)).
 				WillReturnRows(sqlmock.NewRows(
 					[]string{"booking_id", "user_id", "slot_option_id", "status", "booking_type", "created_at"},
@@ -127,7 +127,7 @@ var _ = Describe("BookingRepo", func() {
 
 	Describe("GetBookingContext", func() {
 		It("returns the full booking context including staff", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM bookings b")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_bookings b")).
 				WithArgs(int64(100)).
 				WillReturnRows(sqlmock.NewRows(bookingContextCols).
 					AddRow(100, "accepted", 200, 20,
@@ -149,7 +149,7 @@ var _ = Describe("BookingRepo", func() {
 		})
 
 		It("returns nil staff fields for an owner-managed slot", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM bookings b")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_bookings b")).
 				WithArgs(int64(101)).
 				WillReturnRows(sqlmock.NewRows(bookingContextCols).
 					AddRow(101, "pending", 201, 21,
@@ -166,7 +166,7 @@ var _ = Describe("BookingRepo", func() {
 		})
 
 		It("returns an error when the booking does not exist", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM bookings b")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_bookings b")).
 				WithArgs(int64(999)).
 				WillReturnError(sql.ErrNoRows)
 
@@ -178,7 +178,7 @@ var _ = Describe("BookingRepo", func() {
 
 	Describe("GetBookingContextForSlot", func() {
 		It("returns the active booking's context for the slot", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM bookings b")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_bookings b")).
 				WithArgs(int64(200)).
 				WillReturnRows(sqlmock.NewRows(bookingContextCols).
 					AddRow(100, "accepted", 200, 20,
@@ -195,7 +195,7 @@ var _ = Describe("BookingRepo", func() {
 		})
 
 		It("returns nil, nil when the slot has no active booking", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM bookings b")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_bookings b")).
 				WithArgs(int64(300)).
 				WillReturnError(sql.ErrNoRows)
 
@@ -207,7 +207,7 @@ var _ = Describe("BookingRepo", func() {
 
 	Describe("GetBookingDetail", func() {
 		It("returns the booking detail", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM bookings b")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_bookings b")).
 				WithArgs(int64(100)).
 				WillReturnRows(sqlmock.NewRows(bookingDetailCols).
 					AddRow(100, "accepted", "online",
@@ -225,7 +225,7 @@ var _ = Describe("BookingRepo", func() {
 		})
 
 		It("returns an error when the booking does not exist", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM bookings b")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_bookings b")).
 				WithArgs(int64(999)).
 				WillReturnError(sql.ErrNoRows)
 
@@ -240,7 +240,7 @@ var _ = Describe("BookingRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE bookings")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_bookings")).
 				WithArgs("accepted", int64(2), int64(100)).
 				WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -255,7 +255,7 @@ var _ = Describe("BookingRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE bookings")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_bookings")).
 				WithArgs(&desc, int64(100)).
 				WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -269,7 +269,7 @@ var _ = Describe("BookingRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE bookings")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_bookings")).
 				WithArgs(int64(30), "rescheduled", int64(100)).
 				WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -283,7 +283,7 @@ var _ = Describe("BookingRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE bookings")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_bookings")).
 				WithArgs(int64(200), int64(100)).
 				WillReturnResult(sqlmock.NewResult(0, 2))
 
@@ -316,7 +316,7 @@ var _ = Describe("BookingRepo", func() {
 
 	Describe("GetSlotOptionStaffUserID", func() {
 		It("returns the staff login user id when the slot is staff-assigned", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slot_options ssp")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slot_options ssp")).
 				WithArgs(int64(20)).
 				WillReturnRows(sqlmock.NewRows([]string{"user_id"}).AddRow(5))
 
@@ -327,7 +327,7 @@ var _ = Describe("BookingRepo", func() {
 		})
 
 		It("returns nil when the slot is owner-managed", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slot_options ssp")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slot_options ssp")).
 				WithArgs(int64(21)).
 				WillReturnRows(sqlmock.NewRows([]string{"user_id"}).AddRow(nil))
 
@@ -361,7 +361,7 @@ var _ = Describe("BookingRepo", func() {
 
 	Describe("GetBusinessBookings", func() {
 		It("returns pending/accepted/rescheduled bookings for the business", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM bookings b")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_bookings b")).
 				WithArgs(int64(7)).
 				WillReturnRows(sqlmock.NewRows(bookingDetailCols).
 					AddRow(100, "pending", "online", 200, 20, 10, "2026-08-10", startTime, endTime,
@@ -395,7 +395,7 @@ var _ = Describe("BookingRepo", func() {
 
 	Describe("GetCustomerBookings", func() {
 		It("returns the customer's own bookings, most recent first", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM bookings b")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_bookings b")).
 				WithArgs(int64(1)).
 				WillReturnRows(sqlmock.NewRows(bookingDetailCols).
 					AddRow(101, "accepted", "online", 201, 21, 10, "2026-08-11", startTime, endTime,
@@ -417,7 +417,7 @@ var _ = Describe("BookingRepo", func() {
 				"business_id", "owner_user_id", "business_name", "description",
 				"address", "image_url", "business_contact_number", "business_email",
 			}
-			mock.ExpectQuery(regexp.QuoteMeta("FROM bookings b")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_bookings b")).
 				WithArgs(int64(1)).
 				WillReturnRows(sqlmock.NewRows(businessCols).
 					AddRow(7, 2, "Test Biz", nil, "123 St", nil, "0123456789", "biz@example.com"))
@@ -441,12 +441,12 @@ var _ = Describe("BookingRepo", func() {
 
 	Describe("GetAvailableSlots", func() {
 		It("returns available slots with their packages when no staff filter is given", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots ss")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slots ss")).
 				WithArgs(int64(1), "2026-08-10", int64(10)).
 				WillReturnRows(sqlmock.NewRows(slotCols).
 					AddRow(200, nil, nil, nil, "2026-08-10", startTime, endTime, 1, false))
 
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slot_options ssp")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slot_options ssp")).
 				WithArgs(int64(200), int64(10)).
 				WillReturnRows(sqlmock.NewRows(pkgCols).
 					AddRow(20, 10, "Deep Tissue", 5, "Massage"))
@@ -484,7 +484,7 @@ var _ = Describe("BookingRepo", func() {
 
 	Describe("GetAvailableDates", func() {
 		It("returns distinct bookable dates in the range with no extra filters", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots ss")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slots ss")).
 				WithArgs(int64(1), "2026-08-01", "2026-08-31").
 				WillReturnRows(sqlmock.NewRows([]string{"date"}).
 					AddRow("2026-08-10").

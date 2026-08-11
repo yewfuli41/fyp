@@ -497,7 +497,7 @@ var _ = Describe("ServiceSlotRepo", func() {
 	Describe("GetSlotDates", func() {
 		It("returns the dates of the given slots, sorted", func() {
 			ids := []int64{100, 101}
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slots")).
 				WithArgs(pq.Array(ids)).
 				WillReturnRows(sqlmock.NewRows([]string{"date"}).
 					AddRow("2026-08-10").AddRow("2026-08-11"))
@@ -516,7 +516,7 @@ var _ = Describe("ServiceSlotRepo", func() {
 
 	Describe("GetFutureUnassignedSlotWindows", func() {
 		It("returns future owner-managed slot windows for a business", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots ss")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slots ss")).
 				WithArgs(int64(1), "2026-08-10").
 				WillReturnRows(sqlmock.NewRows([]string{"date", "start_time", "end_time"}).
 					AddRow("2026-08-10", startTime, endTime))
@@ -532,7 +532,7 @@ var _ = Describe("ServiceSlotRepo", func() {
 
 	Describe("GetAssignedSlotsInRange", func() {
 		It("returns a staff's assigned slots within a date range", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots ss")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slots ss")).
 				WithArgs(int64(5), "2026-08-10", "2026-08-20").
 				WillReturnRows(sqlmock.NewRows([]string{"service_slot_id", "date", "start_time", "end_time", "has_booking"}).
 					AddRow(100, "2026-08-10", startTime, endTime, true))
@@ -548,7 +548,7 @@ var _ = Describe("ServiceSlotRepo", func() {
 
 	Describe("GetFutureAssignedSlotWindows", func() {
 		It("returns a staff's future assigned slots", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots ss")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slots ss")).
 				WithArgs(int64(5), "2026-08-10").
 				WillReturnRows(sqlmock.NewRows([]string{"service_slot_id", "date", "start_time", "end_time", "has_booking"}).
 					AddRow(101, "2026-08-15", startTime, endTime, false))
@@ -564,7 +564,7 @@ var _ = Describe("ServiceSlotRepo", func() {
 
 	Describe("BusinessCoversTime", func() {
 		It("returns true when business working hours cover the requested time", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM business_working_hours")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_business_working_hours")).
 				WithArgs(int64(1), "monday", "09:00:00", "10:00:00").
 				WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
 
@@ -574,7 +574,7 @@ var _ = Describe("ServiceSlotRepo", func() {
 		})
 
 		It("returns false when business working hours do not cover the requested time", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM business_working_hours")).
+			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_business_working_hours")).
 				WithArgs(int64(1), "monday", "09:00:00", "10:00:00").
 				WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(false))
 

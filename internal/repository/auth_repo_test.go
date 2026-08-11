@@ -91,7 +91,7 @@ var _ = Describe("AuthRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO users")).
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_users")).
 				WithArgs(signUpParam.Username, signUpParam.Email, signUpParam.ContactNumber, signUpParam.Password, signUpParam.MustResetPassword).
 				WillReturnRows(sqlmock.NewRows(userCols).
 					AddRow(1, signUpParam.Username, signUpParam.Email, signUpParam.ContactNumber, signUpParam.Password, 0, nil, false))
@@ -116,7 +116,7 @@ var _ = Describe("AuthRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO users")).
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_users")).
 				WithArgs(signUpParam.Username, signUpParam.Email, signUpParam.ContactNumber, signUpParam.Password, signUpParam.MustResetPassword).
 				WillReturnError(errors.New("pq: duplicate key value violates unique constraint"))
 
@@ -234,7 +234,7 @@ var _ = Describe("AuthRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET email = $1 WHERE user_id = $2")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_users SET email = $1 WHERE user_id = $2")).
 				WithArgs("newemail@example.com", int64(1)).
 				WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -247,7 +247,7 @@ var _ = Describe("AuthRepo", func() {
 			mock.ExpectBegin()
 			tx, _ := db.Begin()
 
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET email = $1 WHERE user_id = $2")).
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_users SET email = $1 WHERE user_id = $2")).
 				WithArgs("newemail@example.com", int64(1)).
 				WillReturnError(errors.New("update error"))
 

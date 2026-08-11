@@ -1,0 +1,211 @@
+include:
+  - project: "datalake/gateway/gitlab-template"
+    file: image.yml
+
+variables:
+  APP_NAME: fyp-fuli-booking
+  AWS_DEFAULT_REGION: ap-southeast-1
+  ARCH: arm64
+
+  # DOCKER
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_BUILDKIT: "1"
+  DOCKER_DRIVER: overlay2
+  DOCKER_REGISTRY: 559339675726.dkr.ecr.ap-southeast-1.amazonaws.com
+  DOCKER_NAME: datagateway/fyp-fuli-booking
+  NO_PROXY: 127.0.0.1,localhost,*.infra.paynet.my,docker:2375,docker:2376,vault.infra.paynet.my:8200,*.network.paynet.my,.service.consul,*.service.consul,int.paynet.my,.query.consul,*.query.consul,mailwhale.uat.infra.paynet.my,nexus.infra.paynet.my
+  GOPRIVATE: gitlab.infra.paynet.my
+  IMAGE_NAME: ${DOCKER_REGISTRY}/${DOCKER_NAME}:${RELEASE}-arm64
+
+  # GITLAB
+  GITOPS_APP_PATH: dg-sandbox
+  GITOPS_CONFIGURATION_REPO: https://gitlab.infra.paynet.my/datalake/infrastructure
+  GITOPS_PATH: kubernetes/nonproduction/clusters/eks-nonprod/20-applications/dependencies/${GITOPS_APP_PATH}
+  GITLAB_HOST: gitlab.infra.paynet.my
+  CI_EMAIL: its-ci-bot@paynet.my
+  CI_USER: its-ci-bot
+  GIT_K8S_BRANCH: master
+
+default:
+  tags:
+    - rhizome-runner
+    - arm64
+
+stages:
+  - prepare
+  - build
+  - publish
+  - deploy
+
+.rhizome_hooks:
+  hooks:
+    pre_get_sources_script:
+      - unset HTTPS_PROXY
+      - unset HTTP_PROXY
+
+# ~ prepare -----
+
+prepare:
+  extends:
+    - .rhizome_hooks
+    - .builder.image
+  stage: prepare
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH =~ /^v\d+\.\d+\.\d+-rc\d+$/' # Release candidate
+    - when: never
+  script:
+    - | 
+      export RELEASE=${CI_COMMIT_REF_NAME}.${CI_PIPELINE_ID}
+      export GIT_SHORT_REF=$(git rev-parse --short HEAD)
+      export AUTOMATIC_BUILD_VERSION=${RELEASE_NUMBER:-1.0}.${CI_PIPELINE_ID}
+      export CI_COMMIT_TAG=${CI_COMMIT_TAG:-$AUTOMATIC_BUILD_VERSION}
+      env | grep RELEASE >> prepare.env
+      env | grep GIT_SHORT_REF >> prepare.env
+      env | grep AUTOMATIC_BUILD_VERSION >> prepare.env
+      env | grep CI_COMMIT_TAG >> prepare.env
+  artifacts:
+    reports:
+      dotenv: prepare.env
+
+# ~ build -----
+
+build:arm64:
+  extends:
+    - .rhizome_hooks
+    - .go.image
+  stage: build
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH =~ /^v\d+\.\d+\.\d+-rc\d+$/' # Release candidate
+    - when: never
+  script:
+    - |
+      unset HTTPS_PROXY
+      unset HTTP_PROXY
+      mkdir -p out
+      CGO_ENABLED=0 GOOS=linux GOARCH=$ARCH go -C server build -tags server,cron -ldflags "-s -w" -a -o ../out/$APP_NAME .
+  artifacts:
+    expire_in: 3 hrs
+    paths:
+      - out
+
+# Build the React client into out/client
+build:client:
+  extends:
+    - .rhizome_hooks
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH =~ /^v\d+\.\d+\.\d+-rc\d+$/' # Release candidate
+    - when: never
+  stage: build
+  image:
+    name: node:24-bookworm
+  script:
+    - |
+      unset HTTPS_PROXY
+      unset HTTP_PROXY
+
+      corepack enable
+
+      cd client
+
+      npm ci
+      npm run build -- --base=/fyp-fuli-booking/
+      mkdir -p ../out/client
+      cp -a dist/. ../out/client/
+  artifacts:
+    paths:
+      - out/client
+  tags:
+    - rhizome-runner
+    - arm64
+
+# ~ publish -----
+
+.setup-docker:
+  script:
+    - |
+      mkdir -p $HOME/.docker
+      cat > $HOME/.docker/config.json <<EOF
+      {
+        "proxies": {
+          "default": {
+            "noProxy": "$NO_PROXY"
+          }
+        },
+        "max-concurrent-downloads": 1,
+        "max-concurrent-uploads": 1
+      }
+      EOF
+      aws --version || apk add --no-cache aws-cli
+
+publish:arm64:
+  extends:
+    - .rhizome_hooks
+    - .setup-docker
+    - .builder.image
+  services:
+    - docker:28.0.1-dind
+  dependencies:
+    - build:arm64
+    - build:client
+    - prepare
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH =~ /^v\d+\.\d+\.\d+-rc\d+$/' # Release candidate
+    - when: never
+  stage: publish
+  script:
+    - until docker info; do sleep 9; done
+    - |
+      unset HTTPS_PROXY
+      unset HTTP_PROXY
+      unset AWS_ACCESS_KEY_ID
+      unset AWS_ACCESS_KEY_ID_PUBLIC
+      unset AWS_SECRET_ACCESS_KEY
+      unset AWS_SECRET_ACCESS_KEY_PUBLIC
+      aws --version || apk add --no-cache aws-cli
+      aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin $DOCKER_REGISTRY
+      git config --global url."https://gitlab:$GITLAB_TOKEN@gitlab.infra.paynet.my/".insteadOf "https://gitlab.infra.paynet.my/"
+      docker buildx create --use --name builder --driver docker-container
+      docker buildx build \
+        --build-arg GITLAB_TOKEN="$GITLAB_TOKEN" \
+        --platform linux/$ARCH \
+        --progress=plain \
+        --output type=registry,push-retry=5,registry.timeout=1000s \
+        --push \
+        -t $DOCKER_REGISTRY/$DOCKER_NAME:$RELEASE-$ARCH -f Dockerfile.ci.$ARCH .
+
+# ~ deploy -----
+deploy:1:sandbox:
+  extends:
+    - .rhizome_hooks
+    - .builder.image
+  stage: deploy
+  dependencies:
+    - prepare
+    - publish:arm64
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_TAG'
+    - when: never
+  when: manual
+  script:
+    - |
+      unset HTTPS_PROXY
+      unset HTTP_PROXY
+      git config --global url."https://gitlab:$GITOPS_TOKEN@$GITLAB_HOST/".insteadOf "https://$GITLAB_HOST/"
+      git clone --depth 1 $GITOPS_CONFIGURATION_REPO repository -b $GIT_K8S_BRANCH
+      cd repository
+      yq e -i ".fyp-fuli-booking.image.version = strenv(RELEASE) + \"-$ARCH\"" $GITOPS_PATH/values.yaml
+      git add -A
+      git config --global user.email "$CI_EMAIL"
+      git config --global user.name "$CI_USER"
+      git commit -m "Automated CI/CD bot commit" -m "Project: $CI_PROJECT_URL" -m "pipeline: $CI_PIPELINE_URL" -m "Job: $CI_JOB_URL"
+      git push

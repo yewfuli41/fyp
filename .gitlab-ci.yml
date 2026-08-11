@@ -88,6 +88,8 @@ build:arm64:
       unset HTTP_PROXY
       mkdir -p out
       CGO_ENABLED=0 GOOS=linux GOARCH=$ARCH go build -ldflags "-s -w" -a -o ../out/$APP_NAME .
+      echo "=== BUILD OUTPUT ==="
+      ls -lah out/
   artifacts:
     expire_in: 3 hrs
     paths:
@@ -174,6 +176,10 @@ publish:arm64:
       aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin $DOCKER_REGISTRY
       git config --global url."https://gitlab:$GITLAB_TOKEN@gitlab.infra.paynet.my/".insteadOf "https://gitlab.infra.paynet.my/"
       docker buildx create --use --name builder --driver docker-container
+      echo "=== PUBLISH ARTIFACTS ==="
+      pwd
+      ls -lah
+      find out -maxdepth 2 -type f -print
       docker buildx build \
         --build-arg GITLAB_TOKEN="$GITLAB_TOKEN" \
         --platform linux/$ARCH \

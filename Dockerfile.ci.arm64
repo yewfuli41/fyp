@@ -1,0 +1,15 @@
+FROM --platform=linux/arm64 559339675726.dkr.ecr.ap-southeast-1.amazonaws.com/datagateway/golang:v1.26.1-runtime-arm64 AS runtime
+
+FROM scratch
+COPY --from=runtime /usr/local/go/lib/time/zoneinfo.zip /usr/local/go/lib/time/zoneinfo.zip
+COPY --from=runtime /etc/passwd /etc/passwd
+COPY --from=runtime /app /app
+COPY --from=runtime /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+COPY out/fyp-fuli-booking /app/fyp-fuli-booking
+COPY out/client /app/client
+EXPOSE 8080/tcp
+ENV TZ=Asia/Kuala_Lumpur
+USER app
+WORKDIR /app
+CMD ["./fyp-fuli-booking", "server"]

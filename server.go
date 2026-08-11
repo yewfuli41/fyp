@@ -66,5 +66,7 @@ func server(app *app.App, cfg *config.Config) {
 		),
 	)
 
+	e.Static("/", "./client")
+
 	e.Logger.Fatal(e.Start(":" + port))
 }

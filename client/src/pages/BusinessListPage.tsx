@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Alert, Button, Col, Container, Form, Row, Spinner } from "react-bootstrap";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import { getPublicBusinesses, getPublicServices, type PublicBusiness, type PublicService } from "../services/PublicService";
 import { findBookableOptionIds, isCurrentOption } from "../utils/serviceAvailability";
 import { IconChevronRight, IconMail, IconPhone, IconPin, IconSearch } from "../components/icons";
@@ -8,6 +9,7 @@ import "../styles/BookLandingPage.css";
 
 export default function BusinessListPage() {
     const navigate = useNavigate();
+    const { isLoggedIn } = useAuth();
     const [searchParams] = useSearchParams();
     const [all, setAll] = useState<PublicBusiness[]>([]);
     const [servicesByBusiness, setServicesByBusiness] = useState<Record<string, PublicService[]>>({});
@@ -65,7 +67,11 @@ export default function BusinessListPage() {
         : all;
 
     const handleBook = (businessId: string) => {
-        navigate(`/businesses/${businessId}/services`);
+        if (!isLoggedIn){
+            navigate("/login")
+        } else{
+            navigate(`/businesses/${businessId}/services`);
+        }
     };
 
     return (

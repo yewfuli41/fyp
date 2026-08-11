@@ -45,16 +45,16 @@ func (e *resendEmailService) SendStaffWelcomeEmail(toEmail string) error {
 	return e.send(toEmail, subject, plainText, htmlContent)
 }
 
-func (e *resendEmailService) SendBookingStatusEmail(toEmail, recipientName, withName, statusLabel, whenText string) error {
+func (e *resendEmailService) SendBookingStatusEmail(toEmail, recipientName, withName, statusLabel string) error {
 	subject := fmt.Sprintf("Your booking with %s is now %s", withName, statusLabel)
-	plainText := fmt.Sprintf("Hi %s,\n\nYour booking with %s (%s) is now %s.\n\nThank you.", recipientName, withName, whenText, statusLabel)
-	htmlContent := fmt.Sprintf("<p>Hi %s,</p><p>Your booking with <strong>%s</strong> (%s) is now <strong>%s</strong>.</p><p>Thank you.</p>", recipientName, withName, whenText, statusLabel)
+	plainText := fmt.Sprintf("Hi %s,\n\nYour booking with %s is now %s.\n\nThank you.", recipientName, withName, statusLabel)
+	htmlContent := fmt.Sprintf("<p>Hi %s,</p><p>Your booking with <strong>%s</strong> is now <strong>%s</strong>.</p><p>Thank you.</p>", recipientName, withName, statusLabel)
 	return e.send(toEmail, subject, plainText, htmlContent)
 }
 
 func (e *resendEmailService) SendNewBookingRequestEmail(toEmail, recipientName, customerName, whenText string) error {
 	subject := fmt.Sprintf("New booking request from %s", customerName)
-	plainText := fmt.Sprintf("Hi %s,\n\n%s just requested a booking for %s.\n\nPlease accept or reject it from your calendar.", recipientName, customerName, whenText)
+	plainText := fmt.Sprintf("Hi %s,\n\n%s just requested a booking on %s.\n\nPlease accept or reject it from your calendar.", recipientName, customerName, whenText)
 	htmlContent := fmt.Sprintf("<p>Hi %s,</p><p><strong>%s</strong> just requested a booking for <strong>%s</strong>.</p><p>Please accept or reject it from your calendar.</p>", recipientName, customerName, whenText)
 	return e.send(toEmail, subject, plainText, htmlContent)
 }

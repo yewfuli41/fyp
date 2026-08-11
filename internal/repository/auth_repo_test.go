@@ -79,6 +79,55 @@ var _ = Describe("AuthRepo", func() {
 		})
 	})
 
+	Describe("SignUpTx", func() {
+		It("inserts a new user within the transaction and returns the created user", func() {
+			signUpParam := param.SignUpParam{
+				Username:      "testuser",
+				Email:         "test@example.com",
+				ContactNumber: "12345678",
+				Password:      "hashedpassword",
+			}
+
+			mock.ExpectBegin()
+			tx, _ := db.Begin()
+
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_users")).
+				WithArgs(signUpParam.Username, signUpParam.Email, signUpParam.ContactNumber, signUpParam.Password, signUpParam.MustResetPassword).
+				WillReturnRows(sqlmock.NewRows(userCols).
+					AddRow(1, signUpParam.Username, signUpParam.Email, signUpParam.ContactNumber, signUpParam.Password, 0, nil, false))
+
+			user, err := repo.SignUpTx(ctx, tx, signUpParam)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(user.UserID).To(Equal(int64(1)))
+			Expect(user.Username).To(Equal(signUpParam.Username))
+			Expect(user.Email).To(Equal(signUpParam.Email))
+			Expect(*user.ContactNumber).To(Equal(signUpParam.ContactNumber))
+		})
+
+		It("returns an error if the insertion fails, e.g. duplicate email", func() {
+			signUpParam := param.SignUpParam{
+				Username:      "testuser",
+				Email:         "duplicate@example.com",
+				ContactNumber: "12345678",
+				Password:      "hashedpassword",
+			}
+
+			mock.ExpectBegin()
+			tx, _ := db.Begin()
+
+			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_users")).
+				WithArgs(signUpParam.Username, signUpParam.Email, signUpParam.ContactNumber, signUpParam.Password, signUpParam.MustResetPassword).
+				WillReturnError(errors.New("pq: duplicate key value violates unique constraint"))
+
+			user, err := repo.SignUpTx(ctx, tx, signUpParam)
+
+			Expect(err).To(HaveOccurred())
+			Expect(user).To(BeNil())
+			Expect(err.Error()).To(Equal("pq: duplicate key value violates unique constraint"))
+		})
+	})
+
 	Describe("GetUser", func() {
 		It("returns the user if found by email", func() {
 			logInParam := param.LogInParam{
@@ -177,6 +226,35 @@ var _ = Describe("AuthRepo", func() {
 			err := repo.UpdatePassword(ctx, 1, "hashed-password")
 
 			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	Describe("UpdateUserEmailTx", func() {
+		It("updates the user's email within the transaction", func() {
+			mock.ExpectBegin()
+			tx, _ := db.Begin()
+
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_users SET email = $1 WHERE user_id = $2")).
+				WithArgs("newemail@example.com", int64(1)).
+				WillReturnResult(sqlmock.NewResult(0, 1))
+
+			err := repo.UpdateUserEmailTx(ctx, tx, 1, "newemail@example.com")
+
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns an error if the update fails", func() {
+			mock.ExpectBegin()
+			tx, _ := db.Begin()
+
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_users SET email = $1 WHERE user_id = $2")).
+				WithArgs("newemail@example.com", int64(1)).
+				WillReturnError(errors.New("update error"))
+
+			err := repo.UpdateUserEmailTx(ctx, tx, 1, "newemail@example.com")
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("update error"))
 		})
 	})
 })

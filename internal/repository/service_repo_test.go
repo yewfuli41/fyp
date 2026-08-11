@@ -176,6 +176,20 @@ var _ = Describe("ServiceRepo", func() {
 		})
 	})
 
+	Describe("SetServiceDefaultOption", func() {
+		It("marks the given option as default and every other option under the service as not-default", func() {
+			mock.ExpectBegin()
+			tx, _ := db.Begin()
+
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_service_options")).
+				WithArgs(int64(10), int64(20)).
+				WillReturnResult(sqlmock.NewResult(0, 3))
+
+			err := repo.SetServiceDefaultOption(ctx, tx, 10, 20)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
 	Describe("SoftDeleteService", func() {
 		It("soft deletes a service", func() {
 			mock.ExpectBegin()
@@ -279,6 +293,37 @@ var _ = Describe("ServiceRepo", func() {
 		})
 	})
 
+	Describe("GetServiceOptionItemsByOptionIDIncludeDeleted", func() {
+		It("returns items for a package including soft-deleted ones", func() {
+			itemCols := []string{"service_option_item_id", "service_option_id", "service_option_item_name"}
+
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_option_item_id, service_option_id, service_option_item_name FROM fyp_fuli_service_option_items")).
+				WithArgs(int64(20)).
+				WillReturnRows(sqlmock.NewRows(itemCols).
+					AddRow(1, 20, "Oil").
+					AddRow(2, 20, "Lotion").
+					AddRow(3, 20, "Towel"))
+
+			results, err := repo.GetServiceOptionItemsByOptionIDIncludeDeleted(ctx, 20)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(results).To(HaveLen(3))
+			Expect(results[0].ServiceOptionItemName).To(Equal("Oil"))
+			Expect(results[2].ServiceOptionItemName).To(Equal("Towel"))
+		})
+
+		It("returns empty slice when no items exist", func() {
+			itemCols := []string{"service_option_item_id", "service_option_id", "service_option_item_name"}
+
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT service_option_item_id, service_option_id, service_option_item_name FROM fyp_fuli_service_option_items")).
+				WithArgs(int64(99)).
+				WillReturnRows(sqlmock.NewRows(itemCols))
+
+			results, err := repo.GetServiceOptionItemsByOptionIDIncludeDeleted(ctx, 99)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(results).To(BeEmpty())
+		})
+	})
+
 	Describe("HasBookingForService", func() {
 		It("returns true if an active booking exists", func() {
 			mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*)")).
@@ -306,6 +351,28 @@ var _ = Describe("ServiceRepo", func() {
 				WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 
 			hasBooking, err := repo.HasBookingForService(ctx, 10)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hasBooking).To(BeFalse())
+		})
+	})
+
+	Describe("HasBookingForOption", func() {
+		It("returns true if an active booking exists for the option", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*)")).
+				WithArgs(int64(20)).
+				WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+
+			hasBooking, err := repo.HasBookingForOption(ctx, 20)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hasBooking).To(BeTrue())
+		})
+
+		It("returns false if no bookings exist for the option", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*)")).
+				WithArgs(int64(20)).
+				WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+			hasBooking, err := repo.HasBookingForOption(ctx, 20)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(hasBooking).To(BeFalse())
 		})

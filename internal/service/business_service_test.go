@@ -381,4 +381,28 @@ var _ = Describe("BusinessService", func() {
 			Expect(err).To(MatchError("not found"))
 		})
 	})
+
+	Describe("GetBusinesses", func() {
+		It("returns the businesses found by the repo for the given search term", func() {
+			businesses := []param.BusinessProfileParam{
+				{BusinessID: 1, BusinessName: "Finn Studio"},
+				{BusinessID: 2, BusinessName: "Finn Barbers"},
+			}
+			businessRepo.EXPECT().GetBusinesses(ctx, "finn").Return(businesses, nil).Once()
+
+			result, err := businessSvc.GetBusinesses(ctx, "finn")
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(businesses))
+		})
+
+		It("propagates an error from the repo", func() {
+			businessRepo.EXPECT().GetBusinesses(ctx, "finn").Return(nil, fmt.Errorf("db error")).Once()
+
+			result, err := businessSvc.GetBusinesses(ctx, "finn")
+
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError("db error"))
+		})
+	})
 })

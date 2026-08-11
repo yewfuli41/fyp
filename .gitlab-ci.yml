@@ -115,7 +115,7 @@ build:client:
       cd client
 
       npm ci
-      npm run build -- --base=/fyp-fuli-booking/
+      npm run build
       mkdir -p ../out/client
       cp -a dist/. ../out/client/
   artifacts:

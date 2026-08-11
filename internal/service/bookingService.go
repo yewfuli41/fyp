@@ -175,7 +175,7 @@ func (s *bookingService) notify(c *param.BookingContextParam, actorIsBusiness bo
 		if email == "" {
 			return
 		}
-		if err := s.emailService.SendBookingStatusEmail(email, name, withName, statusLabel, c.WhenText); err != nil {
+		if err := s.emailService.SendBookingStatusEmail(email, name, withName, statusLabel); err != nil {
 			log.Errorf("failed to send booking status email to %s: %v", email, err)
 		}
 	}
@@ -358,11 +358,41 @@ func (s *bookingService) RescheduleBooking(ctx context.Context, userID int64, bo
 		return nil, err
 	}
 
+	// Capture the staff assigned before the move — if the owner reassigns the
+	// booking onto a different staff member's slot, both the old and new staff
+	// need to hear about it, not just whoever ends up on the booking now.
+	oldStaffEmail, oldStaffName := c.StaffEmail, c.StaffName
+
 	// Re-fetch context for the new slot's time in the notification.
 	if updated, cerr := s.bookingRepo.GetBookingContext(ctx, bookingID); cerr == nil {
 		c = updated
 	}
 	s.notify(c, business, label)
+
+	// When the owner reschedules, the customer is notified above, but staff are
+	// not (notify() only emails the side that didn't act). Staff still need to
+	// know their schedule changed, so notify them explicitly here: the staff
+	// who had the booking before the move, plus the new slot's staff if the
+	// owner moved it onto someone else's slot.
+	if business && userID == c.BusinessOwnerID {
+		notifyStaff := func(email, name *string) {
+			if email == nil || *email == "" {
+				return
+			}
+			staffName := ""
+			if name != nil {
+				staffName = *name
+			}
+			if err := s.emailService.SendBookingStatusEmail(*email, staffName, c.CustomerName, label); err != nil {
+				log.Errorf("failed to send booking status email to %s: %v", *email, err)
+			}
+		}
+		notifyStaff(oldStaffEmail, oldStaffName)
+		if c.StaffEmail != nil && (oldStaffEmail == nil || *c.StaffEmail != *oldStaffEmail) {
+			notifyStaff(c.StaffEmail, c.StaffName)
+		}
+	}
+
 	return s.bookingRepo.GetBookingDetail(ctx, bookingID)
 }
 

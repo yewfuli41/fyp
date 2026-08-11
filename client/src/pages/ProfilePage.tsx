@@ -341,15 +341,6 @@ export default function ProfilePage() {
               Register Business Profile
             </Button>
           )}
-          {user?.staffProfile && (
-            <Button
-              type="button"
-              className="profile-action-button profile-action-button-wide"
-              onClick={() => navigate("/my-calendar")}
-            >
-              My Calendar
-            </Button>
-          )}
         </div>
       </section>
 

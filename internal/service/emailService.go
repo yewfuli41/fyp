@@ -38,12 +38,12 @@ func (e *sendGridEmailService) SendStaffWelcomeEmail(toEmail string) error {
 	return nil
 }
 
-func (e *sendGridEmailService) SendBookingStatusEmail(toEmail, recipientName, withName, statusLabel, whenText string) error {
+func (e *sendGridEmailService) SendBookingStatusEmail(toEmail, recipientName, withName, statusLabel string) error {
 	from := mail.NewEmail(e.emailCfg.FromName, e.emailCfg.FromEmail)
 	to := mail.NewEmail(recipientName, toEmail)
 	subject := fmt.Sprintf("Your booking with %s is now %s", withName, statusLabel)
-	plainText := fmt.Sprintf("Hi %s,\n\nYour booking with %s (%s) is now %s.\n\nThank you.", recipientName, withName, whenText, statusLabel)
-	htmlContent := fmt.Sprintf("<p>Hi %s,</p><p>Your booking with <strong>%s</strong> (%s) is now <strong>%s</strong>.</p><p>Thank you.</p>", recipientName, withName, whenText, statusLabel)
+	plainText := fmt.Sprintf("Hi %s,\n\nYour booking with %s is now %s.\n\nThank you.", recipientName, withName, statusLabel)
+	htmlContent := fmt.Sprintf("<p>Hi %s,</p><p>Your booking with <strong>%s</strong> is now <strong>%s</strong>.</p><p>Thank you.</p>", recipientName, withName, statusLabel)
 
 	message := mail.NewSingleEmail(from, subject, to, plainText, htmlContent)
 	client := sendgrid.NewSendClient(e.emailCfg.SendGridAPIKey)

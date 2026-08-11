@@ -8,6 +8,7 @@ import {
 import { parseGraphQLErrors } from "../utils/graphqlErrors";
 import { todayISO } from "../utils/serviceSlotHelpers";
 import { IconHistory, IconPencil } from "../components/icons";
+import { notifyPendingCountsChanged } from "../utils/pendingCounts";
 import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
 
 const STATUS_VARIANT: Record<LeaveStatus, string> = {
@@ -130,6 +131,9 @@ export default function LeaveApplicationPage() {
             } else {
                 setDeleting(null);
                 fetchApplications();
+                // Deleting a decided application (the only kind the navbar's
+                // "My Leave" badge counts) should drop the badge right away.
+                notifyPendingCountsChanged();
             }
         } catch {
             setDeleteError("Something went wrong. Please try again.");

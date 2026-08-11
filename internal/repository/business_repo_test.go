@@ -168,6 +168,94 @@ var _ = Describe("BusinessRepo", func() {
 		})
 	})
 
+	Describe("BusinessEmailExists", func() {
+		It("returns true when the business email already exists", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT EXISTS(SELECT 1 FROM business_profiles WHERE business_email = $1)")).
+				WithArgs("taken@example.com").
+				WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
+
+			exists, err := repo.BusinessEmailExists(ctx, "taken@example.com")
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue())
+		})
+
+		It("returns false when the business email does not exist", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT EXISTS(SELECT 1 FROM business_profiles WHERE business_email = $1)")).
+				WithArgs("free@example.com").
+				WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(false))
+
+			exists, err := repo.BusinessEmailExists(ctx, "free@example.com")
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeFalse())
+		})
+
+		It("propagates a DB error instead of reporting the email as free", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT EXISTS(SELECT 1 FROM business_profiles WHERE business_email = $1)")).
+				WithArgs("error@example.com").
+				WillReturnError(sql.ErrConnDone)
+
+			exists, err := repo.BusinessEmailExists(ctx, "error@example.com")
+
+			Expect(err).To(HaveOccurred())
+			Expect(exists).To(BeFalse())
+		})
+	})
+
+	Describe("GetBusinesses", func() {
+		It("returns all matching business profiles", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT business_id, owner_user_id, business_name, description, address")).
+				WillReturnRows(sqlmock.NewRows(businessCols).
+					AddRow(1, 1, "Alpha Biz", nil, "1 St", nil, "0111111111", "alpha@example.com").
+					AddRow(2, 2, "Beta Biz", nil, "2 St", nil, "0222222222", "beta@example.com"))
+
+			results, err := repo.GetBusinesses(ctx, "")
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(results).To(HaveLen(2))
+			Expect(results[0].BusinessName).To(Equal("Alpha Biz"))
+			Expect(results[1].BusinessName).To(Equal("Beta Biz"))
+		})
+
+		It("returns an empty slice when no business matches the search", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT business_id, owner_user_id, business_name, description, address")).
+				WithArgs("%nonexistent%").
+				WillReturnRows(sqlmock.NewRows(businessCols))
+
+			results, err := repo.GetBusinesses(ctx, "nonexistent")
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(results).To(BeEmpty())
+		})
+	})
+
+	Describe("GetBusinessByID", func() {
+		It("returns the business profile when found", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT business_id, owner_user_id, business_name, description, address")).
+				WithArgs(int64(7)).
+				WillReturnRows(sqlmock.NewRows(businessCols).
+					AddRow(7, 1, "My Biz", nil, "123 St", nil, "0123456789", "biz@example.com"))
+
+			result, err := repo.GetBusinessByID(ctx, 7)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.BusinessID).To(Equal(int64(7)))
+			Expect(result.BusinessName).To(Equal("My Biz"))
+		})
+
+		It("returns sql.ErrNoRows when the business is not found", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT business_id, owner_user_id, business_name, description, address")).
+				WithArgs(int64(999)).
+				WillReturnError(sql.ErrNoRows)
+
+			result, err := repo.GetBusinessByID(ctx, 999)
+
+			Expect(err).To(Equal(sql.ErrNoRows))
+			Expect(result).To(BeNil())
+		})
+	})
+
 	Describe("GetBusinessWorkingHours", func() {
 		It("returns working hours for a business", func() {
 			whCols := []string{"day", "start_time", "end_time"}

@@ -9,6 +9,7 @@ import (
 	"fyp/domain/param"
 	"fyp/internal/interfaces/mocks"
 	"fyp/internal/service"
+	"strings"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -27,6 +28,8 @@ var _ = Describe("AuthService", func() {
 			SignUp(context.Context, param.SignUpParam) (*param.AuthResult, error)
 			LogIn(context.Context, param.LogInParam) (*param.AuthResult, error)
 			GetUserProfile(context.Context, string) (*param.AuthUserParam, error)
+			ResetPassword(context.Context, param.ResetPasswordParam) error
+			ChangePassword(context.Context, param.ChangePasswordParam) error
 		}
 	)
 
@@ -316,6 +319,238 @@ var _ = Describe("AuthService", func() {
 
 			Expect(result).To(BeNil())
 			Expect(err).To(MatchError(sql.ErrNoRows))
+		})
+	})
+
+	Describe("ResetPassword", func() {
+		var (
+			resetPasswordParam param.ResetPasswordParam
+			user               *param.AuthUserParam
+		)
+
+		BeforeEach(func() {
+			resetPasswordParam = param.ResetPasswordParam{
+				UserID:      42,
+				Email:       "finn@example.com",
+				NewPassword: "newpassword123",
+			}
+			user = &param.AuthUserParam{
+				UserID:            42,
+				Email:             resetPasswordParam.Email,
+				Password:          hashPassword("temporarypassword"),
+				MustResetPassword: true,
+			}
+		})
+
+		It("returns validation errors without calling the repo", func() {
+			err := authSvc.ResetPassword(ctx, param.ResetPasswordParam{})
+
+			Expect(err).To(MatchError("validation failed"))
+			Expect(err).To(BeAssignableToTypeOf(errs.ValidationErrors{}))
+		})
+
+		It("returns an error when the repo GetUser fails", func() {
+			dbErr := errors.New("database connection failed")
+			authRepo.EXPECT().
+				GetUser(ctx, resetPasswordParam.Email).
+				Return(nil, dbErr).
+				Once()
+
+			err := authSvc.ResetPassword(ctx, resetPasswordParam)
+
+			Expect(err).To(MatchError(dbErr))
+		})
+
+		It("returns a validation error when a reset is not required", func() {
+			user.MustResetPassword = false
+			authRepo.EXPECT().
+				GetUser(ctx, resetPasswordParam.Email).
+				Return(user, nil).
+				Once()
+
+			err := authSvc.ResetPassword(ctx, resetPasswordParam)
+
+			Expect(err).To(Equal(errs.ValidationErrors{
+				{Field: "password", Message: "Password reset is not required"},
+			}))
+		})
+
+		It("returns a validation error when the new password matches the temporary password", func() {
+			resetPasswordParam.NewPassword = "temporarypassword"
+			authRepo.EXPECT().
+				GetUser(ctx, resetPasswordParam.Email).
+				Return(user, nil).
+				Once()
+
+			err := authSvc.ResetPassword(ctx, resetPasswordParam)
+
+			Expect(err).To(Equal(errs.ValidationErrors{
+				{Field: "password", Message: "New password must be different from the temporary password"},
+			}))
+		})
+
+		It("hashes and persists the new password on success", func() {
+			authRepo.EXPECT().
+				GetUser(ctx, resetPasswordParam.Email).
+				Return(user, nil).
+				Once()
+			authRepo.EXPECT().
+				UpdatePassword(ctx, resetPasswordParam.UserID, mock.MatchedBy(func(hashed string) bool {
+					Expect(hashed).NotTo(Equal(resetPasswordParam.NewPassword))
+					Expect(bcrypt.CompareHashAndPassword([]byte(hashed), []byte(resetPasswordParam.NewPassword))).To(Succeed())
+					return true
+				})).
+				Return(nil).
+				Once()
+
+			err := authSvc.ResetPassword(ctx, resetPasswordParam)
+
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns an error when the repo UpdatePassword fails", func() {
+			dbErr := errors.New("update failed")
+			authRepo.EXPECT().
+				GetUser(ctx, resetPasswordParam.Email).
+				Return(user, nil).
+				Once()
+			authRepo.EXPECT().
+				UpdatePassword(ctx, resetPasswordParam.UserID, mock.AnythingOfType("string")).
+				Return(dbErr).
+				Once()
+
+			err := authSvc.ResetPassword(ctx, resetPasswordParam)
+
+			Expect(err).To(MatchError(dbErr))
+		})
+
+		It("returns an error when hashing the new password fails", func() {
+			resetPasswordParam.NewPassword = strings.Repeat("a", 73)
+			authRepo.EXPECT().
+				GetUser(ctx, resetPasswordParam.Email).
+				Return(user, nil).
+				Once()
+
+			err := authSvc.ResetPassword(ctx, resetPasswordParam)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(bcrypt.ErrPasswordTooLong))
+		})
+	})
+
+	Describe("ChangePassword", func() {
+		var (
+			changePasswordParam param.ChangePasswordParam
+			user                *param.AuthUserParam
+		)
+
+		BeforeEach(func() {
+			changePasswordParam = param.ChangePasswordParam{
+				UserID:          42,
+				Email:           "finn@example.com",
+				CurrentPassword: "currentpassword",
+				NewPassword:     "newpassword123",
+			}
+			user = &param.AuthUserParam{
+				UserID:   42,
+				Email:    changePasswordParam.Email,
+				Password: hashPassword(changePasswordParam.CurrentPassword),
+			}
+		})
+
+		It("returns validation errors without calling the repo", func() {
+			err := authSvc.ChangePassword(ctx, param.ChangePasswordParam{})
+
+			Expect(err).To(MatchError("validation failed"))
+			Expect(err).To(BeAssignableToTypeOf(errs.ValidationErrors{}))
+		})
+
+		It("returns an error when the repo GetUser fails", func() {
+			dbErr := errors.New("database connection failed")
+			authRepo.EXPECT().
+				GetUser(ctx, changePasswordParam.Email).
+				Return(nil, dbErr).
+				Once()
+
+			err := authSvc.ChangePassword(ctx, changePasswordParam)
+
+			Expect(err).To(MatchError(dbErr))
+		})
+
+		It("returns a validation error when the current password is wrong", func() {
+			changePasswordParam.CurrentPassword = "wrong-password"
+			authRepo.EXPECT().
+				GetUser(ctx, changePasswordParam.Email).
+				Return(user, nil).
+				Once()
+
+			err := authSvc.ChangePassword(ctx, changePasswordParam)
+
+			Expect(err).To(Equal(errs.ValidationErrors{
+				{Field: "currentPassword", Message: "Current password is incorrect"},
+			}))
+		})
+
+		It("returns a validation error when the new password matches the current password", func() {
+			changePasswordParam.NewPassword = changePasswordParam.CurrentPassword
+			authRepo.EXPECT().
+				GetUser(ctx, changePasswordParam.Email).
+				Return(user, nil).
+				Once()
+
+			err := authSvc.ChangePassword(ctx, changePasswordParam)
+
+			Expect(err).To(Equal(errs.ValidationErrors{
+				{Field: "newPassword", Message: "New password must be different from your current password"},
+			}))
+		})
+
+		It("hashes and persists the new password on success", func() {
+			authRepo.EXPECT().
+				GetUser(ctx, changePasswordParam.Email).
+				Return(user, nil).
+				Once()
+			authRepo.EXPECT().
+				UpdatePassword(ctx, changePasswordParam.UserID, mock.MatchedBy(func(hashed string) bool {
+					Expect(hashed).NotTo(Equal(changePasswordParam.NewPassword))
+					Expect(bcrypt.CompareHashAndPassword([]byte(hashed), []byte(changePasswordParam.NewPassword))).To(Succeed())
+					return true
+				})).
+				Return(nil).
+				Once()
+
+			err := authSvc.ChangePassword(ctx, changePasswordParam)
+
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns an error when the repo UpdatePassword fails", func() {
+			dbErr := errors.New("update failed")
+			authRepo.EXPECT().
+				GetUser(ctx, changePasswordParam.Email).
+				Return(user, nil).
+				Once()
+			authRepo.EXPECT().
+				UpdatePassword(ctx, changePasswordParam.UserID, mock.AnythingOfType("string")).
+				Return(dbErr).
+				Once()
+
+			err := authSvc.ChangePassword(ctx, changePasswordParam)
+
+			Expect(err).To(MatchError(dbErr))
+		})
+
+		It("returns an error when hashing the new password fails", func() {
+			changePasswordParam.NewPassword = strings.Repeat("a", 73)
+			authRepo.EXPECT().
+				GetUser(ctx, changePasswordParam.Email).
+				Return(user, nil).
+				Once()
+
+			err := authSvc.ChangePassword(ctx, changePasswordParam)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(bcrypt.ErrPasswordTooLong))
 		})
 	})
 })

@@ -3,11 +3,13 @@ package service_test
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
 	"fyp/internal/interfaces/mocks"
 	"fyp/internal/service"
+	"strings"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -247,6 +249,143 @@ var _ = Describe("LeaveService", func() {
 			ve, ok := err.(errs.ValidationErrors)
 			Expect(ok).To(BeTrue())
 			Expect(ve[0].Field).To(Equal("leaveId"))
+		})
+	})
+
+	Describe("GetMyLeaveApplications", func() {
+		It("returns the staff's own leave applications", func() {
+			apps := []param.LeaveApplicationParam{
+				{LeaveID: 1, StaffID: staffID, Status: "pending"},
+				{LeaveID: 2, StaffID: staffID, Status: "approved"},
+			}
+			leaveRepo.EXPECT().GetLeaveApplicationsByStaffID(ctx, staffID).Return(apps, nil).Once()
+
+			result, err := leaveSvc.GetMyLeaveApplications(ctx, staffID)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(apps))
+		})
+
+		It("propagates an error from the repo", func() {
+			leaveRepo.EXPECT().GetLeaveApplicationsByStaffID(ctx, staffID).Return(nil, fmt.Errorf("db error")).Once()
+
+			result, err := leaveSvc.GetMyLeaveApplications(ctx, staffID)
+
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError("db error"))
+		})
+	})
+
+	Describe("UpdateLeaveApplication", func() {
+		It("propagates an error when the leave lookup itself fails", func() {
+			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
+				Return(nil, fmt.Errorf("db error")).Once()
+
+			justification := "New reason"
+			result, err := leaveSvc.UpdateLeaveApplication(ctx, staffID, 100, &justification)
+
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError("db error"))
+		})
+
+		It("returns not found when the application doesn't belong to this staff", func() {
+			otherStaff := int64(9)
+			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
+				Return(&param.LeaveApplicationParam{LeaveID: 100, StaffID: otherStaff, Status: "pending"}, nil).Once()
+
+			justification := "New reason"
+			result, err := leaveSvc.UpdateLeaveApplication(ctx, staffID, 100, &justification)
+
+			Expect(result).To(BeNil())
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve[0].Field).To(Equal("leaveId"))
+		})
+
+		It("refuses to edit an application that is no longer pending", func() {
+			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
+				Return(&param.LeaveApplicationParam{LeaveID: 100, StaffID: staffID, Status: "approved"}, nil).Once()
+
+			justification := "New reason"
+			result, err := leaveSvc.UpdateLeaveApplication(ctx, staffID, 100, &justification)
+
+			Expect(result).To(BeNil())
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve[0].Field).To(Equal("leaveId"))
+			Expect(ve[0].Message).To(ContainSubstring("Only pending"))
+		})
+
+		It("returns a validation error when the justification is too long, without starting a transaction", func() {
+			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
+				Return(&param.LeaveApplicationParam{LeaveID: 100, StaffID: staffID, Status: "pending"}, nil).Once()
+
+			tooLong := strings.Repeat("a", 1001)
+			result, err := leaveSvc.UpdateLeaveApplication(ctx, staffID, 100, &tooLong)
+
+			Expect(result).To(BeNil())
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve[0].Field).To(Equal("justification"))
+		})
+
+		It("trims the justification and updates it for the staff's own pending application", func() {
+			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
+				Return(&param.LeaveApplicationParam{LeaveID: 100, StaffID: staffID, Status: "pending"}, nil).Once()
+
+			justification := "  Updated reason  "
+			dbMock.ExpectBegin()
+			leaveRepo.EXPECT().
+				UpdateLeaveJustification(ctx, mock.AnythingOfType("*sql.Tx"), int64(100), mock.MatchedBy(func(j *string) bool {
+					return j != nil && *j == "Updated reason"
+				})).
+				Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			updated := &param.LeaveApplicationParam{LeaveID: 100, StaffID: staffID, Status: "pending", Justification: &justification}
+			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).Return(updated, nil).Once()
+
+			result, err := leaveSvc.UpdateLeaveApplication(ctx, staffID, 100, &justification)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.LeaveID).To(Equal(int64(100)))
+		})
+
+		It("treats a blank justification as clearing it", func() {
+			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
+				Return(&param.LeaveApplicationParam{LeaveID: 100, StaffID: staffID, Status: "pending"}, nil).Once()
+
+			blank := "   "
+			dbMock.ExpectBegin()
+			leaveRepo.EXPECT().
+				UpdateLeaveJustification(ctx, mock.AnythingOfType("*sql.Tx"), int64(100), (*string)(nil)).
+				Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			updated := &param.LeaveApplicationParam{LeaveID: 100, StaffID: staffID, Status: "pending"}
+			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).Return(updated, nil).Once()
+
+			result, err := leaveSvc.UpdateLeaveApplication(ctx, staffID, 100, &blank)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.LeaveID).To(Equal(int64(100)))
+		})
+
+		It("rolls back and propagates an error from UpdateLeaveJustification", func() {
+			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
+				Return(&param.LeaveApplicationParam{LeaveID: 100, StaffID: staffID, Status: "pending"}, nil).Once()
+
+			justification := "Updated reason"
+			dbMock.ExpectBegin()
+			leaveRepo.EXPECT().
+				UpdateLeaveJustification(ctx, mock.AnythingOfType("*sql.Tx"), int64(100), mock.AnythingOfType("*string")).
+				Return(fmt.Errorf("db error")).Once()
+			dbMock.ExpectRollback()
+
+			result, err := leaveSvc.UpdateLeaveApplication(ctx, staffID, 100, &justification)
+
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError("db error"))
 		})
 	})
 })

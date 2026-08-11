@@ -154,7 +154,7 @@ func (b *businessRepo) BusinessEmailExists(ctx context.Context, businessEmail st
 	var exists bool
 	err := b.DB.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM business_profiles WHERE business_email = $1)`, businessEmail).Scan(&exists)
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 	return exists, nil
 }

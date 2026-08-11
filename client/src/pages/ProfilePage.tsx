@@ -14,7 +14,7 @@ import "../styles/ProfilePage.css";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { token, login, user } = useAuth();
+  const { token, login } = useAuth();
   const activeToken = token ?? localStorage.getItem("token");
 
   const [username, setUsername] = useState("");

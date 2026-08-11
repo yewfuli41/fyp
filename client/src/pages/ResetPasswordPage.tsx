@@ -20,7 +20,7 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     if (user && !user.mustResetPassword) {
-      navigate("/", { replace: true });
+      navigate("/book", { replace: true });
     }
   }, [navigate, user]);
 
@@ -59,7 +59,7 @@ export default function ResetPasswordPage() {
       }
 
       login(token, { ...user, mustResetPassword: false });
-      navigate("/", { replace: true });
+      navigate("/book", { replace: true });
     } catch {
       setFormError("Something went wrong. Please try again.");
     } finally {

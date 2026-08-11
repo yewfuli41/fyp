@@ -101,7 +101,7 @@ var _ = Describe("BookingService", func() {
 			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(&postUpdateCtx, nil).Once()
 
 			emailService.EXPECT().
-				SendBookingStatusEmail("owner@example.com", "Owner", "Cust", "a reschedule request", "today").
+				SendBookingStatusEmail("owner@example.com", "Owner", "Cust", "a reschedule request").
 				Return(nil).Once()
 
 			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "pending"}
@@ -146,7 +146,7 @@ var _ = Describe("BookingService", func() {
 			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(&postUpdateCtx, nil).Once()
 
 			emailService.EXPECT().
-				SendBookingStatusEmail("customer@example.com", "Cust", "Biz", "rescheduled", "today").
+				SendBookingStatusEmail("customer@example.com", "Cust", "Biz", "rescheduled").
 				Return(nil).Once()
 
 			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "rescheduled"}
@@ -188,7 +188,7 @@ var _ = Describe("BookingService", func() {
 			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(&postUpdateCtx, nil).Once()
 
 			emailService.EXPECT().
-				SendBookingStatusEmail("customer@example.com", "Cust", "Biz", "rescheduled", "today").
+				SendBookingStatusEmail("customer@example.com", "Cust", "Biz", "rescheduled").
 				Return(nil).Once()
 
 			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "rescheduled"}
@@ -205,6 +205,175 @@ var _ = Describe("BookingService", func() {
 			_, err = bookingSvc.AcceptBooking(ctx, ownerUserID, bookingID)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("Only pending bookings can be accepted."))
+		})
+
+		It("notifies both the old and new staff member when the owner reassigns the booking to a different staff's slot", func() {
+			oldStaffUserID := int64(50)
+			oldStaffEmail := "staffold@example.com"
+			oldStaffName := "StaffOld"
+			newStaffEmail := "staffnew@example.com"
+			newStaffName := "StaffNew"
+
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "accepted",
+				CustomerUserID:  customerUserID,
+				CustomerEmail:   "customer@example.com",
+				CustomerName:    "Cust",
+				BusinessOwnerID: ownerUserID,
+				OwnerEmail:      "owner@example.com",
+				OwnerName:       "Owner",
+				SlotStaffUserID: &oldStaffUserID,
+				StaffEmail:      &oldStaffEmail,
+				StaffName:       &oldStaffName,
+				BusinessName:    "Biz",
+				WhenText:        "today",
+			}
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+			bookingRepo.EXPECT().SlotOptionIsAvailable(ctx, newSlotOption).Return(true, nil).Once()
+
+			dbMock.ExpectBegin()
+			bookingRepo.EXPECT().
+				UpdateBookingSlotOption(ctx, mock.Anything, bookingID, newSlotOption, "rescheduled").
+				Return(nil).Once()
+			serviceRepo.EXPECT().
+				DropSlotOptionIfExpired(ctx, mock.Anything, int64(0)).
+				Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			// Re-fetch reflects the new slot's staff — a different person than before.
+			postUpdateCtx := *ctxParam
+			postUpdateCtx.Status = "rescheduled"
+			postUpdateCtx.StaffEmail = &newStaffEmail
+			postUpdateCtx.StaffName = &newStaffName
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(&postUpdateCtx, nil).Once()
+
+			emailService.EXPECT().
+				SendBookingStatusEmail("customer@example.com", "Cust", "Biz", "rescheduled").
+				Return(nil).Once()
+			emailService.EXPECT().
+				SendBookingStatusEmail(oldStaffEmail, oldStaffName, "Cust", "rescheduled").
+				Return(nil).Once()
+			emailService.EXPECT().
+				SendBookingStatusEmail(newStaffEmail, newStaffName, "Cust", "rescheduled").
+				Return(nil).Once()
+
+			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "rescheduled"}
+			bookingRepo.EXPECT().GetBookingDetail(ctx, bookingID).Return(detail, nil).Once()
+
+			result, err := bookingSvc.RescheduleBooking(ctx, ownerUserID, bookingID, newSlotOption)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Status).To(Equal("rescheduled"))
+		})
+
+		It("notifies the staff member once, not twice, when the owner reschedules within the same staff's own slots", func() {
+			staffUserID := int64(50)
+			staffEmail := "staff@example.com"
+			staffName := "Staff"
+
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "accepted",
+				CustomerUserID:  customerUserID,
+				CustomerEmail:   "customer@example.com",
+				CustomerName:    "Cust",
+				BusinessOwnerID: ownerUserID,
+				OwnerEmail:      "owner@example.com",
+				OwnerName:       "Owner",
+				SlotStaffUserID: &staffUserID,
+				StaffEmail:      &staffEmail,
+				StaffName:       &staffName,
+				BusinessName:    "Biz",
+				WhenText:        "today",
+			}
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+			bookingRepo.EXPECT().SlotOptionIsAvailable(ctx, newSlotOption).Return(true, nil).Once()
+
+			dbMock.ExpectBegin()
+			bookingRepo.EXPECT().
+				UpdateBookingSlotOption(ctx, mock.Anything, bookingID, newSlotOption, "rescheduled").
+				Return(nil).Once()
+			serviceRepo.EXPECT().
+				DropSlotOptionIfExpired(ctx, mock.Anything, int64(0)).
+				Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			// Re-fetch shows the same staff still assigned after the move.
+			postUpdateCtx := *ctxParam
+			postUpdateCtx.Status = "rescheduled"
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(&postUpdateCtx, nil).Once()
+
+			emailService.EXPECT().
+				SendBookingStatusEmail("customer@example.com", "Cust", "Biz", "rescheduled").
+				Return(nil).Once()
+			// Exactly one call expected — mockery fails the test if the same
+			// staff ends up emailed twice (once as "old", once as "new").
+			emailService.EXPECT().
+				SendBookingStatusEmail(staffEmail, staffName, "Cust", "rescheduled").
+				Return(nil).Once()
+
+			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "rescheduled"}
+			bookingRepo.EXPECT().GetBookingDetail(ctx, bookingID).Return(detail, nil).Once()
+
+			result, err := bookingSvc.RescheduleBooking(ctx, ownerUserID, bookingID, newSlotOption)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Status).To(Equal("rescheduled"))
+		})
+
+		It("does not send an extra staff notification when a staff member reschedules their own booking (only the customer is notified)", func() {
+			staffUserID := int64(50)
+			staffEmail := "staff@example.com"
+			staffName := "Staff"
+
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "accepted",
+				CustomerUserID:  customerUserID,
+				CustomerEmail:   "customer@example.com",
+				CustomerName:    "Cust",
+				BusinessOwnerID: ownerUserID,
+				OwnerEmail:      "owner@example.com",
+				OwnerName:       "Owner",
+				SlotStaffUserID: &staffUserID,
+				StaffEmail:      &staffEmail,
+				StaffName:       &staffName,
+				BusinessName:    "Biz",
+				WhenText:        "today",
+			}
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+			bookingRepo.EXPECT().SlotOptionIsAvailable(ctx, newSlotOption).Return(true, nil).Once()
+			// A staff member (not the owner) may only reschedule onto their own slots.
+			bookingRepo.EXPECT().GetSlotOptionStaffUserID(ctx, newSlotOption).Return(&staffUserID, nil).Once()
+
+			dbMock.ExpectBegin()
+			bookingRepo.EXPECT().
+				UpdateBookingSlotOption(ctx, mock.Anything, bookingID, newSlotOption, "rescheduled").
+				Return(nil).Once()
+			serviceRepo.EXPECT().
+				DropSlotOptionIfExpired(ctx, mock.Anything, int64(0)).
+				Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			postUpdateCtx := *ctxParam
+			postUpdateCtx.Status = "rescheduled"
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(&postUpdateCtx, nil).Once()
+
+			emailService.EXPECT().
+				SendBookingStatusEmail("customer@example.com", "Cust", "Biz", "rescheduled").
+				Return(nil).Once()
+			// No expectation is set for the staff's own email — the extra
+			// staff-notification block only runs for an owner-initiated
+			// reschedule, so mockery will fail this test if it fires here too.
+
+			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "rescheduled"}
+			bookingRepo.EXPECT().GetBookingDetail(ctx, bookingID).Return(detail, nil).Once()
+
+			result, err := bookingSvc.RescheduleBooking(ctx, staffUserID, bookingID, newSlotOption)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Status).To(Equal("rescheduled"))
 		})
 	})
 
@@ -232,7 +401,7 @@ var _ = Describe("BookingService", func() {
 			dbMock.ExpectCommit()
 
 			emailService.EXPECT().
-				SendBookingStatusEmail("owner@example.com", "Owner", "Cust", "accepted", "today").
+				SendBookingStatusEmail("owner@example.com", "Owner", "Cust", "accepted").
 				Return(nil).Once()
 
 			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "accepted"}
@@ -282,7 +451,7 @@ var _ = Describe("BookingService", func() {
 			dbMock.ExpectCommit()
 
 			emailService.EXPECT().
-				SendBookingStatusEmail("customer@example.com", "Cust", "Biz", "rejected", "today").
+				SendBookingStatusEmail("customer@example.com", "Cust", "Biz", "rejected").
 				Return(nil).Once()
 
 			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "rejected"}
@@ -322,7 +491,7 @@ var _ = Describe("BookingService", func() {
 			dbMock.ExpectCommit()
 
 			emailService.EXPECT().
-				SendBookingStatusEmail("customer@example.com", "Cust", "Biz", "accepted", "today").
+				SendBookingStatusEmail("customer@example.com", "Cust", "Biz", "accepted").
 				Return(nil).Once()
 
 			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "accepted"}
@@ -360,7 +529,7 @@ var _ = Describe("BookingService", func() {
 			dbMock.ExpectCommit()
 
 			emailService.EXPECT().
-				SendBookingStatusEmail("customer@example.com", "Cust", "Biz", "rejected", "today").
+				SendBookingStatusEmail("customer@example.com", "Cust", "Biz", "rejected").
 				Return(nil).Once()
 
 			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "rejected"}
@@ -470,6 +639,347 @@ var _ = Describe("BookingService", func() {
 			_, err := bookingSvc.AcceptReschedule(ctx, customerUserID, bookingID)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("This appointment has no reschedule to accept."))
+		})
+	})
+
+	Describe("RecordWalkIn", func() {
+		It("inserts the walk-in booking and returns its detail, with no availability/ownership checks", func() {
+			slotOptionID := int64(321)
+			created := &param.BookingParam{BookingID: bookingID, UserID: ownerUserID, SlotOptionID: slotOptionID, Status: "accepted", BookingType: "walk_in"}
+			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "accepted", BookingType: "walk_in"}
+
+			bookingRepo.EXPECT().InsertWalkInBooking(ctx, ownerUserID, slotOptionID).Return(created, nil).Once()
+			bookingRepo.EXPECT().GetBookingDetail(ctx, bookingID).Return(detail, nil).Once()
+
+			result, err := bookingSvc.RecordWalkIn(ctx, ownerUserID, slotOptionID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.BookingID).To(Equal(bookingID))
+			Expect(result.BookingType).To(Equal("walk_in"))
+		})
+
+		It("propagates a DB error from InsertWalkInBooking without calling GetBookingDetail", func() {
+			slotOptionID := int64(321)
+			bookingRepo.EXPECT().InsertWalkInBooking(ctx, ownerUserID, slotOptionID).Return(nil, fmt.Errorf("db error")).Once()
+
+			result, err := bookingSvc.RecordWalkIn(ctx, ownerUserID, slotOptionID)
+			Expect(err).To(HaveOccurred())
+			Expect(result).To(BeNil())
+		})
+	})
+
+	Describe("CancelBooking initiated by the customer", func() {
+		It("cancels an accepted booking and notifies the business side (owner and staff)", func() {
+			staffUserID := int64(20)
+			staffEmail := "staff@example.com"
+			staffName := "Staffer"
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "accepted",
+				SlotOptionID:    500,
+				CustomerUserID:  customerUserID,
+				CustomerName:    "Cust",
+				BusinessOwnerID: ownerUserID,
+				OwnerEmail:      "owner@example.com",
+				OwnerName:       "Owner",
+				SlotStaffUserID: &staffUserID,
+				StaffEmail:      &staffEmail,
+				StaffName:       &staffName,
+				BusinessName:    "Biz",
+			}
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			dbMock.ExpectBegin()
+			bookingRepo.EXPECT().
+				UpdateBookingStatus(ctx, mock.Anything, bookingID, "cancelled", customerUserID).
+				Return(nil).Once()
+			serviceRepo.EXPECT().
+				DropSlotOptionIfExpired(ctx, mock.Anything, int64(500)).
+				Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			emailService.EXPECT().
+				SendBookingStatusEmail("owner@example.com", "Owner", "Cust", "cancelled").
+				Return(nil).Once()
+			emailService.EXPECT().
+				SendBookingStatusEmail("staff@example.com", "Staffer", "Cust", "cancelled").
+				Return(nil).Once()
+
+			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "cancelled"}
+			bookingRepo.EXPECT().GetBookingDetail(ctx, bookingID).Return(detail, nil).Once()
+
+			result, err := bookingSvc.CancelBooking(ctx, customerUserID, bookingID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Status).To(Equal("cancelled"))
+		})
+	})
+
+	Describe("CancelBooking initiated by the business", func() {
+		It("cancels a pending booking and notifies the customer instead", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "pending",
+				SlotOptionID:    501,
+				CustomerUserID:  customerUserID,
+				CustomerEmail:   "customer@example.com",
+				CustomerName:    "Cust",
+				BusinessOwnerID: ownerUserID,
+				BusinessName:    "Biz",
+			}
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			dbMock.ExpectBegin()
+			bookingRepo.EXPECT().
+				UpdateBookingStatus(ctx, mock.Anything, bookingID, "cancelled", ownerUserID).
+				Return(nil).Once()
+			serviceRepo.EXPECT().
+				DropSlotOptionIfExpired(ctx, mock.Anything, int64(501)).
+				Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			emailService.EXPECT().
+				SendBookingStatusEmail("customer@example.com", "Cust", "Biz", "cancelled").
+				Return(nil).Once()
+
+			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "cancelled"}
+			bookingRepo.EXPECT().GetBookingDetail(ctx, bookingID).Return(detail, nil).Once()
+
+			result, err := bookingSvc.CancelBooking(ctx, ownerUserID, bookingID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Status).To(Equal("cancelled"))
+		})
+
+		It("rejects a stranger (neither customer nor business side) trying to cancel", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "accepted",
+				CustomerUserID:  customerUserID,
+				BusinessOwnerID: ownerUserID,
+			}
+			strangerUserID := int64(999)
+			// Also exercises the best-effort sweep-failure branch (a failed sweep
+			// should never block the actual cancel logic below it).
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(fmt.Errorf("sweep failed")).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			_, err := bookingSvc.CancelBooking(ctx, strangerUserID, bookingID)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("You are not allowed to manage this booking."))
+		})
+
+		It("refuses to cancel a booking that is already rejected", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "rejected",
+				CustomerUserID:  customerUserID,
+				BusinessOwnerID: ownerUserID,
+			}
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			_, err := bookingSvc.CancelBooking(ctx, customerUserID, bookingID)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("This booking can no longer be cancelled."))
+		})
+
+		It("returns a not-found error when the booking context lookup fails with sql.ErrNoRows", func() {
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(nil, sql.ErrNoRows).Once()
+
+			_, err := bookingSvc.CancelBooking(ctx, customerUserID, bookingID)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Booking not found."))
+		})
+
+		It("propagates a generic DB error from the booking context lookup as-is (not the not-found message)", func() {
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(nil, fmt.Errorf("db unavailable")).Once()
+
+			_, err := bookingSvc.CancelBooking(ctx, customerUserID, bookingID)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("db unavailable"))
+		})
+
+		It("propagates a DB error from the transaction", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "accepted",
+				SlotOptionID:    502,
+				CustomerUserID:  customerUserID,
+				BusinessOwnerID: ownerUserID,
+			}
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			dbMock.ExpectBegin()
+			bookingRepo.EXPECT().
+				UpdateBookingStatus(ctx, mock.Anything, bookingID, "cancelled", customerUserID).
+				Return(fmt.Errorf("update failed")).Once()
+			dbMock.ExpectRollback()
+
+			_, err := bookingSvc.CancelBooking(ctx, customerUserID, bookingID)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("update failed"))
+		})
+	})
+
+	Describe("UpdateBookingDescription", func() {
+		It("lets the customer trim and update their own note", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:      bookingID,
+				Status:         "accepted",
+				CustomerUserID: customerUserID,
+			}
+			newDescription := "  Please arrive early  "
+			trimmed := "Please arrive early"
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			dbMock.ExpectBegin()
+			bookingRepo.EXPECT().
+				UpdateBookingDescription(ctx, mock.Anything, bookingID, &trimmed).
+				Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "accepted"}
+			bookingRepo.EXPECT().GetBookingDetail(ctx, bookingID).Return(detail, nil).Once()
+
+			result, err := bookingSvc.UpdateBookingDescription(ctx, customerUserID, bookingID, &newDescription)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.BookingID).To(Equal(bookingID))
+		})
+
+		It("normalizes a whitespace-only description to nil", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:      bookingID,
+				Status:         "pending",
+				CustomerUserID: customerUserID,
+			}
+			blank := "   "
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			dbMock.ExpectBegin()
+			bookingRepo.EXPECT().
+				UpdateBookingDescription(ctx, mock.Anything, bookingID, (*string)(nil)).
+				Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			detail := &param.BookingDetailParam{BookingID: bookingID, Status: "pending"}
+			bookingRepo.EXPECT().GetBookingDetail(ctx, bookingID).Return(detail, nil).Once()
+
+			result, err := bookingSvc.UpdateBookingDescription(ctx, customerUserID, bookingID, &blank)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.BookingID).To(Equal(bookingID))
+		})
+
+		It("rejects the business side trying to edit the customer's note", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "accepted",
+				CustomerUserID:  customerUserID,
+				BusinessOwnerID: ownerUserID,
+			}
+			desc := "New note"
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			_, err := bookingSvc.UpdateBookingDescription(ctx, ownerUserID, bookingID, &desc)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("You are not allowed to manage this booking."))
+		})
+
+		It("refuses to edit the description of a rejected booking", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:      bookingID,
+				Status:         "rejected",
+				CustomerUserID: customerUserID,
+			}
+			desc := "New note"
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			_, err := bookingSvc.UpdateBookingDescription(ctx, customerUserID, bookingID, &desc)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("This booking can no longer be edited."))
+		})
+
+		It("returns a not-found error when the booking context lookup fails with sql.ErrNoRows", func() {
+			desc := "New note"
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(nil, sql.ErrNoRows).Once()
+
+			_, err := bookingSvc.UpdateBookingDescription(ctx, customerUserID, bookingID, &desc)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Booking not found."))
+		})
+
+		It("propagates a DB error from the transaction", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:      bookingID,
+				Status:         "accepted",
+				CustomerUserID: customerUserID,
+			}
+			desc := "New note"
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			dbMock.ExpectBegin()
+			bookingRepo.EXPECT().
+				UpdateBookingDescription(ctx, mock.Anything, bookingID, &desc).
+				Return(fmt.Errorf("update failed")).Once()
+			dbMock.ExpectRollback()
+
+			_, err := bookingSvc.UpdateBookingDescription(ctx, customerUserID, bookingID, &desc)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("update failed"))
+		})
+	})
+
+	Describe("GetAvailableDates", func() {
+		It("sweeps past bookings then delegates to the repo", func() {
+			serviceID := int64(5)
+			serviceOptionID := int64(31)
+			staffID := int64(20)
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().
+				GetAvailableDates(ctx, int64(1), &serviceID, &serviceOptionID, &staffID, false, "2026-08-01", "2026-08-31").
+				Return([]string{"2026-08-05", "2026-08-06"}, nil).Once()
+
+			dates, err := bookingSvc.GetAvailableDates(ctx, 1, &serviceID, &serviceOptionID, &staffID, false, "2026-08-01", "2026-08-31")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dates).To(Equal([]string{"2026-08-05", "2026-08-06"}))
+		})
+
+		It("still calls through to the repo even if the sweep itself fails", func() {
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(fmt.Errorf("db unavailable")).Once()
+			bookingRepo.EXPECT().
+				GetAvailableDates(ctx, int64(1), (*int64)(nil), (*int64)(nil), (*int64)(nil), true, "2026-08-01", "2026-08-31").
+				Return(nil, fmt.Errorf("repo error")).Once()
+
+			dates, err := bookingSvc.GetAvailableDates(ctx, 1, nil, nil, nil, true, "2026-08-01", "2026-08-31")
+			Expect(err).To(HaveOccurred())
+			Expect(dates).To(BeNil())
+		})
+	})
+
+	Describe("GetRecentlyBookedBusinesses", func() {
+		It("sweeps past bookings then delegates to the repo", func() {
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().
+				GetRecentlyBookedBusinesses(ctx, customerUserID).
+				Return([]param.BusinessProfileParam{{BusinessID: 7, BusinessName: "Biz"}}, nil).Once()
+
+			result, err := bookingSvc.GetRecentlyBookedBusinesses(ctx, customerUserID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(HaveLen(1))
+			Expect(result[0].BusinessName).To(Equal("Biz"))
+		})
+
+		It("still calls through to the repo (and propagates its error) even if the sweep itself fails", func() {
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(fmt.Errorf("db unavailable")).Once()
+			bookingRepo.EXPECT().
+				GetRecentlyBookedBusinesses(ctx, customerUserID).
+				Return(nil, fmt.Errorf("repo error")).Once()
+
+			result, err := bookingSvc.GetRecentlyBookedBusinesses(ctx, customerUserID)
+			Expect(err).To(HaveOccurred())
+			Expect(result).To(BeNil())
 		})
 	})
 })

@@ -98,4 +98,108 @@ var _ = Describe("AuthParam", func() {
 			})
 		})
 	})
+
+	Describe("ResetPasswordParam", func() {
+		validResetPasswordParam := func() param.ResetPasswordParam {
+			return param.ResetPasswordParam{
+				UserID:      1,
+				Email:       "test@example.com",
+				NewPassword: "newpassword123",
+			}
+		}
+
+		Describe("ValidateResetPassword", func() {
+			It("returns nil for valid parameters", func() {
+				p := validResetPasswordParam()
+				Expect(p.ValidateResetPassword()).To(Succeed())
+			})
+
+			It("returns error when new password is empty", func() {
+				p := validResetPasswordParam()
+				p.NewPassword = ""
+
+				err := p.ValidateResetPassword()
+				Expect(err).To(HaveOccurred())
+
+				var vErrs errs.ValidationErrors
+				Expect(err).To(BeAssignableToTypeOf(vErrs))
+				vErrs = err.(errs.ValidationErrors)
+				Expect(vErrs).To(HaveLen(1))
+				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "password", Message: "Password is required"}))
+			})
+
+			It("returns error when new password is too short", func() {
+				p := validResetPasswordParam()
+				p.NewPassword = "short"
+
+				err := p.ValidateResetPassword()
+				Expect(err).To(HaveOccurred())
+
+				var vErrs errs.ValidationErrors
+				Expect(err).To(BeAssignableToTypeOf(vErrs))
+				vErrs = err.(errs.ValidationErrors)
+				Expect(vErrs).To(HaveLen(1))
+				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "password", Message: "Password must be at least 8 characters"}))
+			})
+		})
+	})
+
+	Describe("ChangePasswordParam", func() {
+		validChangePasswordParam := func() param.ChangePasswordParam {
+			return param.ChangePasswordParam{
+				UserID:          1,
+				Email:           "test@example.com",
+				CurrentPassword: "currentpassword",
+				NewPassword:     "newpassword123",
+			}
+		}
+
+		Describe("ValidateChangePassword", func() {
+			It("returns nil for valid parameters", func() {
+				p := validChangePasswordParam()
+				Expect(p.ValidateChangePassword()).To(Succeed())
+			})
+
+			It("returns errors for empty fields", func() {
+				p := param.ChangePasswordParam{}
+				err := p.ValidateChangePassword()
+				Expect(err).To(HaveOccurred())
+
+				var vErrs errs.ValidationErrors
+				Expect(err).To(BeAssignableToTypeOf(vErrs))
+				vErrs = err.(errs.ValidationErrors)
+				Expect(vErrs).To(HaveLen(2))
+				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "currentPassword", Message: "Current password is required"}))
+				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "newPassword", Message: "New password is required"}))
+			})
+
+			It("returns error when current password is empty but new password is valid", func() {
+				p := validChangePasswordParam()
+				p.CurrentPassword = ""
+
+				err := p.ValidateChangePassword()
+				Expect(err).To(HaveOccurred())
+
+				var vErrs errs.ValidationErrors
+				Expect(err).To(BeAssignableToTypeOf(vErrs))
+				vErrs = err.(errs.ValidationErrors)
+				Expect(vErrs).To(HaveLen(1))
+				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "currentPassword", Message: "Current password is required"}))
+			})
+
+			It("returns error when new password is too short", func() {
+				p := validChangePasswordParam()
+				p.NewPassword = "short"
+
+				err := p.ValidateChangePassword()
+				Expect(err).To(HaveOccurred())
+
+				var vErrs errs.ValidationErrors
+				Expect(err).To(BeAssignableToTypeOf(vErrs))
+				vErrs = err.(errs.ValidationErrors)
+				Expect(vErrs).To(HaveLen(1))
+				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "newPassword", Message: "New password must be at least 8 characters"}))
+			})
+		})
+	})
 })

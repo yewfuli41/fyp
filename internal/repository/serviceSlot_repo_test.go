@@ -493,4 +493,94 @@ var _ = Describe("ServiceSlotRepo", func() {
 			Expect(ids).To(BeNil())
 		})
 	})
+
+	Describe("GetSlotDates", func() {
+		It("returns the dates of the given slots, sorted", func() {
+			ids := []int64{100, 101}
+			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots")).
+				WithArgs(pq.Array(ids)).
+				WillReturnRows(sqlmock.NewRows([]string{"date"}).
+					AddRow("2026-08-10").AddRow("2026-08-11"))
+
+			dates, err := repo.GetSlotDates(ctx, ids)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dates).To(Equal([]string{"2026-08-10", "2026-08-11"}))
+		})
+
+		It("returns nil without querying when no slot IDs are given", func() {
+			dates, err := repo.GetSlotDates(ctx, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dates).To(BeNil())
+		})
+	})
+
+	Describe("GetFutureUnassignedSlotWindows", func() {
+		It("returns future owner-managed slot windows for a business", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots ss")).
+				WithArgs(int64(1), "2026-08-10").
+				WillReturnRows(sqlmock.NewRows([]string{"date", "start_time", "end_time"}).
+					AddRow("2026-08-10", startTime, endTime))
+
+			windows, err := repo.GetFutureUnassignedSlotWindows(ctx, 1, "2026-08-10")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(windows).To(HaveLen(1))
+			Expect(windows[0].Date).To(Equal("2026-08-10"))
+			Expect(windows[0].StartTime).To(Equal(startTime))
+			Expect(windows[0].EndTime).To(Equal(endTime))
+		})
+	})
+
+	Describe("GetAssignedSlotsInRange", func() {
+		It("returns a staff's assigned slots within a date range", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots ss")).
+				WithArgs(int64(5), "2026-08-10", "2026-08-20").
+				WillReturnRows(sqlmock.NewRows([]string{"service_slot_id", "date", "start_time", "end_time", "has_booking"}).
+					AddRow(100, "2026-08-10", startTime, endTime, true))
+
+			slots, err := repo.GetAssignedSlotsInRange(ctx, 5, "2026-08-10", "2026-08-20")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(slots).To(HaveLen(1))
+			Expect(slots[0].ServiceSlotID).To(Equal(int64(100)))
+			Expect(slots[0].Date).To(Equal("2026-08-10"))
+			Expect(slots[0].HasBooking).To(BeTrue())
+		})
+	})
+
+	Describe("GetFutureAssignedSlotWindows", func() {
+		It("returns a staff's future assigned slots", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("FROM service_slots ss")).
+				WithArgs(int64(5), "2026-08-10").
+				WillReturnRows(sqlmock.NewRows([]string{"service_slot_id", "date", "start_time", "end_time", "has_booking"}).
+					AddRow(101, "2026-08-15", startTime, endTime, false))
+
+			slots, err := repo.GetFutureAssignedSlotWindows(ctx, 5, "2026-08-10")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(slots).To(HaveLen(1))
+			Expect(slots[0].ServiceSlotID).To(Equal(int64(101)))
+			Expect(slots[0].Date).To(Equal("2026-08-15"))
+			Expect(slots[0].HasBooking).To(BeFalse())
+		})
+	})
+
+	Describe("BusinessCoversTime", func() {
+		It("returns true when business working hours cover the requested time", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("FROM business_working_hours")).
+				WithArgs(int64(1), "monday", "09:00:00", "10:00:00").
+				WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
+
+			ok, err := repo.BusinessCoversTime(ctx, 1, "monday", startTime, endTime)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ok).To(BeTrue())
+		})
+
+		It("returns false when business working hours do not cover the requested time", func() {
+			mock.ExpectQuery(regexp.QuoteMeta("FROM business_working_hours")).
+				WithArgs(int64(1), "monday", "09:00:00", "10:00:00").
+				WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(false))
+
+			ok, err := repo.BusinessCoversTime(ctx, 1, "monday", startTime, endTime)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ok).To(BeFalse())
+		})
+	})
 })

@@ -36,16 +36,16 @@ func (_m *MockIEmailService) EXPECT() *MockIEmailService_Expecter {
 }
 
 // SendBookingStatusEmail provides a mock function for the type MockIEmailService
-func (_mock *MockIEmailService) SendBookingStatusEmail(toEmail string, recipientName string, businessName string, statusLabel string, whenText string) error {
-	ret := _mock.Called(toEmail, recipientName, businessName, statusLabel, whenText)
+func (_mock *MockIEmailService) SendBookingStatusEmail(toEmail string, recipientName string, withName string, statusLabel string) error {
+	ret := _mock.Called(toEmail, recipientName, withName, statusLabel)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SendBookingStatusEmail")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(string, string, string, string, string) error); ok {
-		r0 = returnFunc(toEmail, recipientName, businessName, statusLabel, whenText)
+	if returnFunc, ok := ret.Get(0).(func(string, string, string, string) error); ok {
+		r0 = returnFunc(toEmail, recipientName, withName, statusLabel)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -60,14 +60,13 @@ type MockIEmailService_SendBookingStatusEmail_Call struct {
 // SendBookingStatusEmail is a helper method to define mock.On call
 //   - toEmail string
 //   - recipientName string
-//   - businessName string
+//   - withName string
 //   - statusLabel string
-//   - whenText string
-func (_e *MockIEmailService_Expecter) SendBookingStatusEmail(toEmail interface{}, recipientName interface{}, businessName interface{}, statusLabel interface{}, whenText interface{}) *MockIEmailService_SendBookingStatusEmail_Call {
-	return &MockIEmailService_SendBookingStatusEmail_Call{Call: _e.mock.On("SendBookingStatusEmail", toEmail, recipientName, businessName, statusLabel, whenText)}
+func (_e *MockIEmailService_Expecter) SendBookingStatusEmail(toEmail interface{}, recipientName interface{}, withName interface{}, statusLabel interface{}) *MockIEmailService_SendBookingStatusEmail_Call {
+	return &MockIEmailService_SendBookingStatusEmail_Call{Call: _e.mock.On("SendBookingStatusEmail", toEmail, recipientName, withName, statusLabel)}
 }
 
-func (_c *MockIEmailService_SendBookingStatusEmail_Call) Run(run func(toEmail string, recipientName string, businessName string, statusLabel string, whenText string)) *MockIEmailService_SendBookingStatusEmail_Call {
+func (_c *MockIEmailService_SendBookingStatusEmail_Call) Run(run func(toEmail string, recipientName string, withName string, statusLabel string)) *MockIEmailService_SendBookingStatusEmail_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 string
 		if args[0] != nil {
@@ -85,16 +84,11 @@ func (_c *MockIEmailService_SendBookingStatusEmail_Call) Run(run func(toEmail st
 		if args[3] != nil {
 			arg3 = args[3].(string)
 		}
-		var arg4 string
-		if args[4] != nil {
-			arg4 = args[4].(string)
-		}
 		run(
 			arg0,
 			arg1,
 			arg2,
 			arg3,
-			arg4,
 		)
 	})
 	return _c
@@ -105,7 +99,7 @@ func (_c *MockIEmailService_SendBookingStatusEmail_Call) Return(err error) *Mock
 	return _c
 }
 
-func (_c *MockIEmailService_SendBookingStatusEmail_Call) RunAndReturn(run func(toEmail string, recipientName string, businessName string, statusLabel string, whenText string) error) *MockIEmailService_SendBookingStatusEmail_Call {
+func (_c *MockIEmailService_SendBookingStatusEmail_Call) RunAndReturn(run func(toEmail string, recipientName string, withName string, statusLabel string) error) *MockIEmailService_SendBookingStatusEmail_Call {
 	_c.Call.Return(run)
 	return _c
 }

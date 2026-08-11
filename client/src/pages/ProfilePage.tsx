@@ -14,7 +14,7 @@ import "../styles/ProfilePage.css";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { token, login, user } = useAuth();
+  const { token, login } = useAuth();
   const activeToken = token ?? localStorage.getItem("token");
 
   const [username, setUsername] = useState("");
@@ -339,15 +339,6 @@ export default function ProfilePage() {
               onClick={() => navigate("/register-business")}
             >
               Register Business Profile
-            </Button>
-          )}
-          {user?.staffProfile && (
-            <Button
-              type="button"
-              className="profile-action-button profile-action-button-wide"
-              onClick={() => navigate("/my-calendar")}
-            >
-              My Calendar
             </Button>
           )}
         </div>

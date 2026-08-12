@@ -11,7 +11,7 @@ import (
 
 func main() {
 	if err := godotenv.Load(".env.local"); err != nil {
-		log.Fatal("Error loading .env.local")
+		log.Println("No .env.local found, using environment variables")
 	}
 
 	cfg, err := config.Load("config/config.yaml")

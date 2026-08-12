@@ -130,7 +130,7 @@ build:client:
     - when: never
   stage: build
   image:
-    name: node:24-bookworm
+    name: node:25-bookworm
   script:
     - |
       unset HTTPS_PROXY

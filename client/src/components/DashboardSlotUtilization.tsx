@@ -150,7 +150,7 @@ export default function DashboardSlotUtilization({ utilization, isLoading, error
                         </div>
 
                         <div className="d-flex flex-wrap align-items-center gap-3 mt-3">
-                            <span className="dashboard-stat-label mb-0">Booked share</span>
+                            <span className="dashboard-stat-label mb-0">Slot Booking Rate</span>
                             <div className="d-flex align-items-center gap-2">
                                 {LEGEND_ITEMS.map(item => (
                                     <span key={item.label} className="d-flex align-items-center gap-1">

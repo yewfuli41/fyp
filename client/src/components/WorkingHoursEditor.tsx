@@ -37,7 +37,7 @@ export default function WorkingHoursEditor({
         if (availableDays.length === 0) return;
         setWorkingHours(prev => prev.map(wh => {
             if (availableDays.includes(wh.day)) return wh;
-            const day = availableDays[0];
+            const day = availableDays[availableDays.length - 1];
             const biz = businessWorkingHours.find(b => b.day === day);
             if (!biz) return { ...wh, day };
             const bizStart = extractTime(biz.startTime);
@@ -56,7 +56,7 @@ export default function WorkingHoursEditor({
     }, [businessWorkingHours]);
 
     const handleAddWorkingHour = () => {
-        const day = availableDays[0] ?? "monday";
+        const day = availableDays[availableDays.length - 1] ?? "sunday";
         const biz = businessWorkingHours.find(wh => wh.day === day);
         let startTime = "09:00:00", endTime = "18:00:00";
         if (biz) {
@@ -104,6 +104,18 @@ export default function WorkingHoursEditor({
     // window, it just wasn't being passed in before.
     const businessHoursForDay = (day: string) => businessWorkingHours.find(wh => wh.day === day);
 
+    // Rows are stored/added in whatever order the user creates them, but
+    // should always be displayed Monday → Sunday (then by start time within
+    // a day) rather than insertion order — keep each row's original index
+    // alongside it so handlers below still update the right entry.
+    const sortedWorkingHours = workingHours
+        .map((wh, index) => ({ wh, index }))
+        .sort((a, b) => {
+            const dayDiff = DAYS_OF_WEEK.indexOf(a.wh.day) - DAYS_OF_WEEK.indexOf(b.wh.day);
+            if (dayDiff !== 0) return dayDiff;
+            return extractTime(a.wh.startTime).localeCompare(extractTime(b.wh.startTime));
+        });
+
     return (
         <>
             <h3 className="mt-4">Business Working Hours</h3>
@@ -123,7 +135,7 @@ export default function WorkingHoursEditor({
             )}
 
             <h3 className="mt-4">Working Hours</h3>
-            {workingHours.map((wh, index) => {
+            {sortedWorkingHours.map(({ wh, index }) => {
                 const dayBusinessHours = businessHoursForDay(wh.day);
                 const timeOptions = dayBusinessHours && {
                     businessStartTime: extractTime(dayBusinessHours.startTime),
@@ -192,9 +204,11 @@ export default function WorkingHoursEditor({
             })}
             {fieldErrors.workingHours && <div className="text-danger mb-2">{fieldErrors.workingHours}</div>}
 
-            <Button variant="link" onClick={handleAddWorkingHour} className="mb-4">
-                Add Working Hour
-            </Button>
+            <div className="mb-4">
+                <Button variant="link" onClick={handleAddWorkingHour} className="px-0">
+                    + Add Working Hour
+                </Button>
+            </div>
         </>
     );
 }

@@ -25,6 +25,7 @@ var _ = Describe("BusinessService", func() {
 		dbMock          sqlmock.Sqlmock
 		businessRepo    *mocks.MockIBusinessRepo
 		serviceSlotRepo *mocks.MockIServiceSlotRepo
+		staffRepo       *mocks.MockIStaffRepo
 		businessSvc     interfaces.IBusinessService
 	)
 
@@ -36,7 +37,8 @@ var _ = Describe("BusinessService", func() {
 
 		businessRepo = mocks.NewMockIBusinessRepo(GinkgoT())
 		serviceSlotRepo = mocks.NewMockIServiceSlotRepo(GinkgoT())
-		businessSvc = service.NewBusinessService(db, businessRepo, serviceSlotRepo)
+		staffRepo = mocks.NewMockIStaffRepo(GinkgoT())
+		businessSvc = service.NewBusinessService(db, businessRepo, serviceSlotRepo, staffRepo)
 	})
 
 	AfterEach(func() {
@@ -79,6 +81,7 @@ var _ = Describe("BusinessService", func() {
 		})
 
 		It("successfully registers a business profile in a transaction", func() {
+			staffRepo.EXPECT().GetStaffByUserID(ctx, businessParam.OwnerUserID).Return(nil, sql.ErrNoRows).Once()
 			dbMock.ExpectBegin()
 
 			businessRepo.EXPECT().
@@ -119,6 +122,7 @@ var _ = Describe("BusinessService", func() {
 			*/
 			// Yes, it starts the transaction FIRST.
 
+			staffRepo.EXPECT().GetStaffByUserID(ctx, invalidParam.OwnerUserID).Return(nil, sql.ErrNoRows).Once()
 			dbMock.ExpectBegin()
 			dbMock.ExpectRollback()
 
@@ -129,6 +133,7 @@ var _ = Describe("BusinessService", func() {
 		})
 
 		It("rolls back and returns error if InsertBusinessProfile fails", func() {
+			staffRepo.EXPECT().GetStaffByUserID(ctx, businessParam.OwnerUserID).Return(nil, sql.ErrNoRows).Once()
 			dbMock.ExpectBegin()
 
 			businessRepo.EXPECT().
@@ -145,6 +150,7 @@ var _ = Describe("BusinessService", func() {
 		})
 
 		It("rolls back and returns error if InsertBusinessWorkingHours fails", func() {
+			staffRepo.EXPECT().GetStaffByUserID(ctx, businessParam.OwnerUserID).Return(nil, sql.ErrNoRows).Once()
 			dbMock.ExpectBegin()
 
 			businessRepo.EXPECT().
@@ -165,7 +171,9 @@ var _ = Describe("BusinessService", func() {
 			Expect(err).To(MatchError("working hours error"))
 		})
 
+		// UT-040 (Business Profile Rules).
 		It("returns an error when the user already has a business profile", func() {
+			staffRepo.EXPECT().GetStaffByUserID(ctx, businessParam.OwnerUserID).Return(nil, sql.ErrNoRows).Once()
 			dbMock.ExpectBegin()
 
 			duplicateErr := newUniqueViolation("business_profiles_owner_user_id_key")
@@ -183,6 +191,7 @@ var _ = Describe("BusinessService", func() {
 		})
 
 		It("prompts the user to log in again when the owner user account cannot be found", func() {
+			staffRepo.EXPECT().GetStaffByUserID(ctx, businessParam.OwnerUserID).Return(nil, sql.ErrNoRows).Once()
 			dbMock.ExpectBegin()
 
 			fkErr := &pq.Error{Code: "23503", Constraint: "business_profiles_owner_user_id_fkey"}
@@ -197,6 +206,31 @@ var _ = Describe("BusinessService", func() {
 
 			Expect(result).To(BeNil())
 			Expect(err.Error()).To(Equal("Unable to register business profile. Please log in again."))
+		})
+
+		// UT-042 (Account Role Exclusivity Rules).
+		It("rejects registration when the user is already a staff member", func() {
+			staffRepo.EXPECT().
+				GetStaffByUserID(ctx, businessParam.OwnerUserID).
+				Return(&param.StaffParam{StaffID: 9, UserID: businessParam.OwnerUserID, BusinessID: 3}, nil).
+				Once()
+
+			result, err := businessSvc.RegisterBusinessProfile(ctx, businessParam)
+
+			Expect(result).To(BeNil())
+			Expect(err.Error()).To(Equal("You are already registered as a staff member and cannot also register a business."))
+		})
+
+		It("propagates an error from the staff-membership check", func() {
+			staffRepo.EXPECT().
+				GetStaffByUserID(ctx, businessParam.OwnerUserID).
+				Return(nil, fmt.Errorf("db down")).
+				Once()
+
+			result, err := businessSvc.RegisterBusinessProfile(ctx, businessParam)
+
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError("db down"))
 		})
 	})
 
@@ -322,6 +356,7 @@ var _ = Describe("BusinessService", func() {
 			Expect(err).To(MatchError("delete error"))
 		})
 
+		// UT-041 (Business Profile Rules).
 		It("rejects the update when an existing owner-managed slot would fall outside the new hours", func() {
 			dbMock.ExpectBegin()
 

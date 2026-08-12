@@ -89,6 +89,7 @@ var _ = Describe("LeaveApplicationParam", func() {
 			}))
 		})
 
+		// UT-049 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when the start date is in the past", func() {
 			p := validParam()
 			p.StartDate = yesterday
@@ -118,6 +119,7 @@ var _ = Describe("LeaveApplicationParam", func() {
 			Expect(p.ValidateApplyLeave()).To(Succeed())
 		})
 
+		// UT-050 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when justification exceeds the max length", func() {
 			p := validParam()
 			reason := strings.Repeat("a", 1001)
@@ -160,6 +162,7 @@ var _ = Describe("LeaveApplicationParam", func() {
 			Expect(p.ValidateUpdateJustification()).To(Succeed())
 		})
 
+		// UT-050 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when justification exceeds the max length", func() {
 			reason := strings.Repeat("a", 1001)
 			p := param.LeaveApplicationParam{Justification: &reason}
@@ -187,6 +190,7 @@ var _ = Describe("LeaveApplicationParam", func() {
 			}))
 		})
 
+		// UT-050 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when remark is empty", func() {
 			remark := ""
 			p := param.LeaveApplicationParam{Remark: &remark}
@@ -197,6 +201,7 @@ var _ = Describe("LeaveApplicationParam", func() {
 			}))
 		})
 
+		// UT-050 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when remark is only whitespace", func() {
 			remark := "   "
 			p := param.LeaveApplicationParam{Remark: &remark}
@@ -207,6 +212,7 @@ var _ = Describe("LeaveApplicationParam", func() {
 			}))
 		})
 
+		// UT-050 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when remark exceeds the max length", func() {
 			remark := strings.Repeat("a", 1001)
 			p := param.LeaveApplicationParam{Remark: &remark}

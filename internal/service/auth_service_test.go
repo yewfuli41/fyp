@@ -46,6 +46,7 @@ var _ = Describe("AuthService", func() {
 	})
 
 	Describe("SignUp", func() {
+		// UT-035 (Authentication & Account Security).
 		It("hashes the password, creates the user, and returns a signed token", func() {
 			signUpParam := param.SignUpParam{
 				Username:      "finn",
@@ -87,6 +88,7 @@ var _ = Describe("AuthService", func() {
 			Expect(err).To(BeAssignableToTypeOf(errs.ValidationErrors{}))
 		})
 
+		// UT-036 (Authentication & Account Security).
 		It("maps duplicate email errors to validation errors", func() {
 			signUpParam := param.SignUpParam{
 				Username:      "finn",
@@ -209,6 +211,7 @@ var _ = Describe("AuthService", func() {
 			expectTokenClaims(result.Token, user, authConfig.JWTExpirationHours)
 		})
 
+		// UT-037 (Authentication & Account Security).
 		It("increments failed attempts for an invalid password", func() {
 			logInParam.Password = "wrong-password"
 
@@ -234,6 +237,7 @@ var _ = Describe("AuthService", func() {
 			}))
 		})
 
+		// UT-037 (Authentication & Account Security).
 		It("returns a locked error when the lockout has not expired", func() {
 			lockedUntil := time.Now().Add(10 * time.Minute)
 			user.LockedUntil = &lockedUntil
@@ -249,6 +253,7 @@ var _ = Describe("AuthService", func() {
 			Expect(err).To(Equal(errs.LockedError{LockedUntil: lockedUntil}))
 		})
 
+		// UT-037 (Authentication & Account Security).
 		It("clears an expired lockout before validating the password", func() {
 			expiredLockUntil := time.Now().Add(-time.Minute)
 			user.LockedUntil = &expiredLockUntil
@@ -361,6 +366,7 @@ var _ = Describe("AuthService", func() {
 			Expect(err).To(MatchError(dbErr))
 		})
 
+		// UT-038 (Authentication & Account Security).
 		It("returns a validation error when a reset is not required", func() {
 			user.MustResetPassword = false
 			authRepo.EXPECT().
@@ -375,6 +381,7 @@ var _ = Describe("AuthService", func() {
 			}))
 		})
 
+		// UT-038 (Authentication & Account Security).
 		It("returns a validation error when the new password matches the temporary password", func() {
 			resetPasswordParam.NewPassword = "temporarypassword"
 			authRepo.EXPECT().
@@ -477,6 +484,7 @@ var _ = Describe("AuthService", func() {
 			Expect(err).To(MatchError(dbErr))
 		})
 
+		// UT-039 (Authentication & Account Security).
 		It("returns a validation error when the current password is wrong", func() {
 			changePasswordParam.CurrentPassword = "wrong-password"
 			authRepo.EXPECT().
@@ -491,6 +499,7 @@ var _ = Describe("AuthService", func() {
 			}))
 		})
 
+		// UT-038 (Authentication & Account Security).
 		It("returns a validation error when the new password matches the current password", func() {
 			changePasswordParam.NewPassword = changePasswordParam.CurrentPassword
 			authRepo.EXPECT().

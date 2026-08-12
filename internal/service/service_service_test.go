@@ -125,6 +125,7 @@ var _ = Describe("ServiceService", func() {
 			Expect(result).To(BeNil())
 		})
 
+		// UT-009 (Service & Option Constraints).
 		It("rejects an option with no effective-from date — it's no longer defaulted to today", func() {
 			p := param.ServiceParam{
 				BusinessID:  1,
@@ -150,6 +151,34 @@ var _ = Describe("ServiceService", func() {
 			Expect(ok).To(BeTrue())
 			Expect(ve).To(ContainElement(errs.ValidationError{
 				Field: "serviceOptions[0]", Message: "Effective from is required",
+			}))
+		})
+
+		// UT-010 (Service & Option Constraints).
+		It("rejects a brand new option with an effective-from date in the past", func() {
+			past := "2000-01-01"
+			p := param.ServiceParam{
+				BusinessID:  1,
+				ServiceName: "Massage",
+				ServiceOptions: []param.ServiceOptionParam{
+					{ServiceOptionName: "Deep Tissue", EffectiveFrom: past},
+				},
+			}
+
+			dbMock.ExpectBegin()
+			serviceRepo.EXPECT().
+				InsertService(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(sp param.ServiceParam) bool {
+					return sp.ServiceName == "Massage"
+				})).
+				Return(createdSvc, nil).Once()
+			dbMock.ExpectRollback()
+
+			result, err := serviceSvc.CreateService(ctx, p)
+			Expect(result).To(BeNil())
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions[0]", Message: "Effective from cannot be in the past",
 			}))
 		})
 
@@ -324,6 +353,7 @@ var _ = Describe("ServiceService", func() {
 			Expect(result.ServiceOptions[1].EffectiveUntil).To(BeNil())
 		})
 
+		// UT-011 (Service & Option Constraints).
 		It("rejects an effective-until in the past for an existing option", func() {
 			past := "2000-01-01"
 			p := param.ServiceParam{
@@ -358,6 +388,7 @@ var _ = Describe("ServiceService", func() {
 			}))
 		})
 
+		// UT-012 (Service & Option Constraints).
 		It("rejects renaming an existing option directly", func() {
 			p := param.ServiceParam{
 				ServiceID:   10,
@@ -385,6 +416,7 @@ var _ = Describe("ServiceService", func() {
 			}))
 		})
 
+		// UT-012 (Service & Option Constraints).
 		It("rejects changing an existing option's items directly", func() {
 			p := param.ServiceParam{
 				ServiceID:   10,
@@ -449,6 +481,7 @@ var _ = Describe("ServiceService", func() {
 			Expect(result.ServiceOptions[1].ServiceOptionID).To(Equal(int64(41)))
 		})
 
+		// UT-009 (Service & Option Constraints).
 		It("rejects a brand new option with no effective-from date", func() {
 			p := param.ServiceParam{
 				ServiceID:   10,
@@ -478,6 +511,7 @@ var _ = Describe("ServiceService", func() {
 			}))
 		})
 
+		// UT-014 (Service & Option Constraints).
 		It("rejects an effective-until date on the default option", func() {
 			until := editUntil
 			p := param.ServiceParam{
@@ -507,6 +541,7 @@ var _ = Describe("ServiceService", func() {
 			}))
 		})
 
+		// UT-014 (Service & Option Constraints).
 		It("moves the default option's effective-from date into the future", func() {
 			future := editFrom // "2030-01-01"
 			p := param.ServiceParam{
@@ -536,6 +571,7 @@ var _ = Describe("ServiceService", func() {
 			Expect(result.ServiceOptions[0].EffectiveFrom).To(Equal(future))
 		})
 
+		// UT-014 (Service & Option Constraints).
 		It("rejects a past effective-from date for the default option", func() {
 			past := "2000-01-01"
 			p := param.ServiceParam{
@@ -729,6 +765,7 @@ var _ = Describe("ServiceService", func() {
 			Expect(result.ServiceOptions[0].ServiceOptionID).To(Equal(int64(32)))
 		})
 
+		// UT-013 (Service & Option Constraints).
 		It("rejects deleting an option that has an active booking", func() {
 			p := param.ServiceParam{
 				ServiceID:   10,
@@ -800,6 +837,7 @@ var _ = Describe("ServiceService", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
+		// UT-015 (Service & Option Constraints).
 		It("fails to delete when bookings exist", func() {
 			serviceRepo.EXPECT().HasBookingForService(ctx, int64(10)).Return(true, nil).Once()
 

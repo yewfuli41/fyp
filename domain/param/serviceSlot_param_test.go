@@ -54,6 +54,7 @@ var _ = Describe("ServiceSlotParam", func() {
 			))
 		})
 
+		// UT-047 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when start time is not before end time", func() {
 			p := param.ServiceSlotParam{
 				ServiceOptionIDs: []int64{1},
@@ -68,6 +69,7 @@ var _ = Describe("ServiceSlotParam", func() {
 			))
 		})
 
+		// UT-047 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when start time equals end time", func() {
 			p := param.ServiceSlotParam{
 				ServiceOptionIDs: []int64{1},
@@ -82,6 +84,7 @@ var _ = Describe("ServiceSlotParam", func() {
 			))
 		})
 
+		// UT-048 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when neither date nor days of week are given", func() {
 			p := param.ServiceSlotParam{
 				ServiceOptionIDs: []int64{1},
@@ -95,6 +98,7 @@ var _ = Describe("ServiceSlotParam", func() {
 			))
 		})
 
+		// UT-048 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when both date and days of week are given", func() {
 			p := param.ServiceSlotParam{
 				ServiceOptionIDs: []int64{1},
@@ -124,6 +128,7 @@ var _ = Describe("ServiceSlotParam", func() {
 			))
 		})
 
+		// UT-049 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when the date and time are in the past", func() {
 			p := param.ServiceSlotParam{
 				ServiceOptionIDs: []int64{1},

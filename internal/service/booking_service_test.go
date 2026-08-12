@@ -68,6 +68,7 @@ var _ = Describe("BookingService", func() {
 	})
 
 	Describe("RescheduleBooking initiated by the customer", func() {
+		// UT-002 (Booking Business Rules).
 		It("sets status to pending (not rescheduled), so the customer cannot self-accept it", func() {
 			ctxParam := &param.BookingContextParam{
 				BookingID:       bookingID,
@@ -114,6 +115,7 @@ var _ = Describe("BookingService", func() {
 	})
 
 	Describe("RescheduleBooking initiated by the business", func() {
+		// UT-002 (Booking Business Rules).
 		It("sets status to rescheduled, awaiting the customer's acceptance", func() {
 			ctxParam := &param.BookingContextParam{
 				BookingID:       bookingID,
@@ -157,6 +159,7 @@ var _ = Describe("BookingService", func() {
 			Expect(result.Status).To(Equal("rescheduled"))
 		})
 
+		// UT-002 (Booking Business Rules).
 		It("moves a still-pending booking to rescheduled too, so the business can't later self-accept it", func() {
 			ctxParam := &param.BookingContextParam{
 				BookingID:       bookingID,
@@ -207,6 +210,7 @@ var _ = Describe("BookingService", func() {
 			Expect(err.Error()).To(Equal("Only pending bookings can be accepted."))
 		})
 
+		// UT-005 (Booking Business Rules).
 		It("notifies both the old and new staff member when the owner reassigns the booking to a different staff's slot", func() {
 			oldStaffUserID := int64(50)
 			oldStaffEmail := "staffold@example.com"
@@ -267,6 +271,7 @@ var _ = Describe("BookingService", func() {
 			Expect(result.Status).To(Equal("rescheduled"))
 		})
 
+		// UT-005 (Booking Business Rules).
 		It("notifies the staff member once, not twice, when the owner reschedules within the same staff's own slots", func() {
 			staffUserID := int64(50)
 			staffEmail := "staff@example.com"
@@ -322,6 +327,7 @@ var _ = Describe("BookingService", func() {
 			Expect(result.Status).To(Equal("rescheduled"))
 		})
 
+		// UT-005 (Booking Business Rules).
 		It("does not send an extra staff notification when a staff member reschedules their own booking (only the customer is notified)", func() {
 			staffUserID := int64(50)
 			staffEmail := "staff@example.com"
@@ -377,6 +383,66 @@ var _ = Describe("BookingService", func() {
 		})
 	})
 
+	Describe("RescheduleBooking authorization and status guards", func() {
+		// UT-007 (Authorization Testing).
+		It("rejects a stranger (neither customer nor business side) trying to reschedule", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "accepted",
+				CustomerUserID:  customerUserID,
+				BusinessOwnerID: ownerUserID,
+			}
+			strangerUserID := int64(999)
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			_, err := bookingSvc.RescheduleBooking(ctx, strangerUserID, bookingID, newSlotOption)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("You are not allowed to manage this booking."))
+		})
+
+		// UT-008 (Authorization Testing).
+		It("rejects a staff member trying to reschedule a booking onto a different staff member's slot", func() {
+			staffUserID := int64(50)
+			otherStaffUserID := int64(51)
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "accepted",
+				CustomerUserID:  customerUserID,
+				BusinessOwnerID: ownerUserID,
+				SlotStaffUserID: &staffUserID,
+			}
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+			bookingRepo.EXPECT().SlotOptionIsAvailable(ctx, newSlotOption).Return(true, nil).Once()
+			bookingRepo.EXPECT().GetSlotOptionStaffUserID(ctx, newSlotOption).Return(&otherStaffUserID, nil).Once()
+
+			_, err := bookingSvc.RescheduleBooking(ctx, staffUserID, bookingID, newSlotOption)
+			Expect(err).To(HaveOccurred())
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve[0].Message).To(Equal("You can only reschedule to your own slots."))
+		})
+
+		// UT-003 (expanded terminal-state guard).
+		It("refuses to reschedule a booking that is already rejected or cancelled", func() {
+			for _, status := range []string{"rejected", "cancelled"} {
+				ctxParam := &param.BookingContextParam{
+					BookingID:       bookingID,
+					Status:          status,
+					CustomerUserID:  customerUserID,
+					BusinessOwnerID: ownerUserID,
+				}
+				bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+				bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+				_, err := bookingSvc.RescheduleBooking(ctx, customerUserID, bookingID, newSlotOption)
+				Expect(err).To(HaveOccurred(), "status=%s", status)
+				Expect(err.Error()).To(Equal("This booking can no longer be rescheduled."), "status=%s", status)
+			}
+		})
+	})
+
 	Describe("Full business-initiated reschedule workflow: accepted -> rescheduled -> customer accepts -> accepted", func() {
 		It("lets the customer accept the business's reschedule proposal", func() {
 			afterReschedule := &param.BookingContextParam{
@@ -412,6 +478,7 @@ var _ = Describe("BookingService", func() {
 			Expect(result.Status).To(Equal("accepted"))
 		})
 
+		// UT-002 (Booking Business Rules).
 		It("does not let the business self-accept its own reschedule proposal", func() {
 			afterReschedule := &param.BookingContextParam{
 				BookingID:      bookingID,
@@ -426,6 +493,7 @@ var _ = Describe("BookingService", func() {
 			Expect(err.Error()).To(Equal("You are not allowed to manage this booking."))
 		})
 
+		// UT-002 (Booking Business Rules).
 		It("lets the business reject (withdraw) its own reschedule proposal instead", func() {
 			afterReschedule := &param.BookingContextParam{
 				BookingID:       bookingID,
@@ -502,6 +570,7 @@ var _ = Describe("BookingService", func() {
 			Expect(result.Status).To(Equal("accepted"))
 		})
 
+		// UT-002 (Booking Business Rules).
 		It("lets the business reject the customer's reschedule request instead", func() {
 			pendingCtx := &param.BookingContextParam{
 				BookingID:       bookingID,
@@ -542,6 +611,7 @@ var _ = Describe("BookingService", func() {
 	})
 
 	Describe("CreateBooking", func() {
+		// UT-001 (Booking Business Rules).
 		It("blocks an owner from booking their own business", func() {
 			bookingRepo.EXPECT().IsSlotOptionOwnedByUser(ctx, newSlotOption, ownerUserID).Return(true, nil).Once()
 
@@ -642,7 +712,82 @@ var _ = Describe("BookingService", func() {
 		})
 	})
 
+	Describe("AcceptBooking", func() {
+		// UT-007 (Authorization Testing): accepting is a business-only
+		// decision — the customer who placed the booking cannot decide it themselves.
+		It("rejects the customer trying to accept their own booking — only the business side may decide", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "pending",
+				CustomerUserID:  customerUserID,
+				BusinessOwnerID: ownerUserID,
+			}
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			_, err := bookingSvc.AcceptBooking(ctx, customerUserID, bookingID)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("You are not allowed to manage this booking."))
+		})
+
+		// UT-003 (expanded terminal-state guard): an already rejected or
+		// cancelled booking is a closed record — accept must refuse both.
+		It("refuses to accept a booking that is already rejected or cancelled", func() {
+			for _, status := range []string{"rejected", "cancelled"} {
+				ctxParam := &param.BookingContextParam{
+					BookingID:       bookingID,
+					Status:          status,
+					CustomerUserID:  customerUserID,
+					BusinessOwnerID: ownerUserID,
+				}
+				bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+				bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+				_, err := bookingSvc.AcceptBooking(ctx, ownerUserID, bookingID)
+				Expect(err).To(HaveOccurred(), "status=%s", status)
+				Expect(err.Error()).To(Equal("Only pending bookings can be accepted."), "status=%s", status)
+			}
+		})
+	})
+
+	Describe("RejectBooking", func() {
+		// UT-007 (Authorization Testing): same business-only restriction as accept.
+		It("rejects the customer trying to reject their own booking — only the business side may decide", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "pending",
+				CustomerUserID:  customerUserID,
+				BusinessOwnerID: ownerUserID,
+			}
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			_, err := bookingSvc.RejectBooking(ctx, customerUserID, bookingID)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("You are not allowed to manage this booking."))
+		})
+
+		// UT-003 (expanded terminal-state guard).
+		It("refuses to reject a booking that is already rejected or cancelled", func() {
+			for _, status := range []string{"rejected", "cancelled"} {
+				ctxParam := &param.BookingContextParam{
+					BookingID:       bookingID,
+					Status:          status,
+					CustomerUserID:  customerUserID,
+					BusinessOwnerID: ownerUserID,
+				}
+				bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+				bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+				_, err := bookingSvc.RejectBooking(ctx, ownerUserID, bookingID)
+				Expect(err).To(HaveOccurred(), "status=%s", status)
+				Expect(err.Error()).To(Equal("Only pending or rescheduled bookings can be rejected."), "status=%s", status)
+			}
+		})
+	})
+
 	Describe("RecordWalkIn", func() {
+		// UT-004 (Booking Business Rules).
 		It("inserts the walk-in booking and returns its detail, with no availability/ownership checks", func() {
 			slotOptionID := int64(321)
 			created := &param.BookingParam{BookingID: bookingID, UserID: ownerUserID, SlotOptionID: slotOptionID, Status: "accepted", BookingType: "walk_in"}
@@ -750,6 +895,7 @@ var _ = Describe("BookingService", func() {
 			Expect(result.Status).To(Equal("cancelled"))
 		})
 
+		// UT-007 (Authorization Testing).
 		It("rejects a stranger (neither customer nor business side) trying to cancel", func() {
 			ctxParam := &param.BookingContextParam{
 				BookingID:       bookingID,
@@ -768,10 +914,28 @@ var _ = Describe("BookingService", func() {
 			Expect(err.Error()).To(Equal("You are not allowed to manage this booking."))
 		})
 
+		// UT-003 (expanded terminal-state guard).
 		It("refuses to cancel a booking that is already rejected", func() {
 			ctxParam := &param.BookingContextParam{
 				BookingID:       bookingID,
 				Status:          "rejected",
+				CustomerUserID:  customerUserID,
+				BusinessOwnerID: ownerUserID,
+			}
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			_, err := bookingSvc.CancelBooking(ctx, customerUserID, bookingID)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("This booking can no longer be cancelled."))
+		})
+
+		// UT-003 (expanded terminal-state guard): cancelling an already
+		// cancelled booking must be refused the same way as a rejected one.
+		It("refuses to cancel a booking that is already cancelled", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "cancelled",
 				CustomerUserID:  customerUserID,
 				BusinessOwnerID: ownerUserID,
 			}
@@ -872,6 +1036,7 @@ var _ = Describe("BookingService", func() {
 			Expect(result.BookingID).To(Equal(bookingID))
 		})
 
+		// UT-006 (Authorization Testing).
 		It("rejects the business side trying to edit the customer's note", func() {
 			ctxParam := &param.BookingContextParam{
 				BookingID:       bookingID,
@@ -887,10 +1052,26 @@ var _ = Describe("BookingService", func() {
 			Expect(err.Error()).To(Equal("You are not allowed to manage this booking."))
 		})
 
+		// UT-003 (expanded terminal-state guard).
 		It("refuses to edit the description of a rejected booking", func() {
 			ctxParam := &param.BookingContextParam{
 				BookingID:      bookingID,
 				Status:         "rejected",
+				CustomerUserID: customerUserID,
+			}
+			desc := "New note"
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			_, err := bookingSvc.UpdateBookingDescription(ctx, customerUserID, bookingID, &desc)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("This booking can no longer be edited."))
+		})
+
+		// UT-003 (expanded terminal-state guard).
+		It("refuses to edit the description of a booking that is already cancelled", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:      bookingID,
+				Status:         "cancelled",
 				CustomerUserID: customerUserID,
 			}
 			desc := "New note"

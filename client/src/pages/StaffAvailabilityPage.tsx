@@ -131,6 +131,12 @@ export default function StaffAvailabilityPage() {
     const [isSavingHours, setIsSavingHours] = useState(false);
     const [hoursConflicts, setHoursConflicts] = useState<ServiceSlot[] | null>(null);
     const [hoursConflictError, setHoursConflictError] = useState("");
+    // Slots with no booking that fall outside the new hours — these are
+    // unassigned outright (no replacement needed), so we just warn about them
+    // in a final confirmation step after any replacement picks are made.
+    const [hoursUnbookedConflicts, setHoursUnbookedConflicts] = useState<ServiceSlot[]>([]);
+    const [showRemovalConfirm, setShowRemovalConfirm] = useState(false);
+    const [pendingReassignments, setPendingReassignments] = useState<SlotReassignment[]>([]);
 
     // Approved leaves filters
     const [approvedStaffId, setApprovedStaffId] = useState("");
@@ -327,9 +333,17 @@ export default function StaffAvailabilityPage() {
                 return;
             }
             const conflicts = conflictRes.data?.staffHoursConflicts ?? [];
-            if (conflicts.length > 0) {
-                setHoursConflicts(conflicts);
+            const booked = conflicts.filter(s => s.hasBooking);
+            const unbooked = conflicts.filter(s => !s.hasBooking);
+            setHoursUnbookedConflicts(unbooked);
+            if (booked.length > 0) {
+                setHoursConflicts(booked);
                 setHoursConflictError("");
+                return;
+            }
+            if (unbooked.length > 0) {
+                setPendingReassignments([]);
+                setShowRemovalConfirm(true);
                 return;
             }
             await saveHours([]);
@@ -343,7 +357,7 @@ export default function StaffAvailabilityPage() {
         const result = await updateStaffWorkingHours(activeToken, selectedStaffId, editHours, reassignments);
         const parsed = parseGraphQLErrors(result, "Failed to update working hours");
         if (parsed.hasErrors) {
-            if (hoursConflicts) {
+            if (hoursConflicts || showRemovalConfirm) {
                 setHoursConflictError(parsed.formError || Object.values(parsed.fieldErrors)[0] || "Failed to update working hours");
             } else {
                 setHoursFieldErrors(parsed.fieldErrors);
@@ -352,16 +366,45 @@ export default function StaffAvailabilityPage() {
             return;
         }
         setHoursConflicts(null);
+        setShowRemovalConfirm(false);
+        setHoursUnbookedConflicts([]);
+        setPendingReassignments([]);
         fetchAll();
     };
 
+    // Fires when the replacement-staff picker is confirmed. If there are also
+    // unbooked slots that will simply be unassigned, don't save yet — show the
+    // removal-confirmation step next instead of committing immediately.
     const confirmHoursReassignment = async (reassignments: SlotReassignment[]) => {
+        if (hoursUnbookedConflicts.length > 0) {
+            setPendingReassignments(reassignments);
+            setHoursConflicts(null);
+            setHoursConflictError("");
+            setShowRemovalConfirm(true);
+            return;
+        }
         setHoursConflictBusy(true);
         try {
             await saveHours(reassignments);
         } finally {
             setHoursConflictBusy(false);
         }
+    };
+
+    const confirmRemoval = async () => {
+        setHoursConflictBusy(true);
+        try {
+            await saveHours(pendingReassignments);
+        } finally {
+            setHoursConflictBusy(false);
+        }
+    };
+
+    const cancelRemoval = () => {
+        setShowRemovalConfirm(false);
+        setHoursUnbookedConflicts([]);
+        setPendingReassignments([]);
+        setHoursConflictError("");
     };
 
     // ── render ────────────────────────────────────────────────────────────────
@@ -668,6 +711,33 @@ export default function StaffAvailabilityPage() {
                 onCancel={() => setHoursConflicts(null)}
                 onConfirm={confirmHoursReassignment}
             />
+
+            {/* Final warning — fires after any replacement picks are made
+                (or immediately if none were needed), whenever slots with no
+                booking fall outside the new hours and will be unassigned. */}
+            <Modal show={showRemovalConfirm} onHide={cancelRemoval} backdrop="static">
+                <Modal.Header closeButton><Modal.Title>Remove {hoursUnbookedConflicts.length} slot{hoursUnbookedConflicts.length === 1 ? "" : "s"}?</Modal.Title></Modal.Header>
+                <Modal.Body>
+                    <p>
+                        {hoursUnbookedConflicts.length} slot{hoursUnbookedConflicts.length === 1 ? "" : "s"} with no booking
+                        {" "}fall{hoursUnbookedConflicts.length === 1 ? "s" : ""} outside the new hours and will be removed
+                        from {selectedStaff?.name ?? "this staff member"}'s schedule:
+                    </p>
+                    <ul className="small text-muted">
+                        {hoursUnbookedConflicts.map(s => (
+                            <li key={s.serviceSlotId}>{s.date} {extractTime(s.startTime)}–{extractTime(s.endTime)}</li>
+                        ))}
+                    </ul>
+                    <p className="mb-0">Are you sure you want to continue?</p>
+                    {hoursConflictError && <Alert variant="danger" className="py-2">{hoursConflictError}</Alert>}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="outline-secondary" onClick={cancelRemoval}>Cancel</Button>
+                    <Button variant="danger" onClick={confirmRemoval} disabled={hoursConflictBusy}>
+                        {hoursConflictBusy ? "Saving..." : "Yes, remove and save"}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
 
             {/* Approve-with-affected-bookings queue — pops up right after
                 clicking Approve on a leave that has some; cancelling any

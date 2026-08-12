@@ -48,6 +48,7 @@ var _ = Describe("AuthParam", func() {
 				Expect(err).To(ContainElement(errs.ValidationError{Field: "email", Message: "Email format is invalid"}))
 			})
 
+			// UT-044 (Input & Parameter Validation (Domain Rules)).
 			It("returns error for short password", func() {
 				p := param.SignUpParam{
 					Username:      "testuser",
@@ -60,6 +61,7 @@ var _ = Describe("AuthParam", func() {
 				Expect(err).To(ContainElement(errs.ValidationError{Field: "password", Message: "Password must be at least 8 characters"}))
 			})
 
+			// UT-045 (Input & Parameter Validation (Domain Rules)).
 			It("returns error for short contact number", func() {
 				p := param.SignUpParam{
 					Username:      "testuser",
@@ -128,6 +130,7 @@ var _ = Describe("AuthParam", func() {
 				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "password", Message: "Password is required"}))
 			})
 
+			// UT-044 (Input & Parameter Validation (Domain Rules)).
 			It("returns error when new password is too short", func() {
 				p := validResetPasswordParam()
 				p.NewPassword = "short"
@@ -187,6 +190,7 @@ var _ = Describe("AuthParam", func() {
 				Expect(vErrs).To(ContainElement(errs.ValidationError{Field: "currentPassword", Message: "Current password is required"}))
 			})
 
+			// UT-044 (Input & Parameter Validation (Domain Rules)).
 			It("returns error when new password is too short", func() {
 				p := validChangePasswordParam()
 				p.NewPassword = "short"

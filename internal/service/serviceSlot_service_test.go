@@ -62,6 +62,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(result).To(BeNil())
 		})
 
+		// UT-016 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the selected packages are invalid", func() {
 			p := param.ServiceSlotParam{
 				BusinessID:       1,
@@ -80,6 +81,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(ve).To(ContainElement(errs.ValidationError{Field: "serviceOptionIds", Message: "One or more selected options are invalid."}))
 		})
 
+		// UT-017 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the assigned staff does not belong to the business", func() {
 			p := param.ServiceSlotParam{
 				BusinessID:       1,
@@ -97,6 +99,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(result).To(BeNil())
 		})
 
+		// UT-017 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the staff does not work during the requested time", func() {
 			p := param.ServiceSlotParam{
 				BusinessID:       1,
@@ -115,6 +118,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(result).To(BeNil())
 		})
 
+		// UT-018 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the business has no working hours during the requested time", func() {
 			p := param.ServiceSlotParam{
 				BusinessID:       1,
@@ -163,6 +167,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(result.ServiceSlotID).To(Equal(int64(100)))
 		})
 
+		// UT-019 (Slot Scheduling & Staff Assignment).
 		It("drops an option from the slot when its own window doesn't cover that date", func() {
 			p := param.ServiceSlotParam{
 				BusinessID:       1,
@@ -227,6 +232,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(result.ServiceSlotID).To(Equal(int64(200)))
 		})
 
+		// UT-017 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the assigned staff is on approved leave on the slot's date", func() {
 			p := param.ServiceSlotParam{
 				BusinessID:       1,
@@ -287,6 +293,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(result.ServiceSlotID).To(Equal(int64(200)))
 		})
 
+		// UT-019 (Slot Scheduling & Staff Assignment).
 		It("skips recurring occurrences that fall outside every selected option's effective window, instead of creating an empty slot", func() {
 			// 3-week horizon, but the option is only effective on the first
 			// occurrence (e.g. an option with an effectiveUntil date) — the
@@ -423,6 +430,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
+		// UT-020 (Slot Scheduling & Staff Assignment).
 		It("returns an error when an affected occurrence already has a booking", func() {
 			p := param.ServiceSlotParam{
 				ServiceSlotID: 100, BusinessID: 1,
@@ -497,6 +505,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(result.ServiceSlotID).To(Equal(int64(100)))
 		})
 
+		// UT-017 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the new staff does not belong to the business", func() {
 			existing := &param.ServiceSlotParam{ServiceSlotID: 100, BusinessID: 1, Date: futureDate}
 			slotRepo.EXPECT().GetServiceSlotByID(ctx, int64(100), int64(1)).Return(existing, nil).Once()
@@ -507,6 +516,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
+		// UT-017 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the new staff does not cover the slot's time", func() {
 			existing := &param.ServiceSlotParam{ServiceSlotID: 100, BusinessID: 1, Date: futureDate, StartTime: startTime, EndTime: endTime}
 			slotRepo.EXPECT().GetServiceSlotByID(ctx, int64(100), int64(1)).Return(existing, nil).Once()
@@ -518,6 +528,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
+		// UT-017 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the new staff is on approved leave on the slot's date", func() {
 			existing := &param.ServiceSlotParam{ServiceSlotID: 100, BusinessID: 1, Date: futureDate, StartTime: startTime, EndTime: endTime}
 			slotRepo.EXPECT().GetServiceSlotByID(ctx, int64(100), int64(1)).Return(existing, nil).Once()
@@ -573,6 +584,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(ve).To(ContainElement(errs.ValidationError{Field: "serviceSlotId", Message: "Service slot not found."}))
 		})
 
+		// UT-020 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the slot already has a booking", func() {
 			existing := &param.ServiceSlotParam{ServiceSlotID: 100, BusinessID: 1}
 			slotRepo.EXPECT().GetServiceSlotByID(ctx, int64(100), int64(1)).Return(existing, nil).Once()
@@ -597,6 +609,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
+		// UT-021 (Slot Scheduling & Staff Assignment).
 		It("deletes every occurrence from the selected slot's own date onward — not from today", func() {
 			recurringID := int64(9)
 			// Deliberately far in the future relative to "now" — if the
@@ -617,6 +630,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
+		// UT-021 (Slot Scheduling & Staff Assignment).
 		It("deletes available future recurring occurrences and reports booked ones that were skipped", func() {
 			recurringID := int64(9)
 			existing := &param.ServiceSlotParam{ServiceSlotID: 100, BusinessID: 1, Date: "2026-08-01", RecurringScheduleID: &recurringID}

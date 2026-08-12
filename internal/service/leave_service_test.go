@@ -65,6 +65,7 @@ var _ = Describe("LeaveService", func() {
 			Expect(result).To(BeNil())
 		})
 
+		// UT-029 (Leave Application Rules).
 		It("rejects an application overlapping an existing one", func() {
 			p := param.LeaveApplicationParam{StartDate: futureStart, EndDate: futureEnd}
 			leaveRepo.EXPECT().HasOverlappingLeave(ctx, staffID, futureStart, futureEnd).Return(true, nil).Once()
@@ -107,6 +108,7 @@ var _ = Describe("LeaveService", func() {
 	})
 
 	Describe("DeleteLeaveApplication", func() {
+		// UT-030 (Leave Application Rules).
 		It("returns not found when the application doesn't belong to this staff", func() {
 			otherStaff := int64(9)
 			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
@@ -132,6 +134,7 @@ var _ = Describe("LeaveService", func() {
 	})
 
 	Describe("GetBusinessLeaveApplications", func() {
+		// UT-031 (Leave Application Rules).
 		It("attaches affected bookings to pending and approved applications, but not rejected ones", func() {
 			pending := param.LeaveApplicationParam{LeaveID: 1, StaffID: staffID, Status: "pending", StartDate: futureStart, EndDate: futureEnd}
 			approved := param.LeaveApplicationParam{LeaveID: 2, StaffID: staffID, Status: "approved", StartDate: futureStart, EndDate: futureEnd}
@@ -156,6 +159,7 @@ var _ = Describe("LeaveService", func() {
 	})
 
 	Describe("ApproveLeaveApplication", func() {
+		// UT-032 (Leave Application Rules).
 		It("rejects approving a non-pending application", func() {
 			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
 				Return(&param.LeaveApplicationParam{LeaveID: 100, BusinessID: businessID, Status: "approved"}, nil).Once()
@@ -165,6 +169,7 @@ var _ = Describe("LeaveService", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
+		// UT-033 (Leave Application Rules).
 		It("approves immediately, leaving a booked slot untouched and unassigning the non-booked one — no replacement picks required", func() {
 			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
 				Return(&param.LeaveApplicationParam{LeaveID: 100, StaffID: staffID, BusinessID: businessID, Status: "pending", StartDate: futureStart, EndDate: futureEnd}, nil).Once()
@@ -193,6 +198,7 @@ var _ = Describe("LeaveService", func() {
 	})
 
 	Describe("RejectLeaveApplication", func() {
+		// UT-034 (Leave Application Rules).
 		It("requires a remark", func() {
 			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
 				Return(&param.LeaveApplicationParam{LeaveID: 100, BusinessID: businessID, Status: "pending"}, nil).Once()
@@ -222,6 +228,7 @@ var _ = Describe("LeaveService", func() {
 			Expect(result.Status).To(Equal("rejected"))
 		})
 
+		// UT-034 (Leave Application Rules).
 		It("also reverses an already-approved application (no separate cancel)", func() {
 			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
 				Return(&param.LeaveApplicationParam{LeaveID: 100, BusinessID: businessID, Status: "approved"}, nil).Once()
@@ -288,6 +295,7 @@ var _ = Describe("LeaveService", func() {
 			Expect(err).To(MatchError("db error"))
 		})
 
+		// UT-030 (Leave Application Rules).
 		It("returns not found when the application doesn't belong to this staff", func() {
 			otherStaff := int64(9)
 			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).

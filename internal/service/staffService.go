@@ -128,7 +128,17 @@ func (s *staffService) RegisterStaff(ctx context.Context, ownerParam *param.Busi
 			} else {
 				return err
 			}
-
+		} else {
+			// This email already belongs to an account — it can be reused for
+			// a staff profile, but not if that account already owns a
+			// business (an owner can't also be someone else's employee).
+			if _, err := s.businessRepo.GetBusinessProfileByOwnerID(ctx, userProfile.UserID); err == nil {
+				return errs.ValidationErrors{
+					{Field: "staffEmail", Message: "This email belongs to a business owner account and cannot be registered as staff."},
+				}
+			} else if !errors.Is(err, sql.ErrNoRows) {
+				return err
+			}
 		}
 		staffParam.UserID = userProfile.UserID
 		staffID, err := s.staffRepo.InsertStaff(ctx, tx, staffParam)
@@ -243,6 +253,20 @@ func (s *staffService) updateStaffEmail(ctx context.Context, tx *sql.Tx, current
 		return errs.ValidationErrors{{Field: "staffEmail", Message: "This email address is already being used as a business email."}}
 	}
 
+	// If this email already logs into a business owner account, reject it
+	// with a specific message — an owner can't also be someone else's
+	// employee — rather than letting it fall through to the generic
+	// "already in use" error the uniqueness constraint below would give.
+	if existingUser, err := s.authRepo.GetUser(ctx, newEmail); err == nil {
+		if _, err := s.businessRepo.GetBusinessProfileByOwnerID(ctx, existingUser.UserID); err == nil {
+			return errs.ValidationErrors{{Field: "staffEmail", Message: "This email belongs to a business owner account and cannot be used for a staff account."}}
+		} else if !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return err
+	}
+
 	if err := s.authRepo.UpdateUserEmailTx(ctx, tx, current.UserID, newEmail); err != nil {
 		if database.IsUniqueViolation(err, "users_email_key") {
 			return errs.ValidationErrors{{Field: "staffEmail", Message: "This email address is already in use."}}
@@ -274,11 +298,12 @@ func (s *staffService) GetStaffHoursConflicts(ctx context.Context, businessID in
 	}
 	outside := slotsOutsideHours(affected, workingHours)
 
+	// Every slot outside the proposed hours is returned, not just booked ones
+	// — the caller needs both: booked slots require a replacement staff pick
+	// (HasBooking true), while unbooked ones are just unassigned outright and
+	// are only surfaced so the caller can warn the owner before committing.
 	slots := make([]param.ServiceSlotParam, 0, len(outside))
 	for _, slot := range outside {
-		if !slot.HasBooking {
-			continue
-		}
 		full, err := s.serviceSlotRepo.GetServiceSlotByID(ctx, slot.ServiceSlotID, businessID)
 		if err != nil {
 			return nil, err
@@ -293,11 +318,14 @@ func (s *staffService) UpdateStaffWorkingHours(ctx context.Context, businessID i
 		return nil, validationErrs
 	}
 
-	business, err := s.businessRepo.GetBusinessByID(ctx, businessID)
+	if _, err := s.businessRepo.GetBusinessByID(ctx, businessID); err != nil {
+		return nil, err
+	}
+	businessHours, err := s.businessRepo.GetBusinessWorkingHours(ctx, businessID)
 	if err != nil {
 		return nil, err
 	}
-	if validationErrs := validateStaffWithinBusinessHours(workingHours, business.WorkingHours); len(validationErrs) > 0 {
+	if validationErrs := validateStaffWithinBusinessHours(workingHours, businessHours); len(validationErrs) > 0 {
 		return nil, validationErrs
 	}
 

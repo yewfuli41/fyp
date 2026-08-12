@@ -18,13 +18,15 @@ import (
 type businessService struct {
 	businessRepo    interfaces.IBusinessRepo
 	serviceSlotRepo interfaces.IServiceSlotRepo
+	staffRepo       interfaces.IStaffRepo
 	tx              *database.Transaction
 }
 
-func NewBusinessService(db *sql.DB, businessRepo interfaces.IBusinessRepo, serviceSlotRepo interfaces.IServiceSlotRepo) interfaces.IBusinessService {
+func NewBusinessService(db *sql.DB, businessRepo interfaces.IBusinessRepo, serviceSlotRepo interfaces.IServiceSlotRepo, staffRepo interfaces.IStaffRepo) interfaces.IBusinessService {
 	return &businessService{
 		businessRepo:    businessRepo,
 		serviceSlotRepo: serviceSlotRepo,
+		staffRepo:       staffRepo,
 		tx:              database.NewTransaction(db),
 	}
 }
@@ -80,6 +82,14 @@ func validateSlotsWithinNewWorkingHours(windows []param.SlotWindowParam, newHour
 }
 
 func (s *businessService) RegisterBusinessProfile(ctx context.Context, businessParam param.BusinessProfileParam) (*param.BusinessProfileParam, error) {
+	// A staff member is already tied to a business as an employee — they
+	// can't also register as that (or another) business's owner.
+	if _, err := s.staffRepo.GetStaffByUserID(ctx, businessParam.OwnerUserID); err == nil {
+		return nil, fmt.Errorf("You are already registered as a staff member and cannot also register a business.")
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+
 	var businessProfile *param.BusinessProfileParam
 	err := s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
 		if err := businessParam.ValidateRegisterBusinessProfile(); err != nil {

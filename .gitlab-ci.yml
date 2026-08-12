@@ -33,6 +33,7 @@ default:
     - arm64
 
 stages:
+  - test
   - prepare
   - build
   - publish

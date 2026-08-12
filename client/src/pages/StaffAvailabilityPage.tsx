@@ -128,6 +128,7 @@ export default function StaffAvailabilityPage() {
     const [editHours, setEditHours] = useState<WorkingHour[]>([]);
     const [hoursFieldErrors, setHoursFieldErrors] = useState<Record<string, string>>({});
     const [hoursFormError, setHoursFormError] = useState("");
+    const [hoursSuccessMessage, setHoursSuccessMessage] = useState("");
     const [isSavingHours, setIsSavingHours] = useState(false);
     const [hoursConflicts, setHoursConflicts] = useState<ServiceSlot[] | null>(null);
     const [hoursConflictError, setHoursConflictError] = useState("");
@@ -206,6 +207,18 @@ export default function StaffAvailabilityPage() {
         setEditHours(toEditableHours(staffList.find(s => s.staffId === staffId)?.workingHours ?? []));
         setHoursFieldErrors({});
         setHoursFormError("");
+        setHoursSuccessMessage("");
+    };
+
+    // Cancelling the reassignment or removal-confirmation modal abandons the
+    // whole edit, not just that step — the hours shown in the editor snap
+    // back to what's actually saved for this staff member, discarding
+    // whatever the user had changed before clicking Save.
+    const resetEditHoursToSaved = () => {
+        setEditHours(toEditableHours(staffList.find(s => s.staffId === selectedStaffId)?.workingHours ?? []));
+        setHoursFieldErrors({});
+        setHoursFormError("");
+        setHoursSuccessMessage("");
     };
 
     const pendingLeaves = leaves.filter(l => l.status === "PENDING");
@@ -324,6 +337,7 @@ export default function StaffAvailabilityPage() {
         setIsSavingHours(true);
         setHoursFormError("");
         setHoursFieldErrors({});
+        setHoursSuccessMessage("");
         try {
             const conflictRes = await staffHoursConflicts(activeToken, selectedStaffId, editHours);
             if (conflictRes.errors?.length) {
@@ -369,6 +383,7 @@ export default function StaffAvailabilityPage() {
         setShowRemovalConfirm(false);
         setHoursUnbookedConflicts([]);
         setPendingReassignments([]);
+        setHoursSuccessMessage("Working hours saved.");
         fetchAll();
     };
 
@@ -405,6 +420,7 @@ export default function StaffAvailabilityPage() {
         setHoursUnbookedConflicts([]);
         setPendingReassignments([]);
         setHoursConflictError("");
+        resetEditHoursToSaved();
     };
 
     // ── render ────────────────────────────────────────────────────────────────
@@ -583,11 +599,15 @@ export default function StaffAvailabilityPage() {
                                 <WorkingHoursEditor
                                     businessWorkingHours={businessWorkingHours}
                                     workingHours={editHours}
-                                    setWorkingHours={setEditHours}
+                                    setWorkingHours={update => {
+                                        setHoursSuccessMessage("");
+                                        setEditHours(update);
+                                    }}
                                     fieldErrors={hoursFieldErrors}
                                     setFieldErrors={setHoursFieldErrors}
                                 />
                                 {hoursFormError && <Alert variant="danger" className="py-2">{hoursFormError}</Alert>}
+                                {hoursSuccessMessage && <Alert variant="success" className="py-2">{hoursSuccessMessage}</Alert>}
                                 <Button variant="primary" onClick={handleSaveHours} disabled={isSavingHours}>
                                     {isSavingHours ? "Saving..." : "Save Schedule"}
                                 </Button>
@@ -708,7 +728,11 @@ export default function StaffAvailabilityPage() {
                 token={activeToken ?? ""}
                 busy={hoursConflictBusy}
                 error={hoursConflictError}
-                onCancel={() => setHoursConflicts(null)}
+                onCancel={() => {
+                    setHoursConflicts(null);
+                    setHoursUnbookedConflicts([]);
+                    resetEditHoursToSaved();
+                }}
                 onConfirm={confirmHoursReassignment}
             />
 

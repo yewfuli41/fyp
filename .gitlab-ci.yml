@@ -137,7 +137,7 @@ build:client:
 
       cd client
 
-      npm ci
+      npm install
       npm run build
       mkdir -p ../out/client
       cp -a dist/. ../out/client/

@@ -136,8 +136,6 @@ build:client:
       unset HTTPS_PROXY
       unset HTTP_PROXY
 
-      corepack enable
-
       cd client
 
       npm ci

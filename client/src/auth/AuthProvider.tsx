@@ -1,4 +1,5 @@
 import React, { useState, useEffect} from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext, type AuthContextValue, type User } from "./AuthContext";
 
 export function AuthProvider({
@@ -6,10 +7,13 @@ export function AuthProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const navigate = useNavigate();
+
   useEffect(() => {
   const handleUnauthorized = () => {
     sessionStorage.setItem("authMessage", "Session expired. Please log in again.");
     logout();
+    navigate("/login", { replace: true });
   };
 
   window.addEventListener("unauthorized", handleUnauthorized);

@@ -66,7 +66,10 @@ func server(app *app.App, cfg *config.Config) {
 		),
 	)
 
-	e.Static("/", "./client")
+	e.Use(echoMiddleware.StaticWithConfig(echoMiddleware.StaticConfig{
+		Root:  "client",
+		HTML5: true,
+	}))
 
 	e.Logger.Fatal(e.Start(":" + port))
 }

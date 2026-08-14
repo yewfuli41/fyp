@@ -19,7 +19,7 @@ func NewLeaveRepo(db *sql.DB) interfaces.ILeaveRepo {
 const leaveApplicationSelect = `
 	SELECT la.leave_id, la.staff_id, st.business_id, st.staff_name, st.position,
 		to_char(la.start_date, 'YYYY-MM-DD'), to_char(la.end_date, 'YYYY-MM-DD'),
-		la.justification, la.status, la.remark, la.decided_at, la.created_at
+		la.justification, la.file_url, la.status, la.remark, la.decided_at, la.created_at
 	FROM fyp_fuli_leave_applications la
 	JOIN fyp_fuli_staff st ON st.staff_id = la.staff_id
 `
@@ -27,12 +27,12 @@ const leaveApplicationSelect = `
 func scanLeaveApplication(row rowScannerService) (*param.LeaveApplicationParam, error) {
 	var p param.LeaveApplicationParam
 	var position sql.NullString
-	var justification, remark sql.NullString
+	var justification, fileURL, remark sql.NullString
 	var decidedAt sql.NullTime
 	if err := row.Scan(
 		&p.LeaveID, &p.StaffID, &p.BusinessID, &p.StaffName, &position,
 		&p.StartDate, &p.EndDate,
-		&justification, &p.Status, &remark, &decidedAt, &p.CreatedAt,
+		&justification, &fileURL, &p.Status, &remark, &decidedAt, &p.CreatedAt,
 	); err != nil {
 		return nil, err
 	}
@@ -40,6 +40,7 @@ func scanLeaveApplication(row rowScannerService) (*param.LeaveApplicationParam, 
 		p.Position = position.String
 	}
 	p.Justification = utils.NullStringPtr(justification)
+	p.FileURL = utils.NullStringPtr(fileURL)
 	p.Remark = utils.NullStringPtr(remark)
 	if decidedAt.Valid {
 		p.DecidedAt = &decidedAt.Time
@@ -54,10 +55,10 @@ func scanLeaveApplication(row rowScannerService) (*param.LeaveApplicationParam, 
 func (r *leaveRepo) InsertLeaveApplication(ctx context.Context, tx *sql.Tx, p param.LeaveApplicationParam) (int64, error) {
 	var leaveID int64
 	err := tx.QueryRowContext(ctx, `
-		INSERT INTO fyp_fuli_leave_applications (staff_id, start_date, end_date, justification)
-		VALUES ($1, $2::date, $3::date, $4)
+		INSERT INTO fyp_fuli_leave_applications (staff_id, start_date, end_date, justification, file_url)
+		VALUES ($1, $2::date, $3::date, $4, $5)
 		RETURNING leave_id
-	`, p.StaffID, p.StartDate, p.EndDate, p.Justification).Scan(&leaveID)
+	`, p.StaffID, p.StartDate, p.EndDate, p.Justification, p.FileURL).Scan(&leaveID)
 	return leaveID, err
 }
 

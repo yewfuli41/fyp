@@ -12602,7 +12602,7 @@ func (ec *executionContext) unmarshalInputApplyLeaveInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"startDate", "endDate", "justification"}
+	fieldsInOrder := [...]string{"startDate", "endDate", "justification", "fileUrl"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -12630,6 +12630,13 @@ func (ec *executionContext) unmarshalInputApplyLeaveInput(ctx context.Context, o
 				return it, err
 			}
 			it.Justification = data
+		case "fileUrl":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileUrl"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FileURL = data
 		}
 	}
 	return it, nil

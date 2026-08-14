@@ -106,6 +106,14 @@ export const IconHistory = ({ size = 16, className }: IconProps) => (
     </svg>
 );
 
+export const IconDownload = ({ size = 16, className }: IconProps) => (
+    <svg {...base(size)} className={className}>
+        <path d="M12 3v12" />
+        <polyline points="7 11 12 16 17 11" />
+        <path d="M4 19h16" />
+    </svg>
+);
+
 export const IconBell = ({ size = 16, className }: IconProps) => (
     <svg {...base(size)} className={className}>
         <path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6 2 6.5H4c.5-.5 2-2 2-6.5Z" />

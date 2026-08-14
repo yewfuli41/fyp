@@ -2,6 +2,9 @@ input ApplyLeaveInput {
   startDate: Date!
   endDate: Date!
   justification: String
+  # Base64 data URI (e.g. "data:application/pdf;base64,...") of a supporting
+  # document such as a medical certificate. Stored as-is in file_url.
+  fileUrl: String
 }
 
 # Assigns (or, when staffId is omitted, unassigns — owner-managed) a

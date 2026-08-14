@@ -373,14 +373,36 @@ export default function StaffManagementPage() {
                                                 >
                                                     Edit
                                                 </Button>
-                                                <Button
-                                                    variant={member.hasBooking ? "secondary" : "danger"}
-                                                    size="sm"
-                                                    onClick={() => openDelete(member)}
-                                                    disabled={editingId !== null}
-                                                >
-                                                    Delete
-                                                </Button>
+                                                {member.hasBooking ? (
+                                                    <OverlayTrigger
+                                                        placement="top"
+                                                        overlay={
+                                                            <Tooltip id={`delete-disabled-${member.staffId}`}>
+                                                                Deletion disabled - booking exists.
+                                                            </Tooltip>
+                                                        }
+                                                    >
+                                                        <span className="d-inline-block">
+                                                            <Button
+                                                                variant="secondary"
+                                                                size="sm"
+                                                                disabled
+                                                                style={{ pointerEvents: "none" }}
+                                                            >
+                                                                Delete
+                                                            </Button>
+                                                        </span>
+                                                    </OverlayTrigger>
+                                                ) : (
+                                                    <Button
+                                                        variant="danger"
+                                                        size="sm"
+                                                        onClick={() => openDelete(member)}
+                                                        disabled={editingId !== null}
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                )}
                                             </div>
                                         )}
                                     </td>

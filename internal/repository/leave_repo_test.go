@@ -33,7 +33,7 @@ var _ = Describe("LeaveRepo", func() {
 		leaveCols = []string{
 			"leave_id", "staff_id", "business_id", "staff_name", "position",
 			"start_date", "end_date",
-			"justification", "status", "remark", "decided_at", "created_at",
+			"justification", "file_url", "status", "remark", "decided_at", "created_at",
 		}
 	})
 
@@ -55,7 +55,7 @@ var _ = Describe("LeaveRepo", func() {
 			tx, _ := db.Begin()
 
 			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_leave_applications")).
-				WithArgs(p.StaffID, p.StartDate, p.EndDate, p.Justification).
+				WithArgs(p.StaffID, p.StartDate, p.EndDate, p.Justification, p.FileURL).
 				WillReturnRows(sqlmock.NewRows([]string{"leave_id"}).AddRow(42))
 
 			leaveID, err := repo.InsertLeaveApplication(ctx, tx, p)
@@ -75,7 +75,7 @@ var _ = Describe("LeaveRepo", func() {
 			tx, _ := db.Begin()
 
 			mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO fyp_fuli_leave_applications")).
-				WithArgs(p.StaffID, p.StartDate, p.EndDate, p.Justification).
+				WithArgs(p.StaffID, p.StartDate, p.EndDate, p.Justification, p.FileURL).
 				WillReturnError(sql.ErrConnDone)
 
 			leaveID, err := repo.InsertLeaveApplication(ctx, tx, p)
@@ -93,8 +93,8 @@ var _ = Describe("LeaveRepo", func() {
 			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_leave_applications la")).
 				WithArgs(int64(5)).
 				WillReturnRows(sqlmock.NewRows(leaveCols).
-					AddRow(1, 5, 2, "Alice", "Therapist", "2026-08-10", "2026-08-12", "Family trip", "approved", nil, decidedAt, createdAt).
-					AddRow(2, 5, 2, "Alice", "Therapist", "2026-09-01", "2026-09-02", nil, "pending", nil, nil, createdAt))
+					AddRow(1, 5, 2, "Alice", "Therapist", "2026-08-10", "2026-08-12", "Family trip", nil, "approved", nil, decidedAt, createdAt).
+					AddRow(2, 5, 2, "Alice", "Therapist", "2026-09-01", "2026-09-02", nil, nil, "pending", nil, nil, createdAt))
 
 			results, err := repo.GetLeaveApplicationsByStaffID(ctx, 5)
 
@@ -138,7 +138,7 @@ var _ = Describe("LeaveRepo", func() {
 			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_leave_applications la")).
 				WithArgs(int64(2)).
 				WillReturnRows(sqlmock.NewRows(leaveCols).
-					AddRow(1, 5, 2, "Alice", "Therapist", "2026-08-10", "2026-08-12", "Family trip", "pending", nil, nil, createdAt))
+					AddRow(1, 5, 2, "Alice", "Therapist", "2026-08-10", "2026-08-12", "Family trip", nil, "pending", nil, nil, createdAt))
 
 			results, err := repo.GetLeaveApplicationsByBusinessID(ctx, 2)
 
@@ -178,7 +178,7 @@ var _ = Describe("LeaveRepo", func() {
 			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_leave_applications la")).
 				WithArgs(int64(1)).
 				WillReturnRows(sqlmock.NewRows(leaveCols).
-					AddRow(1, 5, 2, "Alice", "Therapist", "2026-08-10", "2026-08-12", "Family trip", "pending", nil, nil, createdAt))
+					AddRow(1, 5, 2, "Alice", "Therapist", "2026-08-10", "2026-08-12", "Family trip", nil, "pending", nil, nil, createdAt))
 
 			result, err := repo.GetLeaveApplicationByID(ctx, 1)
 

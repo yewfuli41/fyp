@@ -7,37 +7,47 @@ import { IconBell, IconCalendar, IconChart, IconClock, IconHistory, IconUsers } 
 import "../styles/HomePage.css";
 
 // Grounded in what the app actually does — no invented features (payments,
-// SMS, etc. aren't implemented) so this stays honest marketing copy.
+// SMS, etc. aren't implemented) so this stays honest marketing copy. Each
+// feature also carries its own accent colour (booking-theme.css) so the
+// grid reads as six distinct categories at a glance instead of one blue
+// block — buttons/links stay on --bk-primary, so colour here is purely
+// for telling the cards apart, not implying they're interactive.
 const FEATURES = [
     {
         icon: IconCalendar,
         title: "Smart Scheduling",
         description: "Recurring or one-off slots with automatic conflict prevention — no double-bookings.",
+        color: "var(--bk-primary)",
     },
     {
         icon: IconClock,
         title: "Walk-In Friendly",
         description: "Record a walk-in customer straight into the same calendar as your online bookings.",
+        color: "var(--bk-coral)",
     },
     {
         icon: IconUsers,
         title: "Staff Scheduling",
         description: "Set each staff member's working hours and see the whole team's availability at a glance.",
+        color: "var(--bk-violet)",
     },
     {
         icon: IconBell,
         title: "Booking Requests",
         description: "Accept, reject, or reschedule requests the moment they come in — nothing slips through.",
+        color: "var(--bk-rose)",
     },
     {
         icon: IconChart,
         title: "Built-In Analytics",
         description: "Booking trends, cancellations, and staff utilization, tracked automatically over time.",
+        color: "var(--bk-teal)",
     },
     {
         icon: IconHistory,
         title: "Full History",
         description: "Every booking and leave application kept on record, filterable whenever you need it.",
+        color: "var(--bk-amber)",
     },
 ];
 
@@ -92,7 +102,7 @@ export default function HomePage() {
                 {FEATURES.map(f => (
                     <Col key={f.title} xs={12} sm={6} lg={4}>
                         <div className="home-feature-card">
-                            <div className="home-feature-icon"><f.icon size={22} /></div>
+                            <div className="home-feature-icon" style={{ background: f.color }}><f.icon size={22} /></div>
                             <div className="home-feature-title">{f.title}</div>
                             <div className="home-feature-description">{f.description}</div>
                         </div>

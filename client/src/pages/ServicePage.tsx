@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Alert, Badge, Button, Card, Col, Container, Form, Row, Spinner } from "react-bootstrap";
+import { Alert, Badge, Button, Card, Col, Container, Form, OverlayTrigger, Row, Spinner, Tooltip } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -312,13 +312,35 @@ export default function ServicePage() {
                                             <Button variant="primary" size="sm" onClick={() => openEdit(svc)}>
                                                 Edit
                                             </Button>
-                                            <Button
-                                                variant={serviceHasBooking(svc) ? "outline-secondary" : "danger"}
-                                                size="sm"
-                                                onClick={() => openDelete(svc)}
-                                            >
-                                                Delete
-                                            </Button>
+                                            {serviceHasBooking(svc) ? (
+                                                <OverlayTrigger
+                                                    placement="top"
+                                                    overlay={
+                                                        <Tooltip id={`delete-disabled-${svc.serviceId}`}>
+                                                            Deletion disabled - booking exists.
+                                                        </Tooltip>
+                                                    }
+                                                >
+                                                    <span className="d-inline-block">
+                                                        <Button
+                                                            variant="outline-secondary"
+                                                            size="sm"
+                                                            disabled
+                                                            style={{ pointerEvents: "none" }}
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                    </span>
+                                                </OverlayTrigger>
+                                            ) : (
+                                                <Button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => openDelete(svc)}
+                                                >
+                                                    Delete
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
 

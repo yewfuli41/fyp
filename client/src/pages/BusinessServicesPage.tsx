@@ -7,6 +7,7 @@ import {
     type PublicBusiness, type PublicService, type PublicServiceOption,
 } from "../services/PublicService";
 import { findBookableOptionIds, isCurrentOption } from "../utils/serviceAvailability";
+import { businessAvatarColor } from "../utils/businessColor";
 import { IconCalendar, IconChevronLeft, IconPin } from "../components/icons";
 import BookingModal from "../modals/BookingModal";
 import "../styles/BusinessServicesPage.css";
@@ -110,7 +111,9 @@ export default function BusinessServicesPage() {
                             {business.imageUrl ? (
                                 <img className="bsp-avatar mx-auto" src={business.imageUrl} alt={business.businessName} />
                             ) : (
-                                <div className="bsp-avatar mx-auto">{business.businessName.charAt(0).toUpperCase()}</div>
+                                <div className="bsp-avatar mx-auto" style={{ background: businessAvatarColor(business.businessId) }}>
+                                    {business.businessName.charAt(0).toUpperCase()}
+                                </div>
                             )}
                             <h1 className="h3 bsp-name">{business.businessName}</h1>
                             {business.address && (

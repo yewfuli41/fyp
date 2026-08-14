@@ -186,10 +186,19 @@ export default function (data) {
   );
 
   const succeeded = !!(body && body.data && body.data.createBooking && body.data.createBooking.bookingId);
+  // Validation errors from this API are wrapped: the top-level error message
+  // is always the generic "validation failed", with the real per-field
+  // message(s) nested in extensions.validationErrors[].message (see
+  // graph/graphErrs/validation_error.go) — so both places need checking.
+  const EXPECTED_REJECTION = /no longer available|already been booked/i;
   const rejectedAsExpected = !!(
     body &&
     body.errors &&
-    body.errors.some((e) => /no longer available|already been booked/i.test(e.message))
+    body.errors.some((e) => {
+      if (EXPECTED_REJECTION.test(e.message)) return true;
+      const validationErrors = e.extensions && e.extensions.validationErrors;
+      return Array.isArray(validationErrors) && validationErrors.some((ve) => EXPECTED_REJECTION.test(ve.message));
+    })
   );
 
   check(res, {

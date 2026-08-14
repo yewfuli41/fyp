@@ -38,7 +38,7 @@
 }
 
 .home-hero h1 .accent {
-    background: var(--bk-gradient);
+    background: linear-gradient(100deg, var(--bk-primary) 10%, var(--bk-violet) 55%, var(--bk-coral) 95%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -151,9 +151,8 @@
     align-items: center;
     justify-content: center;
     color: #fff;
-    background: var(--bk-gradient);
     margin-bottom: 1.1rem;
-    box-shadow: 0 6px 16px -6px rgba(47, 111, 235, 0.55);
+    box-shadow: 0 6px 16px -6px rgba(20, 24, 40, 0.45);
 }
 
 .home-feature-title {
@@ -174,7 +173,7 @@
 .home-cta {
     text-align: center;
     border-radius: var(--bk-radius-lg);
-    background: linear-gradient(135deg, #4f8df7, #6aa5f8);
+    background: linear-gradient(135deg, var(--bk-coral), var(--bk-rose));
     padding: 3.5rem 1.5rem;
     margin: 5rem 0 2rem;
     color: #fff;
@@ -198,7 +197,7 @@
     font-weight: 700;
     border-radius: 999px;
     background: #fff;
-    color: var(--bk-primary-dark);
+    color: var(--bk-coral-dark);
     border: none;
 }
 

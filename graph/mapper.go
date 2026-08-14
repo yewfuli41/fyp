@@ -251,6 +251,7 @@ func MapLeaveApplication(l *param.LeaveApplicationParam) *model.LeaveApplication
 		StartDate:        l.StartDate,
 		EndDate:          l.EndDate,
 		Justification:    l.Justification,
+		FileURL:          l.FileURL,
 		Status:           model.LeaveStatus(strings.ToUpper(l.Status)),
 		Remark:           l.Remark,
 		DecidedAt:        decidedAt,

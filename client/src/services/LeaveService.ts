@@ -11,6 +11,7 @@ export interface LeaveApplication {
     startDate: string;
     endDate: string;
     justification?: string | null;
+    fileUrl?: string | null;
     status: LeaveStatus;
     remark?: string | null;
     decidedAt?: string | null;
@@ -22,6 +23,7 @@ export interface ApplyLeaveInput {
     startDate: string; // "YYYY-MM-DD"
     endDate: string;   // "YYYY-MM-DD"
     justification?: string;
+    fileUrl?: string; // base64 data URI of a supporting document
 }
 
 const LEAVE_FIELDS = `
@@ -32,6 +34,7 @@ const LEAVE_FIELDS = `
     startDate
     endDate
     justification
+    fileUrl
     status
     remark
     decidedAt
@@ -47,7 +50,8 @@ export const applyLeave = async (token: string, input: ApplyLeaveInput) => {
             applyLeave(input: {
                 startDate: "${input.startDate}",
                 endDate: "${input.endDate}",
-                justification: ${input.justification ? JSON.stringify(input.justification) : "null"}
+                justification: ${input.justification ? JSON.stringify(input.justification) : "null"},
+                fileUrl: ${input.fileUrl ? JSON.stringify(input.fileUrl) : "null"}
             }) {
                 ${LEAVE_FIELDS}
             }

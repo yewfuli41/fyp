@@ -58,3 +58,62 @@ Rejected as already booked: 9  (expected: 9)
 Unexpected errors:          0  (expected: 0)
 RESULT: PASS — the slot was never double-booked.
 ```
+
+---
+
+# NFR-1 concurrency test — `nfr1_concurrency_race.js`
+
+This is the fuller test for **NFR-1**: *"The system shall handle at least 50 concurrent
+booking and rescheduling requests while maintaining data consistency, ensuring that no
+appointment slot is assigned to more than one active booking."*
+
+`double_booking_race.js` above proves the guarantee for the simplest possible case — one
+slot, one operation type. This script exercises the actual requirement:
+
+- **Multiple contended slots at once** — 5 by default (`SLOTS`), not just one.
+- **A mix of two different operations** racing for the same slot: `createBooking` (a
+  brand-new customer booking it directly) and `rescheduleBooking` (a customer moving an
+  *existing* booking from elsewhere onto it). Reschedule requests hit the same
+  `uq_active_booking_per_slot` constraint via `UpdateBookingSlotOption`, so this proves
+  the guarantee holds across both write paths, not just one.
+- **50+ concurrent requests total** — `SLOTS × ATTEMPTS_PER_SLOT` (default 5 × 10 = 50),
+  evenly split between the two operation types per slot.
+- **An independent server-side check**, not just counting HTTP responses. After the
+  race, `teardown()` logs into the business owner's account and queries
+  `businessBookings` directly, then verifies for *every* contended slot that exactly one
+  non-cancelled/non-rejected booking actually landed there — the real thing NFR-1 is
+  asserting, checked against real stored data rather than trusting client-side tallies.
+
+## Running it
+
+```bash
+# default: 5 slots x 10 attempts = 50 concurrent requests
+k6 run loadtests/k6/nfr1_concurrency_race.js
+
+# scale it up — 8 slots x 10 attempts = 80 concurrent requests
+SLOTS=8 ATTEMPTS_PER_SLOT=10 k6 run loadtests/k6/nfr1_concurrency_race.js
+```
+
+Same prerequisites as above — a running server pointed at a disposable/test database.
+
+A passing run prints a client-side summary plus the independent teardown check:
+
+```
+NFR-1 concurrency race summary
+-------------------------------
+Contended slots:            5
+Attempts per slot:          10  (mix of createBooking and rescheduleBooking)
+Total concurrent requests:  50
+Successful landings:        5  (expected: exactly 5 — one per slot)
+Rejected as already booked: 45  (expected: 45)
+Unexpected errors:          0  (expected: 0)
+CLIENT-SIDE RESULT: PASS
+
+NFR-1 teardown verification — active bookings per target slot:
+  slot 1234: 1 active booking(s) OK
+  slot 1235: 1 active booking(s) OK
+  slot 1236: 1 active booking(s) OK
+  slot 1237: 1 active booking(s) OK
+  slot 1238: 1 active booking(s) OK
+RESULT: PASS — every contended slot ended up with exactly one active booking.
+```

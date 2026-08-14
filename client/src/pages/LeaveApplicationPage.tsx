@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Alert, Badge, Button, Card, Container, Form, Modal, Spinner, Table } from "react-bootstrap";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -7,7 +7,7 @@ import {
 } from "../services/LeaveService";
 import { parseGraphQLErrors } from "../utils/graphqlErrors";
 import { todayISO } from "../utils/serviceSlotHelpers";
-import { IconHistory, IconPencil } from "../components/icons";
+import { IconHistory, IconPencil, IconDownload } from "../components/icons";
 import { notifyPendingCountsChanged } from "../utils/pendingCounts";
 import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
 
@@ -29,9 +29,42 @@ export default function LeaveApplicationPage() {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [reason, setReason] = useState("");
+    const [fileName, setFileName] = useState("");
+    const [fileDataUrl, setFileDataUrl] = useState("");
     const [formError, setFormError] = useState("");
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB, matches the server-side cap
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) {
+            setFileName("");
+            setFileDataUrl("");
+            return;
+        }
+        if (file.size > MAX_FILE_BYTES) {
+            setFieldErrors(prev => ({ ...prev, fileUrl: "Attachment is too large (max 5 MB)." }));
+            e.target.value = "";
+            setFileName("");
+            setFileDataUrl("");
+            return;
+        }
+        setFieldErrors(prev => ({ ...prev, fileUrl: "" }));
+        const reader = new FileReader();
+        reader.onload = () => {
+            setFileDataUrl(typeof reader.result === "string" ? reader.result : "");
+            setFileName(file.name);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const clearFile = () => {
+        setFileName("");
+        setFileDataUrl("");
+        setFieldErrors(prev => ({ ...prev, fileUrl: "" }));
+    };
 
     // Delete confirm
     const [deleting, setDeleting] = useState<LeaveApplication | null>(null);
@@ -71,7 +104,11 @@ export default function LeaveApplicationPage() {
         setFieldErrors({});
         try {
             // End date is optional — a single-day leave only needs the start date.
-            const result = await applyLeave(activeToken, { startDate, endDate: endDate || startDate, justification: reason || undefined });
+            const result = await applyLeave(activeToken, {
+                startDate, endDate: endDate || startDate,
+                justification: reason || undefined,
+                fileUrl: fileDataUrl || undefined,
+            });
             const parsed = parseGraphQLErrors(result, "Failed to apply for leave");
             if (parsed.hasErrors) {
                 setFieldErrors(parsed.fieldErrors);
@@ -81,6 +118,7 @@ export default function LeaveApplicationPage() {
             setStartDate("");
             setEndDate("");
             setReason("");
+            clearFile();
             fetchApplications();
         } catch {
             setFormError("Something went wrong. Please try again.");
@@ -193,7 +231,16 @@ export default function LeaveApplicationPage() {
                         {currentApplications.map(app => (
                             <tr key={app.leaveId}>
                                 <td>
-                                    {app.startDate === app.endDate ? app.startDate : `${app.startDate} – ${app.endDate}`}
+                                    <div>{app.startDate === app.endDate ? app.startDate : `${app.startDate} – ${app.endDate}`}</div>
+                                    {app.fileUrl && (
+                                        <a
+                                            href={app.fileUrl}
+                                            download={`leave-${app.leaveId}-attachment`}
+                                            className="d-inline-flex align-items-center gap-1 small mt-1"
+                                        >
+                                            <IconDownload size={12} /> Download
+                                        </a>
+                                    )}
                                 </td>
                                 <td style={{ minWidth: 220 }}>
                                     {editingId === app.leaveId ? (
@@ -308,6 +355,25 @@ export default function LeaveApplicationPage() {
                         />
                         <Form.Control.Feedback type="invalid">{fieldErrors.justification}</Form.Control.Feedback>
                     </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Supporting Document</Form.Label>
+                        <Form.Control
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={handleFileChange}
+                            isInvalid={!!fieldErrors.fileUrl}
+                        />
+                        <Form.Text muted>Optional, e.g. a medical certificate. Max 5 MB.</Form.Text>
+                        <Form.Control.Feedback type="invalid">{fieldErrors.fileUrl}</Form.Control.Feedback>
+                        {fileName && (
+                            <div className="d-flex align-items-center gap-2 mt-1 small">
+                                <span className="text-muted">{fileName}</span>
+                                <Button variant="link" size="sm" className="p-0" onClick={clearFile}>
+                                    Remove
+                                </Button>
+                            </div>
+                        )}
+                    </Form.Group>
                     {formError && <Alert variant="danger" className="py-2">{formError}</Alert>}
                     <Button
                         variant="primary" onClick={handleApply}
@@ -362,7 +428,18 @@ export default function LeaveApplicationPage() {
                                 <tbody>
                                     {filteredHistory.map(app => (
                                         <tr key={app.leaveId}>
-                                            <td>{app.startDate === app.endDate ? app.startDate : `${app.startDate} – ${app.endDate}`}</td>
+                                            <td>
+                                                <div>{app.startDate === app.endDate ? app.startDate : `${app.startDate} – ${app.endDate}`}</div>
+                                                {app.fileUrl && (
+                                                    <a
+                                                        href={app.fileUrl}
+                                                        download={`leave-${app.leaveId}-attachment`}
+                                                        className="d-inline-flex align-items-center gap-1 small mt-1"
+                                                    >
+                                                        <IconDownload size={12} /> Download
+                                                    </a>
+                                                )}
+                                            </td>
                                             <td>{app.justification || <span className="text-muted fst-italic">None</span>}</td>
                                             <td>
                                                 <Badge bg={STATUS_VARIANT[app.status]}>{app.status}</Badge>

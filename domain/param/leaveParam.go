@@ -4,6 +4,7 @@ import (
 	"fyp/domain/errs"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // LeaveApplicationParam is a staff member's leave request. Deliberately has
@@ -18,7 +19,10 @@ type LeaveApplicationParam struct {
 	StartDate     string // "YYYY-MM-DD"
 	EndDate       string // "YYYY-MM-DD"
 	Justification *string
-	Status        string // "pending" | "approved" | "rejected"
+	// FileURL is a base64 data URI (e.g. "data:application/pdf;base64,...")
+	// of a supporting document, stored as-is — no separate file storage.
+	FileURL *string
+	Status  string // "pending" | "approved" | "rejected"
 	Remark        *string
 	DecidedAt     *time.Time
 	CreatedAt     time.Time
@@ -61,11 +65,29 @@ func (p LeaveApplicationParam) ValidateApplyLeave() error {
 			validationErrs = append(validationErrs, e)
 		}
 	}
+	if e, ok := validateFileURL(p.FileURL); !ok {
+		validationErrs = append(validationErrs, e)
+	}
 
 	if len(validationErrs) > 0 {
 		return validationErrs
 	}
 	return nil
+}
+
+// validateFileURL checks an optional base64 data URI attachment. The bool
+// reports whether the value is acceptable (true when fileURL is nil).
+func validateFileURL(fileURL *string) (errs.ValidationError, bool) {
+	if fileURL == nil {
+		return errs.ValidationError{}, true
+	}
+	if !strings.HasPrefix(*fileURL, "data:") {
+		return errs.ValidationError{Field: "fileUrl", Message: "Attachment must be an uploaded file."}, false
+	}
+	if utf8.RuneCountInString(*fileURL) > maxFileURLLength {
+		return errs.ValidationError{Field: "fileUrl", Message: "Attachment is too large (max 5 MB)."}, false
+	}
+	return errs.ValidationError{}, true
 }
 
 // ValidateUpdateJustification checks just the reason text — used when

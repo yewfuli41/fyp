@@ -23,6 +23,10 @@ const (
 	maxPackageNameLength   = 255
 	maxJustificationLength = 1000
 	maxRemarkLength        = 1000
+	// maxFileURLLength bounds the base64 data URI stored in file_url — about
+	// 5 MB of decoded file data (5*1024*1024*4/3), plus room for the
+	// "data:<mime>;base64," prefix.
+	maxFileURLLength = 7_000_000
 )
 
 var emailRegex = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)

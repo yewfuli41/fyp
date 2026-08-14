@@ -288,7 +288,7 @@
     flex-shrink: 0;
     object-fit: cover;
     overflow: hidden;
-    box-shadow: 0 6px 16px -6px rgba(47, 111, 235, 0.55);
+    box-shadow: 0 6px 16px -6px rgba(20, 24, 40, 0.45);
 }
 
 .biz-name {

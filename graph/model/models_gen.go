@@ -14,6 +14,7 @@ type ApplyLeaveInput struct {
 	StartDate     string  `json:"startDate"`
 	EndDate       string  `json:"endDate"`
 	Justification *string `json:"justification,omitempty"`
+	FileURL       *string `json:"fileUrl,omitempty"`
 }
 
 type AuthPayload struct {

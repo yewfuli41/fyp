@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getPublicBusinesses, getPublicServices, type PublicBusiness, type PublicService } from "../services/PublicService";
 import { findBookableOptionIds, isCurrentOption } from "../utils/serviceAvailability";
+import { businessAvatarColor } from "../utils/businessColor";
 import { IconChevronRight, IconMail, IconPhone, IconPin, IconSearch } from "../components/icons";
 import "../styles/BookLandingPage.css";
 
@@ -109,7 +110,9 @@ export default function BusinessListPage() {
                                         {biz.imageUrl ? (
                                             <img className="biz-avatar" src={biz.imageUrl} alt={biz.businessName} />
                                         ) : (
-                                            <div className="biz-avatar">{biz.businessName.charAt(0).toUpperCase()}</div>
+                                            <div className="biz-avatar" style={{ background: businessAvatarColor(biz.businessId) }}>
+                                                {biz.businessName.charAt(0).toUpperCase()}
+                                            </div>
                                         )}
                                         <div
                                             className="biz-name"

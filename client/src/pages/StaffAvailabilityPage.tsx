@@ -16,7 +16,7 @@ import RescheduleBookingModal from "../modals/RescheduleBookingModal";
 import { parseGraphQLErrors } from "../utils/graphqlErrors";
 import { notifyPendingCountsChanged } from "../utils/pendingCounts";
 import { todayISO } from "../utils/serviceSlotHelpers";
-import { IconEye, IconHistory } from "../components/icons";
+import { IconEye, IconHistory, IconDownload } from "../components/icons";
 import CalendarIcon from "../assets/calendar.png"
 
 // One thing that needs a replacement staff before an action (leave approval
@@ -516,7 +516,17 @@ export default function StaffAvailabilityPage() {
                                             "{leave.justification}"
                                         </div>
                                     )}
-
+                                    <div className = "text-start">
+                                    {leave.fileUrl && (
+                                        <a
+                                            href={leave.fileUrl}
+                                            download={`leave-${leave.leaveId}-attachment`}
+                                            className="d-inline-flex align-items-center gap-1 mt-2 small"
+                                        >
+                                            <IconDownload size={14} /> Download attachment
+                                        </a>
+                                    )}
+                                    </div>
                                 </div>
 
                                 <div className="text-end">
@@ -675,7 +685,18 @@ export default function StaffAvailabilityPage() {
                         {approvedLeaves.map(leave => (
                             <tr key={leave.leaveId}>
                                 <td>{leave.staffName}</td>
-                                <td>{leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} – ${leave.endDate}`}</td>
+                                <td>
+                                    <div>{leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} – ${leave.endDate}`}</div>
+                                    {leave.fileUrl && (
+                                        <a
+                                            href={leave.fileUrl}
+                                            download={`leave-${leave.leaveId}-attachment`}
+                                            className="d-inline-flex align-items-center gap-1 small mt-1"
+                                        >
+                                            <IconDownload size={12} /> Download
+                                        </a>
+                                    )}
+                                </td>
                                 <td>
                                     <Button
                                         variant="outline-danger" size="sm" disabled={leaveBusyId === leave.leaveId}

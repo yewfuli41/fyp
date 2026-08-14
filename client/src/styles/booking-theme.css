@@ -16,6 +16,19 @@
     --bk-success-soft: #e8f7f0;
     --bk-danger: #d64545;
     --bk-danger-soft: #fdecec;
+
+    /* Category accents — one hue per feature/business, used for the icon
+       and avatar tiles on the home and booking pages so colour carries
+       information (which category) instead of being purely decorative.
+       Buttons and links stay on --bk-primary so "blue means clickable"
+       still holds everywhere. */
+    --bk-violet: #8b5cf6;
+    --bk-teal: #0d9488;
+    --bk-coral: #f79a52;
+    --bk-coral-dark: #b8752f;
+    --bk-rose: #ec4899;
+    --bk-amber: #d69e0a;
+
     --bk-radius-lg: 22px;
     --bk-radius-md: 16px;
     --bk-radius-sm: 11px;

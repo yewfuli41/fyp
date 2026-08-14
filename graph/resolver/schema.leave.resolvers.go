@@ -30,6 +30,7 @@ func (r *mutationResolver) ApplyLeave(ctx context.Context, input model.ApplyLeav
 		StartDate:     input.StartDate,
 		EndDate:       input.EndDate,
 		Justification: input.Justification,
+		FileURL:       input.FileURL,
 	}
 	result, err := r.App.LeaveService.ApplyLeave(ctx, staffProfile.StaffID, p)
 	if err != nil {

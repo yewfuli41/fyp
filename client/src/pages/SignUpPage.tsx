@@ -24,7 +24,7 @@ export default function SignUpPage() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      navigate("/book");
+      navigate("/");
     }
   }, [isLoggedIn, navigate]);
 

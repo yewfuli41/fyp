@@ -140,6 +140,11 @@ type LeaveApplication struct {
 	AffectedBookings []*BookingDetail `json:"affectedBookings"`
 }
 
+type LeaveRescheduleInput struct {
+	BookingID       string `json:"bookingId"`
+	NewSlotOptionID string `json:"newSlotOptionId"`
+}
+
 type LogInInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -257,6 +262,7 @@ type ServiceSlotInput struct {
 	StaffID          *string     `json:"staffId,omitempty"`
 	Date             *string     `json:"date,omitempty"`
 	DaysOfWeek       []DayOfWeek `json:"daysOfWeek,omitempty"`
+	RecurringEndDate *string     `json:"recurringEndDate,omitempty"`
 	StartTime        time.Time   `json:"startTime"`
 	EndTime          time.Time   `json:"endTime"`
 	ServiceOptionIds []string    `json:"serviceOptionIds"`

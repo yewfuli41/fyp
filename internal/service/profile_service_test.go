@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"errors"
+	"fyp/database"
 	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
@@ -64,7 +65,7 @@ var _ = Describe("ProfileService", func() {
 				Email:         "duplicate@example.com",
 				ContactNumber: "0123456789",
 			}
-			uniqueErr := newUniqueViolation("users_email_key")
+			uniqueErr := newUniqueViolation(database.ConstraintUserEmail)
 
 			profileRepo.EXPECT().
 				UpdateUser(ctx, profileParam).

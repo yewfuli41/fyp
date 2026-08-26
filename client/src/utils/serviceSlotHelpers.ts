@@ -42,6 +42,13 @@ export const addDays = (d: Date, n: number): Date => {
 
 export const todayISO = (): string => toISO(new Date());
 
+// Tomorrow's date — used to keep "today" out of date pickers where a
+// same-day slot would immediately hit computeTimeOptions' past-time filter
+// and often leave no valid start time (or none at all once every working
+// hour for today has already passed), surfacing as a confusing "no working
+// hours" message. Simplest fix: don't offer today as a choice there.
+export const tomorrowISO = (): string => toISO(addDays(new Date(), 1));
+
 export const nowHHMM = (): string => {
     const now = new Date();
     return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
@@ -83,9 +90,16 @@ export const isOptionOfferedOn = (opt: { effectiveFrom?: string; effectiveUntil?
 export const isOptionSelectableFor = (
     opt: { effectiveFrom?: string; effectiveUntil?: string }, date: string, daysOfWeek: string[],
 ): boolean =>
-    daysOfWeek.length > 0
-        ? !opt.effectiveUntil || opt.effectiveUntil >= todayISO()
-        : isOptionOfferedOn(opt, date);
+    daysOfWeek.length > 0 ? isOptionCurrentlyOffered(opt) : isOptionOfferedOn(opt, date);
+
+// Whether an option is still currently offered — hasn't already ended as of
+// today. Ignores effectiveFrom and any specific occurrence date: used
+// wherever "today" (not a particular date) is what determines availability —
+// a weekday-recurring schedule (future occurrences pick it up once it
+// starts) and a walk-in, which is recorded using today's catalog regardless
+// of which past date it's being backdated to.
+export const isOptionCurrentlyOffered = (opt: { effectiveUntil?: string }): boolean =>
+    !opt.effectiveUntil || opt.effectiveUntil >= todayISO();
 
 // A column's open time intervals ("HH:MM"–"HH:MM") on a given weekday —
 // used by the calendar grid to gray out cells outside working hours.
@@ -104,6 +118,10 @@ export const openIntervals = (workingHours: WorkingHour[], weekday: string): { s
 // a slot from being created on Sunday too.
 export const computeTimeOptions = (
     input: ServiceSlotInput, staffList: Staff[], workingHours: WorkingHour[], lines: string[],
+    // Walk-ins are recorded after the fact, so today's already-passed times
+    // must stay pickable — set true to skip the "today can't offer times
+    // already gone by" filter below.
+    allowPastTimes = false,
 ): string[] => {
     const days = input.daysOfWeek.length > 0
         ? input.daysOfWeek
@@ -129,8 +147,9 @@ export const computeTimeOptions = (
     if (min >= max) return [];
     const options = timeLines(min, max);
     // A single date (not a recurring weekday) that's today can't offer times
-    // that have already passed — the backend rejects those anyway.
-    if (!input.date || input.date !== todayISO()) return options;
+    // that have already passed — the backend rejects those anyway. (Walk-ins
+    // opt out via allowPastTimes since they're recorded after the fact.)
+    if (allowPastTimes || !input.date || input.date !== todayISO()) return options;
     const now = nowHHMM();
     return options.filter(t => t > now);
 };

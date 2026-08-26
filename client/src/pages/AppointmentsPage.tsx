@@ -167,7 +167,7 @@ export default function AppointmentsPage() {
                         className="flex-wrap gap-2"
                     >
                         {STATUS_OPTIONS.map(s => (
-                            <ToggleButton key={s} id={`status-${s}`} value={s} variant="outline-secondary" size="sm" className="rounded-pill">
+                            <ToggleButton key={s} id={`status-${s}`} value={s} variant="outline-primary" size="sm" className="rounded-pill">
                                 {STATUS_META[s].label}
                             </ToggleButton>
                         ))}

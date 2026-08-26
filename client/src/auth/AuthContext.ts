@@ -30,6 +30,12 @@ export type AuthContextValue = {
   user: User | null;
   token: string | null;
   message: string;
+  // True when a previous session ended on its own (the token expired, or the
+  // server rejected it) rather than by the user signing out. Distinguishes a
+  // returning user who needs to re-authenticate — sent to the login page —
+  // from a first-time visitor or someone who deliberately signed out, who
+  // both land on the home page instead.
+  sessionExpired: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
   hasRoles: (roles: string[]) => boolean;

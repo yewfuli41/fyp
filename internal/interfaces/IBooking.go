@@ -9,13 +9,13 @@ import (
 type IBookingRepo interface {
 	// unassignedOnly, when true, narrows to owner-managed (no staff assigned)
 	// slots and takes precedence over staffID.
-	GetAvailableSlots(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool) ([]param.ServiceSlotParam, error)
+	GetAvailableSlots(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool, unavailable *param.StaffUnavailability) ([]param.ServiceSlotParam, error)
 	// GetAvailableDates returns, as "YYYY-MM-DD" strings, every date in
 	// [from, until] that has at least one bookable slot, optionally narrowed
 	// by service, service option, and/or staff (any may be nil for "any").
 	// unassignedOnly, when true, narrows instead to owner-managed slots and
 	// takes precedence over staffID.
-	GetAvailableDates(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string) ([]string, error)
+	GetAvailableDates(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string, unavailable *param.StaffUnavailability) ([]string, error)
 	InsertBooking(ctx context.Context, userID int64, slotOptionID int64, description *string) (*param.BookingParam, error)
 	// InsertWalkInBooking records an already-accepted walk-in booking (no
 	// pending approval step) against userID — the business owner or staff
@@ -44,6 +44,10 @@ type IBookingRepo interface {
 	// GetSlotOptionStaffUserID returns the login user id of the staff member a
 	// slot option is assigned to, or nil if it's owner-managed (unassigned).
 	GetSlotOptionStaffUserID(ctx context.Context, slotOptionID int64) (*int64, error)
+	// GetSlotOptionAssignment returns the staff a slot option's slot is assigned
+	// to (nil when owner-managed) and that slot's date, so a caller can tell
+	// whether moving a booking onto it would land on a staff member's leave.
+	GetSlotOptionAssignment(ctx context.Context, slotOptionID int64) (staffID *int64, date string, err error)
 	// SweepPastBookings flips any pending/accepted/rescheduled booking whose
 	// slot has already ended to "past" — called opportunistically before any
 	// read or action so status is never stale.
@@ -51,8 +55,8 @@ type IBookingRepo interface {
 }
 
 type IBookingService interface {
-	GetAvailableSlots(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool) ([]param.ServiceSlotParam, error)
-	GetAvailableDates(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string) ([]string, error)
+	GetAvailableSlots(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool, unavailable *param.StaffUnavailability) ([]param.ServiceSlotParam, error)
+	GetAvailableDates(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string, unavailable *param.StaffUnavailability) ([]string, error)
 	CreateBooking(ctx context.Context, userID int64, slotOptionID int64, description *string) (*param.BookingParam, error)
 	// RecordWalkIn marks the given (freshly created) slot option as an
 	// already-accepted walk-in booking recorded by actorUserID.

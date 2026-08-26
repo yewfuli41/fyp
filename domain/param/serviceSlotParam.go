@@ -24,37 +24,31 @@ type ServiceSlotParam struct {
 	RecurringScheduleID *int64   // nil => a one-off slot, not part of any weekday series
 	Date                string   // "YYYY-MM-DD" — single specific date (mutually exclusive with DaysOfWeek)
 	DaysOfWeek          []string // recurring weekdays, e.g. ["monday","wednesday"]
-	StartTime           time.Time
-	EndTime             time.Time
-	CreatedBy           int64
-	HasBooking          bool // loaded for display — true once a customer has booked this slot
+	// RecurringEndDate ("YYYY-MM-DD") is the last date a weekday series
+	// generates an occurrence for. Only meaningful alongside DaysOfWeek.
+	// Occurrences are generated once, at creation, so this is the series'
+	// full extent — it is never topped up later.
+	RecurringEndDate string
+	StartTime        time.Time
+	EndTime          time.Time
+	CreatedBy        int64
+	HasBooking       bool // loaded for display — true once a customer has booked this slot
 
 	ServiceOptionIDs []int64         // input: packages to make bookable
 	Packages         []SlotTierParam // loaded for display
-}
 
-// RecurringScheduleRenewalParam is one active weekday-recurring series that
-// may need new occurrences generated to keep its horizon topped up — a
-// series only gets its occurrences eagerly generated once, at creation time
-// (see resolveSchedule), so without renewal it simply runs dry once that
-// fixed window passes.
-type RecurringScheduleRenewalParam struct {
-	RecurringScheduleID int64
-	StaffID             *int64 // nil => owner-managed (no assigned staff)
-	Day                 string
-	StartTime           time.Time
-	EndTime             time.Time
-	// LastDate is the latest active ("YYYY-MM-DD") occurrence already
-	// generated for this series, or "" if none remain (e.g. every occurrence
-	// was individually deleted without deleting the series itself).
-	LastDate string
+	// AllowPast skips the "date and time cannot be in the past" check below —
+	// set by RecordWalkIn, which creates a slot for something that's already
+	// happened (the walk-in is being logged after the fact), unlike an
+	// ordinary slot which is always for a future booking.
+	AllowPast bool
 }
 
 func (p ServiceSlotParam) Validate() error {
 	var validationErrs errs.ValidationErrors
 
 	if len(p.ServiceOptionIDs) == 0 {
-		validationErrs = append(validationErrs, errs.ValidationError{Field: "serviceOptionIds", Message: "Please complete required fields"})
+		validationErrs = append(validationErrs, errs.ValidationError{Field: "serviceOptionIds", Message: "Please select a service and its option"})
 	}
 	if !p.StartTime.Before(p.EndTime) {
 		validationErrs = append(validationErrs, errs.ValidationError{Field: "startTime", Message: "Start time must be before end time"})
@@ -66,10 +60,26 @@ func (p ServiceSlotParam) Validate() error {
 		validationErrs = append(validationErrs, errs.ValidationError{Field: "schedule", Message: "Please select days of the week or a date"})
 	} else if hasDate && hasDays {
 		validationErrs = append(validationErrs, errs.ValidationError{Field: "schedule", Message: "Choose either weekdays or a single date, not both"})
+	} else if hasDays {
+		// Optional: an omitted end date falls back to the configured default
+		// in resolveSchedule. A supplied one must be a real, future date —
+		// a series ending today or earlier would generate nothing at all.
+		if end := strings.TrimSpace(p.RecurringEndDate); end != "" {
+			parsed, err := time.Parse("2006-01-02", end)
+			if err != nil {
+				validationErrs = append(validationErrs, errs.ValidationError{Field: "recurringEndDate", Message: "Invalid end date"})
+			} else {
+				now := time.Now()
+				today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+				if parsed.Before(today) {
+					validationErrs = append(validationErrs, errs.ValidationError{Field: "recurringEndDate", Message: "End date cannot be in the past"})
+				}
+			}
+		}
 	} else if hasDate {
 		if parsed, err := time.Parse("2006-01-02", p.Date); err != nil {
 			validationErrs = append(validationErrs, errs.ValidationError{Field: "date", Message: "Invalid date"})
-		} else {
+		} else if !p.AllowPast {
 			slotStart := time.Date(
 				parsed.Year(), parsed.Month(), parsed.Day(),
 				p.StartTime.Hour(), p.StartTime.Minute(), p.StartTime.Second(), 0,

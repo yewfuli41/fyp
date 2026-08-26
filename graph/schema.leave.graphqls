@@ -27,18 +27,28 @@ extend type Query {
   staffHoursConflicts(staffId: ID!, workingHours: [WorkingHourInput!]!): [ServiceSlot!]!
 }
 
+# One "move this booking onto that slot" decision taken while approving a
+# leave. The owner settles every affected booking before approving, and the
+# whole set is submitted with the approval so nothing is written — and no
+# customer is emailed — for a leave that is still pending.
+input LeaveRescheduleInput {
+  bookingId: ID!
+  newSlotOptionId: ID!
+}
+
 extend type Mutation {
   applyLeave(input: ApplyLeaveInput!): LeaveApplication!
   # Lets the applying staff member edit just their reason while the
   # application is still pending — the date range can't be changed here.
   updateLeaveApplication(leaveId: ID!, justification: String): LeaveApplication!
   deleteLeaveApplication(leaveId: ID!): Boolean!
-  # Approving never blocks on picking replacements — a slot with no booking
-  # is freed back to owner-managed immediately, and a booked slot is simply
-  # left as-is (still visible, still assigned) until the owner reschedules
-  # that booking separately; see affectedBookings, which keeps listing it
-  # under this leave until it's moved off the leave's date range.
-  approveLeaveApplication(leaveId: ID!): LeaveApplication!
+  # Every booking the leave affects must appear in reschedules — leaving one
+  # out is rejected and the leave stays pending, since approving would strand
+  # that customer with no staff member. Each move happens in the same
+  # transaction as the approval, so an approval the owner abandons part-way
+  # leaves the leave pending and every booking untouched. A slot with no
+  # booking is simply freed back to owner-managed.
+  approveLeaveApplication(leaveId: ID!, reschedules: [LeaveRescheduleInput!]): LeaveApplication!
   # Also reverses an already-approved leave (moving it to rejected, with a
   # required remark) — there is no separate cancel. Does not undo any staff
   # reassignments already made when it was approved.

@@ -1,11 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { Alert, Button, Form, Modal, Spinner } from "react-bootstrap";
-import { getAvailableSlots, getPublicServices, type AvailableSlot } from "../services/PublicService";
+import {
+    getAvailableSlots, getPublicServices,
+    type AvailableSlot, type StaffUnavailability,
+} from "../services/PublicService";
 import { rescheduleBooking, type BookingDetail } from "../services/BookingService";
 import { extractTime } from "../services/ServiceSlotService";
-import { todayISO } from "../utils/serviceSlotHelpers";
+import { displayDate, todayISO } from "../utils/serviceSlotHelpers";
 import { findBookableOptionIds, isCurrentOption } from "../utils/serviceAvailability";
 import BookingDatePicker from "../components/BookingDatePicker";
+import "../styles/RescheduleBookingModal.css";
 
 interface Props {
     show: boolean;
@@ -15,7 +19,20 @@ interface Props {
     onHide: () => void;
     booking: BookingDetail | null;
     token: string | null;
-    onDone: () => void;
+    // Fires once the reschedule has actually been committed. Optional because
+    // callers that pass onStage commit later, on their own terms, and drive
+    // whatever comes next themselves.
+    onDone?: () => void;
+    // When set, picking a slot stages the choice instead of writing it: the
+    // modal calls this and stops, leaving the caller to apply it later. Used
+    // by leave approval, where nothing may be written until the owner has
+    // settled every affected booking and the approval itself commits.
+    onStage?: (newSlotOptionId: string) => void;
+    // Keeps one staff member's slots out of the picker across a date range.
+    // Set while approving that staff's leave, so the owner can't move a
+    // customer onto another of their slots on a day they're taking off — the
+    // leave is still pending, so nothing else would stop it.
+    unavailable?: StaffUnavailability;
     // When set (a staff member, not the owner, is rescheduling), only that
     // staff's own slots are offered — the backend enforces this regardless.
     lockedStaffId?: string;
@@ -41,7 +58,7 @@ interface RescheduleChoice extends AvailableSlot {
 }
 
 export default function RescheduleBookingModal({
-    show, onHide, booking, token, onDone, lockedStaffId, allowOptionChange, note,
+    show, onHide, booking, token, onDone, onStage, unavailable, lockedStaffId, allowOptionChange, note,
 }: Props) {
     const [date, setDate] = useState(todayISO());
     const [selectedOptionId, setSelectedOptionId] = useState("");
@@ -100,7 +117,7 @@ export default function RescheduleBookingModal({
         setLoading(true);
         setError("");
         try {
-            const res = await getAvailableSlots(booking.businessId, selectedOptionId, date, lockedStaffId);
+            const res = await getAvailableSlots(booking.businessId, selectedOptionId, date, lockedStaffId, undefined, unavailable);
             const choices = (res.data?.availableSlots ?? []).flatMap(slot => {
                 const slotOptionId = slot.serviceSlotOptions[0]?.slotOptionId;
                 return slotOptionId ? [{ ...slot, slotOptionId }] : [];
@@ -112,13 +129,23 @@ export default function RescheduleBookingModal({
         } finally {
             setLoading(false);
         }
-    }, [booking, date, lockedStaffId, selectedOptionId]);
+        // Same reason as BookingDatePicker: depend on the unavailability's
+        // fields, not the inline object's identity.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [booking, date, lockedStaffId, selectedOptionId,
+        unavailable?.staffId, unavailable?.from, unavailable?.until]);
 
     useEffect(() => {
         if (show && booking && selectedOptionId) loadSlots();
     }, [show, booking, selectedOptionId, loadSlots]);
 
     const handlePick = async (newSlotOptionId: string) => {
+        // Staged: hand the choice back unwritten and let the caller decide
+        // when (and whether) it reaches the database.
+        if (onStage) {
+            onStage(newSlotOptionId);
+            return;
+        }
         if (!token || !booking) return;
         setBusy(true);
         setError("");
@@ -131,7 +158,7 @@ export default function RescheduleBookingModal({
             // Success only ever calls onDone — the caller decides whether
             // that means closing (simple case) or moving on to the next
             // booking in a queue without the modal flickering shut first.
-            onDone();
+            onDone?.();
         } catch {
             setError("Something went wrong. Please try again.");
         } finally {
@@ -139,13 +166,31 @@ export default function RescheduleBookingModal({
         }
     };
 
-    const selectedOptionLabel = optionChoices.find(o => o.serviceOptionId === selectedOptionId);
-
     return (
         <Modal show={show} onHide={onHide} backdrop="static">
             <Modal.Header closeButton><Modal.Title>Reschedule booking</Modal.Title></Modal.Header>
             <Modal.Body>
                 {note && <Alert variant="info" className="py-2">{note}</Alert>}
+
+                {/* The slot being moved. Shown for every reschedule, but it
+                    matters most in the leave queue, where the owner works
+                    through several bookings in a row and the service name
+                    alone doesn't say which appointment is on screen. */}
+                {booking && (
+                    <div className="rb-current mb-3">
+                        <div className="rb-current-label">Currently booked</div>
+                        <div className="rb-current-when">
+                            {displayDate(new Date(`${booking.date}T00:00:00`))}
+                            {" · "}
+                            {extractTime(booking.startTime)}–{extractTime(booking.endTime)}
+                        </div>
+                        <div className="rb-current-meta">
+                            {booking.serviceName} — {booking.optionName}
+                            {" · "}{booking.customerName}
+                            {booking.staffName ? ` · ${booking.staffName}` : " · Owner-managed"}
+                        </div>
+                    </div>
+                )}
 
                 {booking && allowOptionChange && optionChoices.length > 0 ? (
                     <Form.Group className="mb-3">
@@ -161,19 +206,21 @@ export default function RescheduleBookingModal({
                             ))}
                         </Form.Select>
                     </Form.Group>
-                ) : booking && (
-                    <p className="text-muted mb-3">
-                        {selectedOptionLabel ? `${selectedOptionLabel.serviceName} — ${selectedOptionLabel.optionName}` : `${booking.serviceName} — ${booking.optionName}`}
-                    </p>
-                )}
+                ) : null}
 
                 {booking && (
                     <Form.Group className="mb-3">
                         <Form.Label>Pick a new date</Form.Label>
                         <BookingDatePicker
                             businessId={booking.businessId}
-                            serviceOptionId={selectedOptionId}
+                            // Falls back to the booking's own option for the
+                            // first render, before the effect below has copied
+                            // it into state — without it the picker would
+                            // briefly ask for "any option in the business" and
+                            // colour dates by slots this booking can't move to.
+                            serviceOptionId={selectedOptionId || booking.serviceOptionId}
                             staffId={lockedStaffId}
+                            unavailable={unavailable}
                             value={date}
                             onChange={setDate}
                         />

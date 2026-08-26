@@ -83,7 +83,7 @@ func (r *mutationResolver) DeleteLeaveApplication(ctx context.Context, leaveID s
 }
 
 // ApproveLeaveApplication is the resolver for the approveLeaveApplication field.
-func (r *mutationResolver) ApproveLeaveApplication(ctx context.Context, leaveID string) (*model.LeaveApplication, error) {
+func (r *mutationResolver) ApproveLeaveApplication(ctx context.Context, leaveID string, reschedules []*model.LeaveRescheduleInput) (*model.LeaveApplication, error) {
 	currentUser, err := contexts.CurrentUser(ctx)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
@@ -98,7 +98,23 @@ func (r *mutationResolver) ApproveLeaveApplication(ctx context.Context, leaveID 
 		return nil, fmt.Errorf("invalid leave ID")
 	}
 
-	result, err := r.App.LeaveService.ApproveLeaveApplication(ctx, businessProfile.BusinessID, lid)
+	moves := make([]param.LeaveRescheduleParam, 0, len(reschedules))
+	for _, r := range reschedules {
+		if r == nil {
+			continue
+		}
+		bid, err := parseID(r.BookingID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid booking ID")
+		}
+		sid, err := parseID(r.NewSlotOptionID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid slot option ID")
+		}
+		moves = append(moves, param.LeaveRescheduleParam{BookingID: bid, NewSlotOptionID: sid})
+	}
+
+	result, err := r.App.LeaveService.ApproveLeaveApplication(ctx, businessProfile.BusinessID, lid, moves)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
 	}

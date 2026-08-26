@@ -50,11 +50,11 @@ var _ = Describe("ServiceSlotParam", func() {
 			err := p.Validate()
 			Expect(err).To(HaveOccurred())
 			Expect(err.(errs.ValidationErrors)).To(ContainElement(
-				errs.ValidationError{Field: "serviceOptionIds", Message: "Please complete required fields"},
+				errs.ValidationError{Field: "serviceOptionIds", Message: "Please select a service and its option"},
 			))
 		})
 
-		// UT-047 (Input & Parameter Validation (Domain Rules)).
+		// UT-049 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when start time is not before end time", func() {
 			p := param.ServiceSlotParam{
 				ServiceOptionIDs: []int64{1},
@@ -69,7 +69,7 @@ var _ = Describe("ServiceSlotParam", func() {
 			))
 		})
 
-		// UT-047 (Input & Parameter Validation (Domain Rules)).
+		// UT-049 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when start time equals end time", func() {
 			p := param.ServiceSlotParam{
 				ServiceOptionIDs: []int64{1},
@@ -84,7 +84,7 @@ var _ = Describe("ServiceSlotParam", func() {
 			))
 		})
 
-		// UT-048 (Input & Parameter Validation (Domain Rules)).
+		// UT-050 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when neither date nor days of week are given", func() {
 			p := param.ServiceSlotParam{
 				ServiceOptionIDs: []int64{1},
@@ -98,7 +98,7 @@ var _ = Describe("ServiceSlotParam", func() {
 			))
 		})
 
-		// UT-048 (Input & Parameter Validation (Domain Rules)).
+		// UT-050 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when both date and days of week are given", func() {
 			p := param.ServiceSlotParam{
 				ServiceOptionIDs: []int64{1},
@@ -128,7 +128,7 @@ var _ = Describe("ServiceSlotParam", func() {
 			))
 		})
 
-		// UT-049 (Input & Parameter Validation (Domain Rules)).
+		// UT-051 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when the date and time are in the past", func() {
 			p := param.ServiceSlotParam{
 				ServiceOptionIDs: []int64{1},
@@ -152,7 +152,7 @@ var _ = Describe("ServiceSlotParam", func() {
 			Expect(err).To(HaveOccurred())
 			validationErrs := err.(errs.ValidationErrors)
 			Expect(validationErrs).To(ContainElement(
-				errs.ValidationError{Field: "serviceOptionIds", Message: "Please complete required fields"},
+				errs.ValidationError{Field: "serviceOptionIds", Message: "Please select a service and its option"},
 			))
 			Expect(validationErrs).To(ContainElement(
 				errs.ValidationError{Field: "startTime", Message: "Start time must be before end time"},

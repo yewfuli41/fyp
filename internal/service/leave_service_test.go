@@ -27,6 +27,7 @@ var _ = Describe("LeaveService", func() {
 		serviceSlotRepo *mocks.MockIServiceSlotRepo
 		bookingRepo     *mocks.MockIBookingRepo
 		businessRepo    *mocks.MockIBusinessRepo
+		serviceRepo     *mocks.MockIServiceRepo
 		emailService    *mocks.MockIEmailService
 		leaveSvc        interfaces.ILeaveService
 		futureStart     string
@@ -45,8 +46,9 @@ var _ = Describe("LeaveService", func() {
 		serviceSlotRepo = mocks.NewMockIServiceSlotRepo(GinkgoT())
 		bookingRepo = mocks.NewMockIBookingRepo(GinkgoT())
 		businessRepo = mocks.NewMockIBusinessRepo(GinkgoT())
+		serviceRepo = mocks.NewMockIServiceRepo(GinkgoT())
 		emailService = mocks.NewMockIEmailService(GinkgoT())
-		leaveSvc = service.NewLeaveService(db, leaveRepo, serviceSlotRepo, bookingRepo, businessRepo, emailService)
+		leaveSvc = service.NewLeaveService(db, leaveRepo, serviceSlotRepo, bookingRepo, businessRepo, serviceRepo, emailService)
 
 		futureStart = time.Now().AddDate(0, 0, 7).Format("2006-01-02")
 		futureEnd = time.Now().AddDate(0, 0, 9).Format("2006-01-02")
@@ -65,7 +67,7 @@ var _ = Describe("LeaveService", func() {
 			Expect(result).To(BeNil())
 		})
 
-		// UT-029 (Leave Application Rules).
+		// UT-023 (Leave Application Rules).
 		It("rejects an application overlapping an existing one", func() {
 			p := param.LeaveApplicationParam{StartDate: futureStart, EndDate: futureEnd}
 			leaveRepo.EXPECT().HasOverlappingLeave(ctx, staffID, futureStart, futureEnd).Return(true, nil).Once()
@@ -108,7 +110,7 @@ var _ = Describe("LeaveService", func() {
 	})
 
 	Describe("DeleteLeaveApplication", func() {
-		// UT-030 (Leave Application Rules).
+		// UT-039 (Authorization Testing).
 		It("returns not found when the application doesn't belong to this staff", func() {
 			otherStaff := int64(9)
 			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
@@ -134,7 +136,6 @@ var _ = Describe("LeaveService", func() {
 	})
 
 	Describe("GetBusinessLeaveApplications", func() {
-		// UT-031 (Leave Application Rules).
 		It("attaches affected bookings to pending and approved applications, but not rejected ones", func() {
 			pending := param.LeaveApplicationParam{LeaveID: 1, StaffID: staffID, Status: "pending", StartDate: futureStart, EndDate: futureEnd}
 			approved := param.LeaveApplicationParam{LeaveID: 2, StaffID: staffID, Status: "approved", StartDate: futureStart, EndDate: futureEnd}
@@ -159,18 +160,18 @@ var _ = Describe("LeaveService", func() {
 	})
 
 	Describe("ApproveLeaveApplication", func() {
-		// UT-032 (Leave Application Rules).
+		// UT-024 (Leave Application Rules).
 		It("rejects approving a non-pending application", func() {
 			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
 				Return(&param.LeaveApplicationParam{LeaveID: 100, BusinessID: businessID, Status: "approved"}, nil).Once()
 
-			result, err := leaveSvc.ApproveLeaveApplication(ctx, businessID, 100)
+			result, err := leaveSvc.ApproveLeaveApplication(ctx, businessID, 100, nil)
 			Expect(result).To(BeNil())
 			Expect(err).To(HaveOccurred())
 		})
 
-		// UT-033 (Leave Application Rules).
-		It("approves immediately, leaving a booked slot untouched and unassigning the non-booked one — no replacement picks required", func() {
+		// UT-025 (Leave Application Rules).
+		It("blocks approving while a booked slot has no replacement — nothing is written", func() {
 			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
 				Return(&param.LeaveApplicationParam{LeaveID: 100, StaffID: staffID, BusinessID: businessID, Status: "pending", StartDate: futureStart, EndDate: futureEnd}, nil).Once()
 
@@ -181,9 +182,27 @@ var _ = Describe("LeaveService", func() {
 			serviceSlotRepo.EXPECT().GetAssignedSlotsInRange(ctx, staffID, futureStart, futureEnd).
 				Return([]param.AssignedSlotParam{booked, notBooked}, nil).Once()
 
+			// No transaction is opened at all: the leave stays pending, slot
+			// 301 keeps its staff member, and no customer is moved.
+			result, err := leaveSvc.ApproveLeaveApplication(ctx, businessID, 100, nil)
+
+			Expect(result).To(BeNil())
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve[0].Field).To(Equal("reschedules"))
+		})
+
+		It("approves and frees the staff's slots when none of them is booked", func() {
+			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
+				Return(&param.LeaveApplicationParam{LeaveID: 100, StaffID: staffID, BusinessID: businessID, Status: "pending", StartDate: futureStart, EndDate: futureEnd}, nil).Once()
+
+			startTime := time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC)
+			endTime := time.Date(0, 1, 1, 10, 0, 0, 0, time.UTC)
+			notBooked := param.AssignedSlotParam{ServiceSlotID: 301, Date: futureEnd, StartTime: startTime, EndTime: endTime, HasBooking: false}
+			serviceSlotRepo.EXPECT().GetAssignedSlotsInRange(ctx, staffID, futureStart, futureEnd).
+				Return([]param.AssignedSlotParam{notBooked}, nil).Once()
+
 			dbMock.ExpectBegin()
-			// Slot 300 (booked) gets no ReassignStaff call at all — approving
-			// never touches it; only the non-booked slot 301 is freed.
 			serviceSlotRepo.EXPECT().ReassignStaff(ctx, mock.AnythingOfType("*sql.Tx"), int64(301), businessID, (*int64)(nil)).Return(nil).Once()
 			leaveRepo.EXPECT().UpdateLeaveStatus(ctx, mock.AnythingOfType("*sql.Tx"), int64(100), "approved", (*string)(nil)).Return(nil).Once()
 			dbMock.ExpectCommit()
@@ -191,14 +210,270 @@ var _ = Describe("LeaveService", func() {
 			updated := &param.LeaveApplicationParam{LeaveID: 100, Status: "approved"}
 			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).Return(updated, nil).Once()
 
-			result, err := leaveSvc.ApproveLeaveApplication(ctx, businessID, 100)
+			result, err := leaveSvc.ApproveLeaveApplication(ctx, businessID, 100, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Status).To(Equal("approved"))
+		})
+
+		// Every test below covers the same guarantee from a different angle:
+		// the reschedules an owner picks while settling a leave are held until
+		// the approval itself commits, so a customer is never moved — nor
+		// emailed — for a leave that stays pending.
+		Describe("with reschedules", func() {
+			var pendingLeave *param.LeaveApplicationParam
+			var affectedBooking param.BookingDetailParam
+
+			BeforeEach(func() {
+				pendingLeave = &param.LeaveApplicationParam{
+					LeaveID: 100, StaffID: staffID, BusinessID: businessID, Status: "pending",
+					StartDate: futureStart, EndDate: futureEnd,
+				}
+				affectedBooking = param.BookingDetailParam{
+					BookingID: 200, ServiceSlotID: 300, SlotOptionID: 400, Date: futureStart,
+				}
+			})
+
+			It("moves the booking, frees the vacated slot and approves in one transaction, emailing the customer only after it commits", func() {
+				leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).Return(pendingLeave, nil).Once()
+				bookingRepo.EXPECT().GetBusinessBookings(ctx, businessID, &staffID).
+					Return([]param.BookingDetailParam{affectedBooking}, nil).Once()
+				bookingRepo.EXPECT().SlotOptionIsAvailable(ctx, int64(500)).Return(true, nil).Once()
+				// Owner-managed target, so it is not the leaving staff's own slot.
+				bookingRepo.EXPECT().GetSlotOptionAssignment(ctx, int64(500)).Return((*int64)(nil), futureStart, nil).Once()
+
+				startTime := time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC)
+				endTime := time.Date(0, 1, 1, 10, 0, 0, 0, time.UTC)
+				booked := param.AssignedSlotParam{ServiceSlotID: 300, Date: futureStart, StartTime: startTime, EndTime: endTime, HasBooking: true}
+				serviceSlotRepo.EXPECT().GetAssignedSlotsInRange(ctx, staffID, futureStart, futureEnd).
+					Return([]param.AssignedSlotParam{booked}, nil).Once()
+
+				dbMock.ExpectBegin()
+				bookingRepo.EXPECT().
+					UpdateBookingSlotOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(200), int64(500), "rescheduled").
+					Return(nil).Once()
+				serviceRepo.EXPECT().
+					DropSlotOptionIfExpired(ctx, mock.AnythingOfType("*sql.Tx"), int64(400)).Return(nil).Once()
+				// Slot 300 held the booking we just moved off it, so it is now
+				// empty and gets freed back to owner-managed like any other.
+				serviceSlotRepo.EXPECT().
+					ReassignStaff(ctx, mock.AnythingOfType("*sql.Tx"), int64(300), businessID, (*int64)(nil)).Return(nil).Once()
+				leaveRepo.EXPECT().
+					UpdateLeaveStatus(ctx, mock.AnythingOfType("*sql.Tx"), int64(100), "approved", (*string)(nil)).Return(nil).Once()
+				dbMock.ExpectCommit()
+
+				bookingRepo.EXPECT().GetBookingContext(ctx, int64(200)).Return(&param.BookingContextParam{
+					BookingID: 200, CustomerName: "Dana", CustomerEmail: "dana@example.com", BusinessName: "Salon",
+				}, nil).Once()
+				emailService.EXPECT().
+					SendBookingStatusEmail("dana@example.com", "Dana", "Salon", "rescheduled").Return(nil).Once()
+
+				leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
+					Return(&param.LeaveApplicationParam{LeaveID: 100, Status: "approved"}, nil).Once()
+
+				result, err := leaveSvc.ApproveLeaveApplication(ctx, businessID, 100, []param.LeaveRescheduleParam{
+					{BookingID: 200, NewSlotOptionID: 500},
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.Status).To(Equal("approved"))
+			})
+
+			It("aborts the whole approval before any write when a chosen slot has been taken in the meantime", func() {
+				leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).Return(pendingLeave, nil).Once()
+				bookingRepo.EXPECT().GetBusinessBookings(ctx, businessID, &staffID).
+					Return([]param.BookingDetailParam{affectedBooking}, nil).Once()
+				bookingRepo.EXPECT().SlotOptionIsAvailable(ctx, int64(500)).Return(false, nil).Once()
+
+				// No ExpectBegin: the transaction is never opened, so the leave
+				// is still pending and the booking still sits on its old slot.
+				result, err := leaveSvc.ApproveLeaveApplication(ctx, businessID, 100, []param.LeaveRescheduleParam{
+					{BookingID: 200, NewSlotOptionID: 500},
+				})
+				Expect(result).To(BeNil())
+				ve, ok := err.(errs.ValidationErrors)
+				Expect(ok).To(BeTrue())
+				Expect(ve[0].Field).To(Equal("reschedules"))
+			})
+
+			It("refuses a booking that this leave doesn't actually affect", func() {
+				leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).Return(pendingLeave, nil).Once()
+				bookingRepo.EXPECT().GetBusinessBookings(ctx, businessID, &staffID).
+					Return([]param.BookingDetailParam{affectedBooking}, nil).Once()
+
+				result, err := leaveSvc.ApproveLeaveApplication(ctx, businessID, 100, []param.LeaveRescheduleParam{
+					{BookingID: 999, NewSlotOptionID: 500},
+				})
+				Expect(result).To(BeNil())
+				ve, ok := err.(errs.ValidationErrors)
+				Expect(ok).To(BeTrue())
+				Expect(ve[0].Field).To(Equal("reschedules"))
+			})
+
+			It("refuses to move two bookings onto the same slot", func() {
+				second := param.BookingDetailParam{BookingID: 201, ServiceSlotID: 301, SlotOptionID: 401, Date: futureEnd}
+				leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).Return(pendingLeave, nil).Once()
+				bookingRepo.EXPECT().GetBusinessBookings(ctx, businessID, &staffID).
+					Return([]param.BookingDetailParam{affectedBooking, second}, nil).Once()
+				bookingRepo.EXPECT().SlotOptionIsAvailable(ctx, int64(500)).Return(true, nil).Once()
+				bookingRepo.EXPECT().GetSlotOptionAssignment(ctx, int64(500)).Return((*int64)(nil), futureStart, nil).Once()
+
+				result, err := leaveSvc.ApproveLeaveApplication(ctx, businessID, 100, []param.LeaveRescheduleParam{
+					{BookingID: 200, NewSlotOptionID: 500},
+					{BookingID: 201, NewSlotOptionID: 500},
+				})
+				Expect(result).To(BeNil())
+				ve, ok := err.(errs.ValidationErrors)
+				Expect(ok).To(BeTrue())
+				Expect(ve[0].Field).To(Equal("reschedules"))
+			})
+
+			// UT-027 (Leave Application Rules). The other side of the same
+			// rule: only the leave's own dates are off-limits. A slot the same
+			// staff member covers on a day they are back at work is a
+			// perfectly good replacement, and blocking it would leave the
+			// owner with nowhere to move the customer.
+			It("accepts one of the leaving staff's own slots on a day outside their leave", func() {
+				outsideLeave := time.Now().AddDate(0, 0, 20).Format("2006-01-02")
+
+				leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).Return(pendingLeave, nil).Once()
+				bookingRepo.EXPECT().GetBusinessBookings(ctx, businessID, &staffID).
+					Return([]param.BookingDetailParam{affectedBooking}, nil).Once()
+				bookingRepo.EXPECT().SlotOptionIsAvailable(ctx, int64(500)).Return(true, nil).Once()
+				// Same staff member, but well after the leave ends.
+				bookingRepo.EXPECT().GetSlotOptionAssignment(ctx, int64(500)).
+					Return(&staffID, outsideLeave, nil).Once()
+
+				startTime := time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC)
+				endTime := time.Date(0, 1, 1, 10, 0, 0, 0, time.UTC)
+				booked := param.AssignedSlotParam{ServiceSlotID: 300, Date: futureStart, StartTime: startTime, EndTime: endTime, HasBooking: true}
+				serviceSlotRepo.EXPECT().GetAssignedSlotsInRange(ctx, staffID, futureStart, futureEnd).
+					Return([]param.AssignedSlotParam{booked}, nil).Once()
+
+				dbMock.ExpectBegin()
+				bookingRepo.EXPECT().
+					UpdateBookingSlotOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(200), int64(500), "rescheduled").
+					Return(nil).Once()
+				serviceRepo.EXPECT().
+					DropSlotOptionIfExpired(ctx, mock.AnythingOfType("*sql.Tx"), int64(400)).Return(nil).Once()
+				serviceSlotRepo.EXPECT().
+					ReassignStaff(ctx, mock.AnythingOfType("*sql.Tx"), int64(300), businessID, (*int64)(nil)).Return(nil).Once()
+				leaveRepo.EXPECT().
+					UpdateLeaveStatus(ctx, mock.AnythingOfType("*sql.Tx"), int64(100), "approved", (*string)(nil)).Return(nil).Once()
+				dbMock.ExpectCommit()
+
+				bookingRepo.EXPECT().GetBookingContext(ctx, int64(200)).Return(&param.BookingContextParam{
+					BookingID: 200, CustomerName: "Dana", CustomerEmail: "dana@example.com", BusinessName: "Salon",
+				}, nil).Once()
+				emailService.EXPECT().
+					SendBookingStatusEmail("dana@example.com", "Dana", "Salon", "rescheduled").Return(nil).Once()
+
+				leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
+					Return(&param.LeaveApplicationParam{LeaveID: 100, Status: "approved"}, nil).Once()
+
+				result, err := leaveSvc.ApproveLeaveApplication(ctx, businessID, 100, []param.LeaveRescheduleParam{
+					{BookingID: 200, NewSlotOptionID: 500},
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.Status).To(Equal("approved"))
+			})
+
+			// UT-027 (Leave Application Rules). The picker already hides these,
+			// but that's a client-side rule — the server must refuse them too.
+			It("refuses a slot belonging to the leaving staff on a day inside their own leave", func() {
+				leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).Return(pendingLeave, nil).Once()
+				bookingRepo.EXPECT().GetBusinessBookings(ctx, businessID, &staffID).
+					Return([]param.BookingDetailParam{affectedBooking}, nil).Once()
+				bookingRepo.EXPECT().SlotOptionIsAvailable(ctx, int64(500)).Return(true, nil).Once()
+				// Free, but it's this same staff member's slot on a leave day —
+				// moving the customer there leaves nobody to serve them.
+				bookingRepo.EXPECT().GetSlotOptionAssignment(ctx, int64(500)).
+					Return(&staffID, futureEnd, nil).Once()
+
+				// No ExpectBegin: refused before the transaction is opened.
+				result, err := leaveSvc.ApproveLeaveApplication(ctx, businessID, 100, []param.LeaveRescheduleParam{
+					{BookingID: 200, NewSlotOptionID: 500},
+				})
+				Expect(result).To(BeNil())
+				ve, ok := err.(errs.ValidationErrors)
+				Expect(ok).To(BeTrue())
+				Expect(ve[0].Field).To(Equal("reschedules"))
+				Expect(ve[0].Message).To(ContainSubstring("covered by this leave"))
+			})
+
+			// A slot of theirs on a date the leave doesn't cover is fine —
+			// they're only away for the range they asked for.
+			It("allows the leaving staff's own slot on a date outside the leave", func() {
+				outside := "2030-01-01"
+				leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).Return(pendingLeave, nil).Once()
+				bookingRepo.EXPECT().GetBusinessBookings(ctx, businessID, &staffID).
+					Return([]param.BookingDetailParam{affectedBooking}, nil).Once()
+				bookingRepo.EXPECT().SlotOptionIsAvailable(ctx, int64(500)).Return(true, nil).Once()
+				bookingRepo.EXPECT().GetSlotOptionAssignment(ctx, int64(500)).
+					Return(&staffID, outside, nil).Once()
+				serviceSlotRepo.EXPECT().GetAssignedSlotsInRange(ctx, staffID, futureStart, futureEnd).
+					Return([]param.AssignedSlotParam{}, nil).Once()
+
+				dbMock.ExpectBegin()
+				bookingRepo.EXPECT().
+					UpdateBookingSlotOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(200), int64(500), "rescheduled").
+					Return(nil).Once()
+				serviceRepo.EXPECT().
+					DropSlotOptionIfExpired(ctx, mock.AnythingOfType("*sql.Tx"), int64(400)).Return(nil).Once()
+				leaveRepo.EXPECT().
+					UpdateLeaveStatus(ctx, mock.AnythingOfType("*sql.Tx"), int64(100), "approved", (*string)(nil)).Return(nil).Once()
+				dbMock.ExpectCommit()
+
+				bookingRepo.EXPECT().GetBookingContext(ctx, int64(200)).Return(&param.BookingContextParam{
+					BookingID: 200, CustomerName: "Dana", CustomerEmail: "dana@example.com", BusinessName: "Salon",
+				}, nil).Once()
+				emailService.EXPECT().
+					SendBookingStatusEmail("dana@example.com", "Dana", "Salon", "rescheduled").Return(nil).Once()
+				leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
+					Return(&param.LeaveApplicationParam{LeaveID: 100, Status: "approved"}, nil).Once()
+
+				result, err := leaveSvc.ApproveLeaveApplication(ctx, businessID, 100, []param.LeaveRescheduleParam{
+					{BookingID: 200, NewSlotOptionID: 500},
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.Status).To(Equal("approved"))
+			})
+
+			It("rolls the whole approval back — leave included — when a later booking in the batch fails to move", func() {
+				second := param.BookingDetailParam{BookingID: 201, ServiceSlotID: 301, SlotOptionID: 401, Date: futureEnd}
+				leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).Return(pendingLeave, nil).Once()
+				bookingRepo.EXPECT().GetBusinessBookings(ctx, businessID, &staffID).
+					Return([]param.BookingDetailParam{affectedBooking, second}, nil).Once()
+				bookingRepo.EXPECT().SlotOptionIsAvailable(ctx, int64(500)).Return(true, nil).Once()
+				bookingRepo.EXPECT().SlotOptionIsAvailable(ctx, int64(501)).Return(true, nil).Once()
+				bookingRepo.EXPECT().GetSlotOptionAssignment(ctx, int64(500)).Return((*int64)(nil), futureStart, nil).Once()
+				bookingRepo.EXPECT().GetSlotOptionAssignment(ctx, int64(501)).Return((*int64)(nil), futureEnd, nil).Once()
+				serviceSlotRepo.EXPECT().GetAssignedSlotsInRange(ctx, staffID, futureStart, futureEnd).
+					Return([]param.AssignedSlotParam{}, nil).Once()
+
+				dbMock.ExpectBegin()
+				bookingRepo.EXPECT().
+					UpdateBookingSlotOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(200), int64(500), "rescheduled").
+					Return(nil).Once()
+				serviceRepo.EXPECT().
+					DropSlotOptionIfExpired(ctx, mock.AnythingOfType("*sql.Tx"), int64(400)).Return(nil).Once()
+				// The second move blows up, so the first one — and the approval
+				// itself — must go back with it. No email is ever sent.
+				bookingRepo.EXPECT().
+					UpdateBookingSlotOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(201), int64(501), "rescheduled").
+					Return(fmt.Errorf("slot vanished")).Once()
+				dbMock.ExpectRollback()
+
+				result, err := leaveSvc.ApproveLeaveApplication(ctx, businessID, 100, []param.LeaveRescheduleParam{
+					{BookingID: 200, NewSlotOptionID: 500},
+					{BookingID: 201, NewSlotOptionID: 501},
+				})
+				Expect(result).To(BeNil())
+				Expect(err).To(MatchError(ContainSubstring("slot vanished")))
+			})
 		})
 	})
 
 	Describe("RejectLeaveApplication", func() {
-		// UT-034 (Leave Application Rules).
+		// UT-026 (Leave Application Rules).
 		It("requires a remark", func() {
 			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
 				Return(&param.LeaveApplicationParam{LeaveID: 100, BusinessID: businessID, Status: "pending"}, nil).Once()
@@ -228,7 +503,7 @@ var _ = Describe("LeaveService", func() {
 			Expect(result.Status).To(Equal("rejected"))
 		})
 
-		// UT-034 (Leave Application Rules).
+		// UT-026 (Leave Application Rules).
 		It("also reverses an already-approved application (no separate cancel)", func() {
 			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).
 				Return(&param.LeaveApplicationParam{LeaveID: 100, BusinessID: businessID, Status: "approved"}, nil).Once()
@@ -295,7 +570,7 @@ var _ = Describe("LeaveService", func() {
 			Expect(err).To(MatchError("db error"))
 		})
 
-		// UT-030 (Leave Application Rules).
+		// UT-039 (Authorization Testing).
 		It("returns not found when the application doesn't belong to this staff", func() {
 			otherStaff := int64(9)
 			leaveRepo.EXPECT().GetLeaveApplicationByID(ctx, int64(100)).

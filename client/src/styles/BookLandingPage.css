@@ -22,7 +22,9 @@
     letter-spacing: -1.6px;
     margin-bottom: 0.75rem;
     color: var(--bk-text);
-    background: var(--bk-gradient);
+    /* Same gradient-text treatment as the "local services in seconds" accent
+       on the home page hero (see .home-hero h1 .accent in HomePage.css). */
+    background: linear-gradient(100deg, var(--bk-primary) 10%, var(--bk-violet) 55%, var(--bk-coral) 95%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -112,7 +114,8 @@
     padding-inline: 2.1rem;
     font-weight: 600;
     border-radius: 999px;
-    background: var(--bk-gradient);
+    /* Blue-to-violet — the purple half of the "BookIt" title's gradient. */
+    background: linear-gradient(135deg, var(--bk-primary), var(--bk-violet));
     border: none;
     box-shadow: var(--bk-shadow-sm);
     transition: box-shadow 0.2s ease, transform 0.15s ease;
@@ -158,36 +161,33 @@
     font-weight: 700;
 }
 
-.book-suggestion-desc {
+.book-suggestion-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--bk-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    background: var(--bk-gradient);
+    flex-shrink: 0;
+    object-fit: cover;
+    overflow: hidden;
+}
+
+.book-suggestion-detail {
     font-weight: 400;
     font-size: 0.82rem;
     color: var(--bk-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
     margin-top: 0.15rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.book-suggestion-options {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.35rem;
-    margin-top: 0.4rem;
-}
-
-.book-suggestion-option-pill {
-    background: var(--bk-surface-muted);
-    border: 1px solid var(--bk-border);
-    color: var(--bk-text-muted);
-    font-size: 0.74rem;
-    font-weight: 600;
-    padding: 0.15rem 0.55rem;
-    border-radius: 999px;
-}
-
-.book-autocomplete li:hover .book-suggestion-option-pill {
-    background: var(--bk-surface);
 }
 
 /* Generic reusable search field (toolbar contexts, smaller than the hero's) */

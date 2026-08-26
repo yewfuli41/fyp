@@ -299,7 +299,10 @@ export function teardown(data) {
 
   const activeBySlot = {};
   for (const b of bookings) {
-    if (b.status === 'cancelled' || b.status === 'rejected') continue;
+    // BookingStatus is a GraphQL enum, so it comes back upper-case
+    // (CANCELLED / REJECTED) — compare in one case or nothing is skipped.
+    const status = String(b.status).toUpperCase();
+    if (status === 'CANCELLED' || status === 'REJECTED') continue;
     activeBySlot[b.slotOptionId] = (activeBySlot[b.slotOptionId] || 0) + 1;
   }
 

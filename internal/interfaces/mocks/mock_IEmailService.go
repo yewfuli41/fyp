@@ -318,16 +318,16 @@ func (_c *MockIEmailService_SendStaffReassignedEmail_Call) RunAndReturn(run func
 }
 
 // SendStaffWelcomeEmail provides a mock function for the type MockIEmailService
-func (_mock *MockIEmailService) SendStaffWelcomeEmail(toEmail string) error {
-	ret := _mock.Called(toEmail)
+func (_mock *MockIEmailService) SendStaffWelcomeEmail(toEmail string, tempPassword string) error {
+	ret := _mock.Called(toEmail, tempPassword)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SendStaffWelcomeEmail")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(string) error); ok {
-		r0 = returnFunc(toEmail)
+	if returnFunc, ok := ret.Get(0).(func(string, string) error); ok {
+		r0 = returnFunc(toEmail, tempPassword)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -341,18 +341,24 @@ type MockIEmailService_SendStaffWelcomeEmail_Call struct {
 
 // SendStaffWelcomeEmail is a helper method to define mock.On call
 //   - toEmail string
-func (_e *MockIEmailService_Expecter) SendStaffWelcomeEmail(toEmail interface{}) *MockIEmailService_SendStaffWelcomeEmail_Call {
-	return &MockIEmailService_SendStaffWelcomeEmail_Call{Call: _e.mock.On("SendStaffWelcomeEmail", toEmail)}
+//   - tempPassword string
+func (_e *MockIEmailService_Expecter) SendStaffWelcomeEmail(toEmail interface{}, tempPassword interface{}) *MockIEmailService_SendStaffWelcomeEmail_Call {
+	return &MockIEmailService_SendStaffWelcomeEmail_Call{Call: _e.mock.On("SendStaffWelcomeEmail", toEmail, tempPassword)}
 }
 
-func (_c *MockIEmailService_SendStaffWelcomeEmail_Call) Run(run func(toEmail string)) *MockIEmailService_SendStaffWelcomeEmail_Call {
+func (_c *MockIEmailService_SendStaffWelcomeEmail_Call) Run(run func(toEmail string, tempPassword string)) *MockIEmailService_SendStaffWelcomeEmail_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 string
 		if args[0] != nil {
 			arg0 = args[0].(string)
 		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
 		run(
 			arg0,
+			arg1,
 		)
 	})
 	return _c
@@ -363,7 +369,7 @@ func (_c *MockIEmailService_SendStaffWelcomeEmail_Call) Return(err error) *MockI
 	return _c
 }
 
-func (_c *MockIEmailService_SendStaffWelcomeEmail_Call) RunAndReturn(run func(toEmail string) error) *MockIEmailService_SendStaffWelcomeEmail_Call {
+func (_c *MockIEmailService_SendStaffWelcomeEmail_Call) RunAndReturn(run func(toEmail string, tempPassword string) error) *MockIEmailService_SendStaffWelcomeEmail_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -4,7 +4,7 @@ import type { Service } from "../services/ServiceService";
 import type { Staff } from "../services/StaffService";
 import type { ServiceSlotInput } from "../services/ServiceSlotService";
 import {
-    cap, computeTimeOptions, defaultOptionId, isOptionSelectableFor, nowHHMM, todayISO, weekdayName,
+    cap, computeTimeOptions, defaultOptionId, isOptionSelectableFor, nowHHMM, todayISO, tomorrowISO, weekdayName,
     type WorkingHour,
 } from "../utils/serviceSlotHelpers";
 import { DAYS_OF_WEEK } from "../utils/time";
@@ -45,13 +45,31 @@ interface AddServiceSlotModalProps {
     // Staff field is hidden — the backend forces the slot onto this staff ID
     // regardless of what's in `form.staffId`.
     lockedStaffId?: string;
+    // Default length, in weeks, of a recurring series when no end date is
+    // given — shown in the note under the picker so the owner knows what
+    // leaving it blank produces. null while loading or if the lookup failed.
+    recurringDefaultWeeks?: number | null;
 }
 
 export default function AddServiceSlotModal({
     show, onHide, formError, fieldErrors, setFieldErrors, form, setForm, formServiceId, setFormServiceId,
     dates, setDates, ranges, setRanges, services, staff, workingHours, lines, onSubmit, isSaving, lockedStaffId,
+    recurringDefaultWeeks,
 }: AddServiceSlotModalProps) {
     const filledDates = dates.filter(Boolean);
+
+    // Deliberately never pre-filled: the end date is optional, and seeding it
+    // would make it read as a choice the owner has already made. Blank means
+    // "use the server's default length" — see the note under the picker.
+    //
+    // Roughly how long the series runs, when a date has been picked.
+    const recurringWeeks = useMemo(() => {
+        if (!form.recurringEndDate) return null;
+        const end = new Date(`${form.recurringEndDate}T00:00:00`);
+        if (isNaN(end.getTime())) return null;
+        const days = Math.round((end.getTime() - new Date(`${todayISO()}T00:00:00`).getTime()) / 86400000);
+        return days < 0 ? null : Math.max(1, Math.round(days / 7));
+    }, [form.recurringEndDate]);
 
     // An option/service must be valid on EVERY selected date, since all
     // dates share the same serviceOptionIds when the slots are created.
@@ -210,13 +228,34 @@ export default function AddServiceSlotModal({
                             </div>
                         ))}
                     </div>
+                    {form.daysOfWeek.length > 0 && (
+                        <div className="mt-3">
+                            <Form.Label className="fw-semibold mb-1">Repeat until</Form.Label>
+                            <Form.Control
+                                type="date"
+                                min={todayISO()}
+                                value={form.recurringEndDate ?? ""}
+                                isInvalid={!!fieldErrors.recurringEndDate}
+                                onChange={e => setForm(f => ({ ...f, recurringEndDate: e.target.value }))}
+                            />
+                            <Form.Control.Feedback type="invalid">{fieldErrors.recurringEndDate}</Form.Control.Feedback>
+                            <div className="text-muted small mt-1">
+                                {recurringWeeks != null
+                                    ? `Slots are generated up to this date (about ${recurringWeeks} week${recurringWeeks === 1 ? "" : "s"}).`
+                                    : recurringDefaultWeeks != null
+                                        ? `By default, slots are generated for about ${recurringDefaultWeeks} weeks. You can select an earlier or later end date before saving.`
+                                        : "By default, slots are generated for a fixed number of weeks. You can select an earlier or later end date before saving."}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="text-center fw-bold my-2">OR</div>
                     {dates.map((d, i) => (
                         <div key={i} className="d-flex gap-2 mb-2 align-items-center">
                             <Form.Control
                                 type="date"
                                 value={d}
-                                min={todayISO()}
+                                min={tomorrowISO()}
                                 disabled={form.daysOfWeek.length > 0}
                                 onChange={e => setDates(ds => ds.map((x, idx) => (idx === i ? e.target.value : x)))}
                             />

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"fyp/database"
 	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
@@ -171,12 +172,12 @@ var _ = Describe("BusinessService", func() {
 			Expect(err).To(MatchError("working hours error"))
 		})
 
-		// UT-040 (Business Profile Rules).
+		// UT-033 (Business Profile Rules).
 		It("returns an error when the user already has a business profile", func() {
 			staffRepo.EXPECT().GetStaffByUserID(ctx, businessParam.OwnerUserID).Return(nil, sql.ErrNoRows).Once()
 			dbMock.ExpectBegin()
 
-			duplicateErr := newUniqueViolation("business_profiles_owner_user_id_key")
+			duplicateErr := newUniqueViolation(database.ConstraintBusinessOwner)
 			businessRepo.EXPECT().
 				InsertBusinessProfile(ctx, mock.AnythingOfType("*sql.Tx"), businessParam).
 				Return(nil, duplicateErr).
@@ -194,7 +195,7 @@ var _ = Describe("BusinessService", func() {
 			staffRepo.EXPECT().GetStaffByUserID(ctx, businessParam.OwnerUserID).Return(nil, sql.ErrNoRows).Once()
 			dbMock.ExpectBegin()
 
-			fkErr := &pq.Error{Code: "23503", Constraint: "business_profiles_owner_user_id_fkey"}
+			fkErr := &pq.Error{Code: "23503", Constraint: database.ConstraintBusinessOwnerRef}
 			businessRepo.EXPECT().
 				InsertBusinessProfile(ctx, mock.AnythingOfType("*sql.Tx"), businessParam).
 				Return(nil, fkErr).
@@ -208,7 +209,7 @@ var _ = Describe("BusinessService", func() {
 			Expect(err.Error()).To(Equal("Unable to register business profile. Please log in again."))
 		})
 
-		// UT-042 (Account Role Exclusivity Rules).
+		// UT-041 (Account Role Exclusivity Rules).
 		It("rejects registration when the user is already a staff member", func() {
 			staffRepo.EXPECT().
 				GetStaffByUserID(ctx, businessParam.OwnerUserID).
@@ -356,7 +357,7 @@ var _ = Describe("BusinessService", func() {
 			Expect(err).To(MatchError("delete error"))
 		})
 
-		// UT-041 (Business Profile Rules).
+		// UT-034 (Business Profile Rules).
 		It("rejects the update when an existing owner-managed slot would fall outside the new hours", func() {
 			dbMock.ExpectBegin()
 

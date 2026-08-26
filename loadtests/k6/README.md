@@ -117,3 +117,71 @@ NFR-1 teardown verification — active bookings per target slot:
   slot 1238: 1 active booking(s) OK
 RESULT: PASS — every contended slot ended up with exactly one active booking.
 ```
+
+---
+
+# Leave-approval atomicity race — `leave_approval_race.js`
+
+The two scripts above race customers against each other. This one races the
+**business owner's leave approval** against ordinary customers.
+
+Approving a leave is all-or-nothing: every booking the leave affects has to be
+given a replacement time, and either all of those moves land together with the
+approval or none of them do (`ApproveLeaveApplication` in
+`internal/service/leaveService.go`). `leave_service_test.go` proves that
+sequentially against mocks — but the way it actually breaks in production is a
+race: while the owner is approving, a customer books one of the very slots the
+owner picked as a replacement.
+
+## What it does
+
+1. **Setup**: creates an owner, a business, a service, and a staff member; puts
+   `AFFECTED` (default 2) customer bookings on that staff member's slots for a
+   future day; creates one owner-managed replacement slot per booking on the
+   same day; has the staff member apply for leave covering it; and signs up
+   `RACERS_PER_SLOT` (default 10) customers per replacement slot.
+2. **Race**: the owner's `approveLeaveApplication` (settling both bookings in
+   one call) fires at the same instant as all `AFFECTED × RACERS_PER_SLOT`
+   customers calling `createBooking` on the replacement slots — 21 concurrent
+   requests by default.
+3. **Assertion** (in `teardown`, read back from stored data): whoever lost had
+   to lose cleanly. If the leave ended up `APPROVED`, every affected booking
+   must sit on its replacement slot. If it is still `PENDING`, every affected
+   booking must still sit on its **original** slot — a leave left pending with
+   even one customer already moved is the violation this test exists to catch.
+   Each replacement slot must also hold at most one active booking.
+
+## Running it
+
+```bash
+k6 run loadtests/k6/leave_approval_race.js
+
+# more affected bookings and heavier contention
+AFFECTED=3 RACERS_PER_SLOT=15 k6 run loadtests/k6/leave_approval_race.js
+```
+
+Same prerequisites as above — a running server pointed at a disposable/test
+database. This one also creates a staff account and a leave application.
+
+A passing run prints the client-side tally plus the independent teardown check:
+
+```
+Leave-approval atomicity race summary
+--------------------------------------
+Affected bookings settled in one approval: 2
+Racing customers per replacement slot:     10
+Total concurrent requests:                 21  (1 approval + 20 bookings)
+Approval went through:                     1
+Approval cleanly refused:                  0
+Racing bookings that landed:               0
+Racing bookings cleanly rejected:          20
+Unexpected errors:                         0  (expected: 0)
+CLIENT-SIDE RESULT: PASS — the approval won, cleanly.
+
+Leave-approval race verification — leave ended up APPROVED:
+  booking 4321: on slot option 987 (replacement) OK
+  booking 4322: on slot option 988 (replacement) OK
+  replacement slot option 987: 1 active booking(s) OK
+  replacement slot option 988: 1 active booking(s) OK
+RESULT: PASS — the approval won and every affected booking moved with it.
+```

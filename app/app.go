@@ -19,6 +19,10 @@ type App struct {
 	BookingService     interfaces.IBookingService
 	LeaveService       interfaces.ILeaveService
 	AnalyticsService   interfaces.IAnalyticsService
+	// Surfaced so the API can tell the UI how far ahead recurring slots are
+	// generated, rather than the client hard-coding a number that could drift
+	// from the one generation actually uses.
+	ServiceSlotConfig config.ServiceSlotConfig
 }
 
 func NewApp(db *sql.DB, cfg *config.Config) *App {
@@ -38,7 +42,7 @@ func NewApp(db *sql.DB, cfg *config.Config) *App {
 	leaveRepo := repository.NewLeaveRepo(db)
 	serviceSlotService := service.NewServiceSlotService(db, serviceSlotRepo, serviceRepo, leaveRepo, cfg.ServiceSlot, emailService)
 	bookingService := service.NewBookingService(db, bookingRepo, emailService, serviceRepo)
-	leaveService := service.NewLeaveService(db, leaveRepo, serviceSlotRepo, bookingRepo, businessRepo, emailService)
+	leaveService := service.NewLeaveService(db, leaveRepo, serviceSlotRepo, bookingRepo, businessRepo, serviceRepo, emailService)
 	analyticsRepo := repository.NewAnalyticsRepo(db)
 	analyticsService := service.NewAnalyticsService(analyticsRepo)
 	return &App{
@@ -52,5 +56,6 @@ func NewApp(db *sql.DB, cfg *config.Config) *App {
 		BookingService:     bookingService,
 		LeaveService:       leaveService,
 		AnalyticsService:   analyticsService,
+		ServiceSlotConfig:  cfg.ServiceSlot,
 	}
 }

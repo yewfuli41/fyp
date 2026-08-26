@@ -34,6 +34,12 @@ export default function DashboardCancellationAnalysis({
     // behind the cancelled/rejected bookings, not just how many.
     const byStaff = analysis?.byStaff ?? [];
 
+    // Headline totals for the same customer-vs-staff split the By staff
+    // chart breaks down — byStaff covers every cancellation/rejection in the
+    // range, so summing its two columns gives each side's total.
+    const customerTotal = byStaff.reduce((sum, s) => sum + s.customerCount, 0);
+    const staffTotal = byStaff.reduce((sum, s) => sum + s.staffCount, 0);
+
     return (
         <Card className="dashboard-card">
             <Card.Body>
@@ -67,58 +73,21 @@ export default function DashboardCancellationAnalysis({
                 ) : (
                     <>
                         <Row className="g-3 mb-3 mt-1">
-                            <Col xs={6} md={4}>
+                            <Col xs={6}>
                                 <div className="dashboard-stat-tile">
-                                    <div className="dashboard-stat-value">{analysis.totalCancelled}</div>
-                                    <div className="dashboard-stat-label">Cancelled</div>
+                                    <div className="dashboard-stat-value">{customerTotal}</div>
+                                    <div className="dashboard-stat-label">Cancelled by customer</div>
                                 </div>
                             </Col>
-                            <Col xs={6} md={4}>
+                            <Col xs={6}>
                                 <div className="dashboard-stat-tile">
-                                    <div className="dashboard-stat-value">{analysis.totalRejected}</div>
-                                    <div className="dashboard-stat-label">Rejected</div>
-                                </div>
-                            </Col>
-                            <Col xs={12} md={4}>
-                                <div className="dashboard-stat-tile">
-                                    <div className="dashboard-stat-value">{(analysis.cancelledOrRejectedRate * 100).toFixed(1)}%</div>
-                                    <div className="dashboard-stat-label">Cancelled + rejected rate</div>
+                                    <div className="dashboard-stat-value">{staffTotal}</div>
+                                    <div className="dashboard-stat-label">Cancelled/rejected by staff</div>
                                 </div>
                             </Col>
                         </Row>
 
-                        <div className="dashboard-subheading">By service</div>
-                        {byService.length === 0 ? (
-                            <div className="dashboard-empty">No cancellations or rejections in this range.</div>
-                        ) : (
-                            <ResponsiveContainer width="100%" height={Math.max(140, byService.length * 40)}>
-                                <BarChart data={byService} layout="vertical" margin={{ top: 4, right: 24, left: 0, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" horizontal={false} />
-                                    <XAxis
-                                        type="number"
-                                        allowDecimals={false}
-                                        tick={{ fontSize: 12, fill: "var(--chart-muted)" }}
-                                        axisLine={{ stroke: "var(--chart-axis)" }}
-                                        tickLine={false}
-                                    />
-                                    <YAxis
-                                        type="category"
-                                        dataKey="serviceName"
-                                        width={120}
-                                        tick={{ fontSize: 12, fill: "var(--chart-text-secondary)" }}
-                                        axisLine={false}
-                                        tickLine={false}
-                                    />
-                                    <Tooltip
-                                        formatter={value => [String(value), "Cancelled + rejected"]}
-                                        contentStyle={{ background: "var(--chart-surface)", border: "1px solid var(--chart-grid)", borderRadius: 8, fontSize: 13 }}
-                                    />
-                                    <Bar dataKey="count" fill="var(--series-8)" radius={[0, 4, 4, 0]} maxBarSize={20} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        )}
-
-                        <div className="dashboard-subheading mt-4">By staff</div>
+                        <div className="dashboard-subheading">By staff</div>
                         {byStaff.length === 0 ? (
                             <div className="dashboard-empty">No cancellations or rejections in this range.</div>
                         ) : (
@@ -152,6 +121,37 @@ export default function DashboardCancellationAnalysis({
                                         dataKey="staffCount" name="Cancelled/rejected by staff" stackId="decided"
                                         fill="var(--series-8)" radius={[0, 4, 4, 0]} maxBarSize={20}
                                     />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        )}
+
+                        <div className="dashboard-subheading mt-4">By service</div>
+                        {byService.length === 0 ? (
+                            <div className="dashboard-empty">No cancellations or rejections in this range.</div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height={Math.max(140, byService.length * 40)}>
+                                <BarChart data={byService} layout="vertical" margin={{ top: 4, right: 24, left: 0, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" horizontal={false} />
+                                    <XAxis
+                                        type="number"
+                                        allowDecimals={false}
+                                        tick={{ fontSize: 12, fill: "var(--chart-muted)" }}
+                                        axisLine={{ stroke: "var(--chart-axis)" }}
+                                        tickLine={false}
+                                    />
+                                    <YAxis
+                                        type="category"
+                                        dataKey="serviceName"
+                                        width={120}
+                                        tick={{ fontSize: 12, fill: "var(--chart-text-secondary)" }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <Tooltip
+                                        formatter={value => [String(value), "Cancelled + rejected"]}
+                                        contentStyle={{ background: "var(--chart-surface)", border: "1px solid var(--chart-grid)", borderRadius: 8, fontSize: 13 }}
+                                    />
+                                    <Bar dataKey="count" fill="var(--series-8)" radius={[0, 4, 4, 0]} maxBarSize={20} />
                                 </BarChart>
                             </ResponsiveContainer>
                         )}

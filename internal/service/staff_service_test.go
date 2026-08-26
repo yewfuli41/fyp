@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"fyp/database"
 	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/internal/interfaces"
@@ -60,7 +61,7 @@ var _ = Describe("StaffService working hours", func() {
 	})
 
 	Describe("GetStaffHoursConflicts", func() {
-		// UT-022 (Staff Scheduling & Working-Hour Rules).
+		// UT-019 (Staff Scheduling & Working-Hour Rules).
 		It("returns every slot — booked and unbooked — that falls outside the proposed hours", func() {
 			newHours := []param.WorkingHourParam{
 				{Day: "monday", StartTime: time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC), EndTime: time.Date(0, 1, 1, 12, 0, 0, 0, time.UTC)},
@@ -100,7 +101,7 @@ var _ = Describe("StaffService working hours", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		// UT-023 (Staff Scheduling & Working-Hour Rules).
+		// UT-020 (Staff Scheduling & Working-Hour Rules).
 		It("rejects hours outside the business's own hours", func() {
 			newHours := []param.WorkingHourParam{
 				{Day: "monday", StartTime: time.Date(0, 1, 1, 6, 0, 0, 0, time.UTC), EndTime: time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC)},
@@ -115,7 +116,7 @@ var _ = Describe("StaffService working hours", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		// UT-024 (Staff Scheduling & Working-Hour Rules).
+		// UT-021 (Staff Scheduling & Working-Hour Rules).
 		It("rolls back when a booked slot outside the new hours has no reassignment", func() {
 			newHours := []param.WorkingHourParam{
 				{Day: "monday", StartTime: time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC), EndTime: time.Date(0, 1, 1, 12, 0, 0, 0, time.UTC)},
@@ -144,7 +145,7 @@ var _ = Describe("StaffService working hours", func() {
 			Expect(ve[0].Field).To(Equal("reassignments"))
 		})
 
-		// UT-024 (Staff Scheduling & Working-Hour Rules).
+		// UT-021 (Staff Scheduling & Working-Hour Rules).
 		It("reassigns the booked slot, unassigns the non-booked one, and saves the new hours", func() {
 			newHours := []param.WorkingHourParam{
 				{Day: "monday", StartTime: time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC), EndTime: time.Date(0, 1, 1, 12, 0, 0, 0, time.UTC)},
@@ -240,12 +241,12 @@ var _ = Describe("StaffService staff management", func() {
 		}
 
 		validStaff = param.StaffParam{
-			BusinessID:          businessID,
-			StaffName:           "Jane Doe",
-			StaffEmail:          "jane@example.com",
-			StaffContactNumber:  "0123456789",
-			Position:            "Stylist",
-			Password:            "password123",
+			BusinessID:         businessID,
+			StaffName:          "Jane Doe",
+			StaffEmail:         "jane@example.com",
+			StaffContactNumber: "0123456789",
+			Position:           "Stylist",
+			Password:           "password123",
 			WorkingHours: []param.WorkingHourParam{
 				{Day: "monday", StartTime: time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC), EndTime: time.Date(0, 1, 1, 17, 0, 0, 0, time.UTC)},
 			},
@@ -267,7 +268,7 @@ var _ = Describe("StaffService staff management", func() {
 			Expect(ok).To(BeTrue())
 		})
 
-		// UT-025 (Staff Scheduling & Working-Hour Rules).
+		// UT-043 (Account Role Exclusivity Rules).
 		It("rejects a staff email matching the owner's own email", func() {
 			businessRepo.EXPECT().BusinessEmailExists(ctx, validStaff.StaffEmail).Return(false, nil).Once()
 
@@ -278,7 +279,7 @@ var _ = Describe("StaffService staff management", func() {
 			Expect(ve[0].Field).To(Equal("staffEmail"))
 		})
 
-		// UT-023 (Staff Scheduling & Working-Hour Rules).
+		// UT-020 (Staff Scheduling & Working-Hour Rules).
 		It("rejects staff working hours outside business working hours", func() {
 			outside := validStaff
 			outside.WorkingHours = []param.WorkingHourParam{
@@ -292,7 +293,7 @@ var _ = Describe("StaffService staff management", func() {
 			Expect(ok).To(BeTrue())
 		})
 
-		// UT-025 (Staff Scheduling & Working-Hour Rules).
+		// UT-043 (Account Role Exclusivity Rules).
 		It("rejects a staff email already used as a business email", func() {
 			businessRepo.EXPECT().BusinessEmailExists(ctx, validStaff.StaffEmail).Return(true, nil).Once()
 
@@ -329,7 +330,7 @@ var _ = Describe("StaffService staff management", func() {
 			})).Return(nil).Once()
 			dbMock.ExpectCommit()
 
-			emailService.EXPECT().SendStaffWelcomeEmail(validStaff.StaffEmail).Return(nil).Once()
+			emailService.EXPECT().SendStaffWelcomeEmail(validStaff.StaffEmail, validStaff.Password).Return(nil).Once()
 
 			err := staffSvc.RegisterStaff(ctx, ownerParam, validStaff, param.AuthUserParam{Email: "owner@example.com"})
 			Expect(err).NotTo(HaveOccurred())
@@ -354,7 +355,7 @@ var _ = Describe("StaffService staff management", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		// UT-026 (Staff Scheduling & Working-Hour Rules).
+		// UT-044 (Account Role Exclusivity Rules).
 		It("rolls back and returns a validation error when the staff already has a profile", func() {
 			businessRepo.EXPECT().BusinessEmailExists(ctx, validStaff.StaffEmail).Return(false, nil).Once()
 
@@ -362,7 +363,7 @@ var _ = Describe("StaffService staff management", func() {
 			authRepo.EXPECT().GetUser(ctx, validStaff.StaffEmail).Return(&param.AuthUserParam{UserID: userID}, nil).Once()
 			businessRepo.EXPECT().GetBusinessProfileByOwnerID(ctx, userID).Return(nil, sql.ErrNoRows).Once()
 			staffRepo.EXPECT().InsertStaff(ctx, mock.AnythingOfType("*sql.Tx"), mock.AnythingOfType("param.StaffParam")).
-				Return(nil, newUniqueViolation("staff_user_id_key")).Once()
+				Return(nil, newUniqueViolation(database.ConstraintStaffUserID)).Once()
 			dbMock.ExpectRollback()
 
 			err := staffSvc.RegisterStaff(ctx, ownerParam, validStaff, param.AuthUserParam{Email: "owner@example.com"})
@@ -371,7 +372,7 @@ var _ = Describe("StaffService staff management", func() {
 			Expect(ve[0].Field).To(Equal("staffEmail"))
 		})
 
-		// UT-042 (Account Role Exclusivity Rules).
+		// UT-041 (Account Role Exclusivity Rules).
 		It("rolls back and rejects registration when the existing account already owns a business", func() {
 			businessRepo.EXPECT().BusinessEmailExists(ctx, validStaff.StaffEmail).Return(false, nil).Once()
 
@@ -413,7 +414,11 @@ var _ = Describe("StaffService staff management", func() {
 			Expect(err).To(MatchError("connection reset"))
 		})
 
-		It("returns a descriptive error when the welcome email fails to send", func() {
+		// The staff profile is already committed before the email is sent, so
+		// a send failure is logged and swallowed — surfacing it as an error
+		// would report a successful registration as a failure, and retrying
+		// would only hit "a staff profile already exists for this email".
+		It("still succeeds when the welcome email fails to send", func() {
 			businessRepo.EXPECT().BusinessEmailExists(ctx, validStaff.StaffEmail).Return(false, nil).Once()
 
 			dbMock.ExpectBegin()
@@ -427,11 +432,10 @@ var _ = Describe("StaffService staff management", func() {
 			staffRepo.EXPECT().InsertStaffWorkingHours(ctx, mock.AnythingOfType("*sql.Tx"), mock.AnythingOfType("param.StaffParam")).Return(nil).Once()
 			dbMock.ExpectCommit()
 
-			emailService.EXPECT().SendStaffWelcomeEmail(validStaff.StaffEmail).Return(fmt.Errorf("smtp down")).Once()
+			emailService.EXPECT().SendStaffWelcomeEmail(validStaff.StaffEmail, validStaff.Password).Return(fmt.Errorf("smtp down")).Once()
 
 			err := staffSvc.RegisterStaff(ctx, ownerParam, validStaff, param.AuthUserParam{Email: "owner@example.com"})
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("welcome email"))
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 
@@ -563,7 +567,7 @@ var _ = Describe("StaffService staff management", func() {
 			Expect(result).To(Equal(updated))
 		})
 
-		// UT-027 (Staff Scheduling & Working-Hour Rules).
+		// UT-045 (Account Role Exclusivity Rules).
 		It("rolls back when the email changed but the staff has already logged in", func() {
 			changed := updateParam
 			changed.StaffEmail = "new-jane@example.com"
@@ -580,7 +584,7 @@ var _ = Describe("StaffService staff management", func() {
 			Expect(ve[0].Field).To(Equal("staffEmail"))
 		})
 
-		// UT-027 (Staff Scheduling & Working-Hour Rules).
+		// UT-045 (Account Role Exclusivity Rules).
 		It("rolls back when the new email is already used as a business email", func() {
 			changed := updateParam
 			changed.StaffEmail = "new-jane@example.com"
@@ -598,7 +602,7 @@ var _ = Describe("StaffService staff management", func() {
 			Expect(ve[0].Field).To(Equal("staffEmail"))
 		})
 
-		// UT-043 (Account Role Exclusivity Rules).
+		// UT-042 (Account Role Exclusivity Rules).
 		It("rolls back when the new email logs into an existing business owner account", func() {
 			changed := updateParam
 			changed.StaffEmail = "owner2@example.com"
@@ -651,7 +655,7 @@ var _ = Describe("StaffService staff management", func() {
 			businessRepo.EXPECT().BusinessEmailExists(ctx, "new-jane@example.com").Return(false, nil).Once()
 			authRepo.EXPECT().GetUser(ctx, "new-jane@example.com").Return(nil, sql.ErrNoRows).Once()
 			authRepo.EXPECT().UpdateUserEmailTx(ctx, mock.AnythingOfType("*sql.Tx"), userID, "new-jane@example.com").
-				Return(newUniqueViolation("users_email_key")).Once()
+				Return(newUniqueViolation(database.ConstraintUserEmail)).Once()
 			dbMock.ExpectRollback()
 
 			result, err := staffSvc.UpdateStaff(ctx, changed)
@@ -699,7 +703,7 @@ var _ = Describe("StaffService staff management", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		// UT-028 (Staff Scheduling & Working-Hour Rules).
+		// UT-022 (Staff Scheduling & Working-Hour Rules).
 		It("refuses to delete a staff member with an active booking", func() {
 			staffRepo.EXPECT().HasBookingForStaff(ctx, staffID).Return(true, nil).Once()
 

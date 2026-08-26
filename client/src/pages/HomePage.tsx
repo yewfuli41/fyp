@@ -1,6 +1,8 @@
 import { Container, Col, Row } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useViewMode } from "../view/ViewModeContext";
+import BookLandingPage from "./BookLandingPage";
 import BusinessDashboardPage from "./BusinessDashboardPage";
 import StaffDashboardPage from "./StaffDashboardPage";
 import { IconBell, IconCalendar, IconChart, IconClock, IconHistory, IconUsers } from "../components/icons";
@@ -52,11 +54,30 @@ const FEATURES = [
 ];
 
 export default function HomePage() {
-    const { isLoggedIn, user, message } = useAuth();
+    const { isLoggedIn, user, message, sessionExpired } = useAuth();
+    const { viewMode } = useViewMode();
+
+    // A returning user whose session lapsed on its own (expired token, or a
+    // 401 mid-use — see sessionExpired in AuthProvider) is sent straight to
+    // the login screen to pick up where they left off. A first-time visitor,
+    // or someone who deliberately signed out, gets the welcome screen below
+    // instead — neither of them was in the middle of anything.
+    if (!isLoggedIn && sessionExpired) {
+        return <Navigate to="/login" replace />;
+    }
+
+    // Customer mode belongs to "/" itself rather than a separate /book URL:
+    // a plain customer is always in it, and an owner or staff member who
+    // switches to it is asking for the same booking screen. Signed-out
+    // visitors are deliberately excluded — the booking landing has nothing
+    // to show them, so they keep the marketing screen at the bottom.
+    if (isLoggedIn && viewMode === "customer") {
+        return <BookLandingPage />;
+    }
 
     // A business owner's landing page is the analytics dashboard (UC-12);
-    // a staff member's is their own quick-glance dashboard — everyone else
-    // (customers, logged-out visitors) sees the welcome/marketing screen.
+    // a staff member's is their own quick-glance dashboard — anyone signed
+    // out falls through to the marketing screen at the bottom.
     if (isLoggedIn && user?.businessProfile) {
         return <BusinessDashboardPage />;
     }

@@ -57,11 +57,11 @@ var _ = Describe("BookingService", func() {
 		It("sweeps past bookings then delegates straight to the repo (which itself checks the option's own validity window)", func() {
 			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
 			bookingRepo.EXPECT().
-				GetAvailableSlots(ctx, int64(1), int64(31), "2026-08-01", (*int64)(nil), false).
+				GetAvailableSlots(ctx, int64(1), int64(31), "2026-08-01", (*int64)(nil), false, (*param.StaffUnavailability)(nil)).
 				Return([]param.ServiceSlotParam{{ServiceSlotID: 900}}, nil).
 				Once()
 
-			slots, err := bookingSvc.GetAvailableSlots(ctx, 1, 31, "2026-08-01", nil, false)
+			slots, err := bookingSvc.GetAvailableSlots(ctx, 1, 31, "2026-08-01", nil, false, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(slots).To(HaveLen(1))
 		})
@@ -384,7 +384,7 @@ var _ = Describe("BookingService", func() {
 	})
 
 	Describe("RescheduleBooking authorization and status guards", func() {
-		// UT-007 (Authorization Testing).
+		// UT-036 (Authorization Testing).
 		It("rejects a stranger (neither customer nor business side) trying to reschedule", func() {
 			ctxParam := &param.BookingContextParam{
 				BookingID:       bookingID,
@@ -401,7 +401,7 @@ var _ = Describe("BookingService", func() {
 			Expect(err.Error()).To(Equal("You are not allowed to manage this booking."))
 		})
 
-		// UT-008 (Authorization Testing).
+		// UT-037 (Authorization Testing).
 		It("rejects a staff member trying to reschedule a booking onto a different staff member's slot", func() {
 			staffUserID := int64(50)
 			otherStaffUserID := int64(51)
@@ -697,6 +697,7 @@ var _ = Describe("BookingService", func() {
 	})
 
 	Describe("AcceptReschedule", func() {
+		// UT-002 (Booking Business Rules)
 		It("rejects the customer trying to accept their own now-pending reschedule request", func() {
 			ctxParam := &param.BookingContextParam{
 				BookingID:      bookingID,
@@ -713,8 +714,6 @@ var _ = Describe("BookingService", func() {
 	})
 
 	Describe("AcceptBooking", func() {
-		// UT-007 (Authorization Testing): accepting is a business-only
-		// decision — the customer who placed the booking cannot decide it themselves.
 		It("rejects the customer trying to accept their own booking — only the business side may decide", func() {
 			ctxParam := &param.BookingContextParam{
 				BookingID:       bookingID,
@@ -726,6 +725,24 @@ var _ = Describe("BookingService", func() {
 			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
 
 			_, err := bookingSvc.AcceptBooking(ctx, customerUserID, bookingID)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("You are not allowed to manage this booking."))
+		})
+
+		// UT-036 (Authorization Testing): a stranger is blocked the same way
+		// as the customer — accept is a business-only decision either way.
+		It("rejects a stranger (neither customer nor business side) trying to accept a booking", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "pending",
+				CustomerUserID:  customerUserID,
+				BusinessOwnerID: ownerUserID,
+			}
+			strangerUserID := int64(999)
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			_, err := bookingSvc.AcceptBooking(ctx, strangerUserID, bookingID)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("You are not allowed to manage this booking."))
 		})
@@ -751,7 +768,6 @@ var _ = Describe("BookingService", func() {
 	})
 
 	Describe("RejectBooking", func() {
-		// UT-007 (Authorization Testing): same business-only restriction as accept.
 		It("rejects the customer trying to reject their own booking — only the business side may decide", func() {
 			ctxParam := &param.BookingContextParam{
 				BookingID:       bookingID,
@@ -763,6 +779,24 @@ var _ = Describe("BookingService", func() {
 			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
 
 			_, err := bookingSvc.RejectBooking(ctx, customerUserID, bookingID)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("You are not allowed to manage this booking."))
+		})
+
+		// UT-036 (Authorization Testing): a stranger is blocked the same way
+		// as the customer — reject is a business-only decision either way.
+		It("rejects a stranger (neither customer nor business side) trying to reject a booking", func() {
+			ctxParam := &param.BookingContextParam{
+				BookingID:       bookingID,
+				Status:          "pending",
+				CustomerUserID:  customerUserID,
+				BusinessOwnerID: ownerUserID,
+			}
+			strangerUserID := int64(999)
+			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContext(ctx, bookingID).Return(ctxParam, nil).Once()
+
+			_, err := bookingSvc.RejectBooking(ctx, strangerUserID, bookingID)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("You are not allowed to manage this booking."))
 		})
@@ -895,7 +929,7 @@ var _ = Describe("BookingService", func() {
 			Expect(result.Status).To(Equal("cancelled"))
 		})
 
-		// UT-007 (Authorization Testing).
+		// UT-036 (Authorization Testing).
 		It("rejects a stranger (neither customer nor business side) trying to cancel", func() {
 			ctxParam := &param.BookingContextParam{
 				BookingID:       bookingID,
@@ -1036,7 +1070,7 @@ var _ = Describe("BookingService", func() {
 			Expect(result.BookingID).To(Equal(bookingID))
 		})
 
-		// UT-006 (Authorization Testing).
+		// UT-035 (Authorization Testing).
 		It("rejects the business side trying to edit the customer's note", func() {
 			ctxParam := &param.BookingContextParam{
 				BookingID:       bookingID,
@@ -1119,10 +1153,10 @@ var _ = Describe("BookingService", func() {
 			staffID := int64(20)
 			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(nil).Once()
 			bookingRepo.EXPECT().
-				GetAvailableDates(ctx, int64(1), &serviceID, &serviceOptionID, &staffID, false, "2026-08-01", "2026-08-31").
+				GetAvailableDates(ctx, int64(1), &serviceID, &serviceOptionID, &staffID, false, "2026-08-01", "2026-08-31", (*param.StaffUnavailability)(nil)).
 				Return([]string{"2026-08-05", "2026-08-06"}, nil).Once()
 
-			dates, err := bookingSvc.GetAvailableDates(ctx, 1, &serviceID, &serviceOptionID, &staffID, false, "2026-08-01", "2026-08-31")
+			dates, err := bookingSvc.GetAvailableDates(ctx, 1, &serviceID, &serviceOptionID, &staffID, false, "2026-08-01", "2026-08-31", nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dates).To(Equal([]string{"2026-08-05", "2026-08-06"}))
 		})
@@ -1130,10 +1164,10 @@ var _ = Describe("BookingService", func() {
 		It("still calls through to the repo even if the sweep itself fails", func() {
 			bookingRepo.EXPECT().SweepPastBookings(ctx).Return(fmt.Errorf("db unavailable")).Once()
 			bookingRepo.EXPECT().
-				GetAvailableDates(ctx, int64(1), (*int64)(nil), (*int64)(nil), (*int64)(nil), true, "2026-08-01", "2026-08-31").
+				GetAvailableDates(ctx, int64(1), (*int64)(nil), (*int64)(nil), (*int64)(nil), true, "2026-08-01", "2026-08-31", (*param.StaffUnavailability)(nil)).
 				Return(nil, fmt.Errorf("repo error")).Once()
 
-			dates, err := bookingSvc.GetAvailableDates(ctx, 1, nil, nil, nil, true, "2026-08-01", "2026-08-31")
+			dates, err := bookingSvc.GetAvailableDates(ctx, 1, nil, nil, nil, true, "2026-08-01", "2026-08-31", nil)
 			Expect(err).To(HaveOccurred())
 			Expect(dates).To(BeNil())
 		})

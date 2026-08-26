@@ -101,7 +101,6 @@ export default function RegisterStaffPage() {
     return (
         <Container className="py-5">
             <h1>Register Staff</h1>
-            {successMessage && <Alert variant="success">{successMessage}</Alert>}
             <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
                     <Form.Label>Name</Form.Label>
@@ -178,8 +177,11 @@ export default function RegisterStaffPage() {
                     errorMessage={fieldErrors.password}
                     className="mb-1"
                 />
+                {/* SendStaffWelcomeEmail includes this password, but delivery
+                    isn't guaranteed (a failed send is only logged server-side —
+                    see RegisterStaff), so the owner is told to keep a copy. */}
                 <p className="text-muted small mb-3">
-                    Share this with the staff member directly — they'll be required to change it on first login.
+                    Login details have been emailed to the staff member. Please keep a copy of the temporary password in case the email does not reach them. They will be required to change the temporary password on their first login.
                 </p>
 
                 <WorkingHoursEditor
@@ -191,7 +193,7 @@ export default function RegisterStaffPage() {
                 />
 
                 {formError && <Alert variant="danger">{formError}</Alert>}
-
+                {successMessage && <Alert variant="success">{successMessage}</Alert>}
                 <div className="d-flex gap-2 justify-content-end">
                     <Button variant="outline-secondary" onClick={() => navigate("/staff")}>
                         Cancel

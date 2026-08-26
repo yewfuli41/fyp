@@ -109,7 +109,7 @@ func (s *serviceService) CreateService(ctx context.Context, p param.ServiceParam
 	err := s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
 		created, err := s.serviceRepo.InsertService(ctx, tx, p)
 		if err != nil {
-			if database.IsUniqueViolation(err, "services_unique_name") {
+			if database.IsUniqueViolation(err, database.ConstraintServiceName) {
 				return errs.ValidationErrors{{Field: "serviceName", Message: "Service name already exists"}}
 			}
 			return err
@@ -129,7 +129,7 @@ func (s *serviceService) CreateService(ctx context.Context, p param.ServiceParam
 			pkg.EffectiveFrom = from
 			createdPkg, err := s.serviceRepo.InsertServiceOption(ctx, tx, pkg)
 			if err != nil {
-				if database.IsUniqueViolation(err, "service_options_unique_name") {
+				if database.IsUniqueViolation(err, database.ConstraintServiceOptionName) {
 					return errs.ValidationErrors{{Field: fmt.Sprintf("serviceOptionName[%d]", i), Message: "Service option name already exists"}}
 				}
 				return err
@@ -137,7 +137,7 @@ func (s *serviceService) CreateService(ctx context.Context, p param.ServiceParam
 			for j, item := range pkg.ServiceOptionItems {
 				item.ServiceOptionID = createdPkg.ServiceOptionID
 				if err := s.serviceRepo.InsertServiceOptionItem(ctx, tx, item); err != nil {
-					if database.IsUniqueViolation(err, "service_option_items_unique_name") {
+					if database.IsUniqueViolation(err, database.ConstraintServiceOptionItemName) {
 						return errs.ValidationErrors{{Field: fmt.Sprintf("serviceOptionItemName[%d][%d]", i, j), Message: "Option item name already exists"}}
 					}
 					return err
@@ -170,7 +170,7 @@ func (s *serviceService) UpdateService(ctx context.Context, p param.ServiceParam
 	err := s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
 		updated, err := s.serviceRepo.UpdateService(ctx, tx, p)
 		if err != nil {
-			if database.IsUniqueViolation(err, "services_unique_name") {
+			if database.IsUniqueViolation(err, database.ConstraintServiceName) {
 				return errs.ValidationErrors{{Field: "serviceName", Message: "Service name already exists"}}
 			}
 			return err
@@ -382,7 +382,7 @@ func validateNewOptionWindow(pkg param.ServiceOptionParam, i int) (string, error
 func (s *serviceService) insertOptionWithItems(ctx context.Context, tx *sql.Tx, opt param.ServiceOptionParam, items []param.ServiceOptionItemParam, i int) (*param.ServiceOptionParam, error) {
 	created, err := s.serviceRepo.InsertServiceOption(ctx, tx, opt)
 	if err != nil {
-		if database.IsUniqueViolation(err, "service_options_unique_name") {
+		if database.IsUniqueViolation(err, database.ConstraintServiceOptionName) {
 			return nil, errs.ValidationErrors{{Field: fmt.Sprintf("serviceOptionName[%d]", i), Message: "Service option name already exists"}}
 		}
 		return nil, err
@@ -390,7 +390,7 @@ func (s *serviceService) insertOptionWithItems(ctx context.Context, tx *sql.Tx, 
 	for j, item := range items {
 		item.ServiceOptionID = created.ServiceOptionID
 		if err := s.serviceRepo.InsertServiceOptionItem(ctx, tx, item); err != nil {
-			if database.IsUniqueViolation(err, "service_option_items_unique_name") {
+			if database.IsUniqueViolation(err, database.ConstraintServiceOptionItemName) {
 				return nil, errs.ValidationErrors{{Field: fmt.Sprintf("serviceOptionItemName[%d][%d]", i, j), Message: "Option item name already exists"}}
 			}
 			return nil, err

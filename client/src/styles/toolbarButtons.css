@@ -1,0 +1,33 @@
+/* Page-header action buttons — a solid primary for the main action, paired
+   with a lighter outline one beside it. Shared by the Calendar toolbar
+   ("Record Walk-In" / "Add Service Slots") and Staff Management
+   ("Manage Schedule" / "+ Add Staff") so the pairing reads the same on both. */
+
+/* Bootstrap's default hover (a faint darken) barely reads against the
+   surrounding page, so give both buttons a soft lift instead. */
+.toolbar-btn {
+  transition: filter 0.15s ease, background-color 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.toolbar-btn:hover {
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+  transform: translateY(-1px);
+}
+
+.toolbar-btn.btn-primary:hover {
+  filter: brightness(0.92);
+}
+
+/* The outline half of the pair: plain outline-primary at rest, and on
+   hover/click a shallow, soft blue — secondary in weight next to the solid
+   button beside it. Bootstrap's default fills it fully solid on both hover
+   and active, which would make it read as equally prominent. */
+.toolbar-btn-soft:hover,
+.toolbar-btn-soft:active,
+.toolbar-btn-soft.active,
+.toolbar-btn-soft:focus-visible {
+  background-color: rgba(13, 110, 253, 0.12);
+  border-color: rgba(13, 110, 253, 0.45);
+  color: #0d6efd;
+}

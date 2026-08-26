@@ -5,6 +5,7 @@ import type { Service } from "../services/ServiceService";
 import { NONE_COL } from "../utils/serviceSlotHelpers";
 import MultiSelectDropdown from "./MultiSelectDropdown";
 import calendarIcon from "../assets/calendar-icon-vector_942802-557.avif";
+import "../styles/toolbarButtons.css";
 
 interface CalendarToolbarProps {
     onAddClick: () => void;
@@ -36,8 +37,8 @@ export default function CalendarToolbar({
             <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
                 <h1 className="fs-2 fw-bold mb-0">Calendar View</h1>
                 <div className="d-flex gap-2">
-                    <Button variant="outline-primary" onClick={onWalkInClick}>Record Walk-In</Button>
-                    <Button variant="primary" onClick={onAddClick}>Add Service Slots</Button>
+                    <Button className="toolbar-btn toolbar-btn-soft" variant="outline-primary" onClick={onWalkInClick}>Record Walk-In</Button>
+                    <Button className="toolbar-btn" variant="primary" onClick={onAddClick}>Add Service Slots</Button>
                 </div>
             </div>
 

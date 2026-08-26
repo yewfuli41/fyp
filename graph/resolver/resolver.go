@@ -3,6 +3,7 @@ package resolver
 import (
 	"context"
 	"fyp/app"
+	"fyp/domain/errs"
 	"fyp/domain/param"
 	"fyp/graph"
 	"fyp/graph/graphErrs"
@@ -28,6 +29,30 @@ func NewResolver(app *app.App) *Resolver {
 
 func parseID(id string) (int64, error) {
 	return strconv.ParseInt(id, 10, 64)
+}
+
+// parseStaffUnavailability turns the three optional "this staff can't work
+// then" arguments into a param, requiring all three together — a staff id with
+// no range (or a range with no staff) would silently hide nothing, which is
+// the failure mode most likely to go unnoticed.
+func parseStaffUnavailability(staffID *string, from *string, until *string) (*param.StaffUnavailability, error) {
+	haveStaff := staffID != nil && *staffID != ""
+	haveFrom := from != nil && *from != ""
+	haveUntil := until != nil && *until != ""
+	if !haveStaff && !haveFrom && !haveUntil {
+		return nil, nil
+	}
+	if !haveStaff || !haveFrom || !haveUntil {
+		return nil, errs.ValidationErrors{{
+			Field:   "unavailableStaffId",
+			Message: "unavailableStaffId, unavailableFrom and unavailableUntil must be given together.",
+		}}
+	}
+	id, err := parseID(*staffID)
+	if err != nil {
+		return nil, err
+	}
+	return &param.StaffUnavailability{StaffID: id, From: *from, Until: *until}, nil
 }
 
 func parseIDs(ids []string) ([]int64, error) {

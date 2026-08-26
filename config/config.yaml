@@ -4,4 +4,4 @@ auth:
   jwt_expiration_hours: 12
 
 service_slot:
-  recurring_horizon_weeks: 12
+  recurring_horizon_weeks: 52

@@ -62,7 +62,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(result).To(BeNil())
 		})
 
-		// UT-016 (Slot Scheduling & Staff Assignment).
+		// UT-038 (Authorization Testing).
 		It("returns an error when the selected packages are invalid", func() {
 			p := param.ServiceSlotParam{
 				BusinessID:       1,
@@ -81,7 +81,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(ve).To(ContainElement(errs.ValidationError{Field: "serviceOptionIds", Message: "One or more selected options are invalid."}))
 		})
 
-		// UT-017 (Slot Scheduling & Staff Assignment).
+		// UT-013 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the assigned staff does not belong to the business", func() {
 			p := param.ServiceSlotParam{
 				BusinessID:       1,
@@ -99,7 +99,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(result).To(BeNil())
 		})
 
-		// UT-017 (Slot Scheduling & Staff Assignment).
+		// UT-013 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the staff does not work during the requested time", func() {
 			p := param.ServiceSlotParam{
 				BusinessID:       1,
@@ -118,7 +118,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(result).To(BeNil())
 		})
 
-		// UT-018 (Slot Scheduling & Staff Assignment).
+		// UT-014 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the business has no working hours during the requested time", func() {
 			p := param.ServiceSlotParam{
 				BusinessID:       1,
@@ -167,8 +167,40 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(result.ServiceSlotID).To(Equal(int64(100)))
 		})
 
-		// UT-019 (Slot Scheduling & Staff Assignment).
-		It("drops an option from the slot when its own window doesn't cover that date", func() {
+		// UT-015 (Slot Scheduling & Staff Assignment).
+		It("drops one option from the slot when its own window doesn't cover that date, keeping the other", func() {
+			p := param.ServiceSlotParam{
+				BusinessID:       1,
+				ServiceOptionIDs: []int64{20, 21},
+				Date:             futureDate,
+				StartTime:        startTime,
+				EndTime:          endTime,
+			}
+			slotRepo.EXPECT().OptionsBelongToBusiness(ctx, int64(1), []int64{20, 21}).Return(true, nil).Once()
+			slotRepo.EXPECT().BusinessCoversTime(ctx, int64(1), mock.Anything, startTime, endTime).Return(true, nil).Once()
+			serviceRepo.EXPECT().IsOptionEffectiveOn(ctx, int64(20), futureDate).Return(false, nil).Once()
+			serviceRepo.EXPECT().IsOptionEffectiveOn(ctx, int64(21), futureDate).Return(true, nil).Once()
+
+			dbMock.ExpectBegin()
+			slotRepo.EXPECT().
+				InsertServiceSlot(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(sp param.ServiceSlotParam) bool {
+					return sp.Date == futureDate
+				})).
+				Return(int64(100), nil).Once()
+			// Only the effective option (21) is attached — 20 is simply omitted.
+			slotRepo.EXPECT().InsertServiceSlotOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(100), int64(21)).Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			created := &param.ServiceSlotParam{ServiceSlotID: 100, BusinessID: 1}
+			slotRepo.EXPECT().GetServiceSlotByID(ctx, int64(100), int64(1)).Return(created, nil).Once()
+
+			result, err := slotSvc.CreateServiceSlot(ctx, p)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ServiceSlotID).To(Equal(int64(100)))
+		})
+
+		// UT-015 (Slot Scheduling & Staff Assignment).
+		It("rejects a single (non-recurring, non-walk-in) slot when none of its options are effective on that date", func() {
 			p := param.ServiceSlotParam{
 				BusinessID:       1,
 				ServiceOptionIDs: []int64{20},
@@ -181,20 +213,14 @@ var _ = Describe("ServiceSlotService", func() {
 			serviceRepo.EXPECT().IsOptionEffectiveOn(ctx, int64(20), futureDate).Return(false, nil).Once()
 
 			dbMock.ExpectBegin()
-			slotRepo.EXPECT().
-				InsertServiceSlot(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(sp param.ServiceSlotParam) bool {
-					return sp.Date == futureDate
-				})).
-				Return(int64(100), nil).Once()
-			// No InsertServiceSlotOption call — the option is simply omitted.
-			dbMock.ExpectCommit()
-
-			created := &param.ServiceSlotParam{ServiceSlotID: 100, BusinessID: 1}
-			slotRepo.EXPECT().GetServiceSlotByID(ctx, int64(100), int64(1)).Return(created, nil).Once()
+			dbMock.ExpectRollback()
 
 			result, err := slotSvc.CreateServiceSlot(ctx, p)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result.ServiceSlotID).To(Equal(int64(100)))
+			Expect(result).To(BeNil())
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve[0].Field).To(Equal("serviceOptionIds"))
+			Expect(ve[0].Message).To(Equal("None of the selected options are offered on " + futureDate + "."))
 		})
 
 		It("creates a recurring, staff-assigned slot", func() {
@@ -232,7 +258,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(result.ServiceSlotID).To(Equal(int64(200)))
 		})
 
-		// UT-017 (Slot Scheduling & Staff Assignment).
+		// UT-013 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the assigned staff is on approved leave on the slot's date", func() {
 			p := param.ServiceSlotParam{
 				BusinessID:       1,
@@ -253,6 +279,74 @@ var _ = Describe("ServiceSlotService", func() {
 			// it's surfaced as a general form message on the frontend rather than
 			// pinned to the time picker's field feedback.
 			Expect(err).To(MatchError("This staff member is on approved leave on " + futureDate + " — pick a different date or staff member."))
+		})
+
+		// UT-004 (Booking Business Rules).
+		It("records a backdated walk-in against the option effective on that past date", func() {
+			// A walk-in is a record of what was actually sold that day, so the
+			// option is resolved against the walk-in's own date — including an
+			// option that has since ended, which is exactly the case a
+			// backdated walk-in needs and "still offered today" would block.
+			pastDate := time.Now().AddDate(0, 0, -11)
+			pastISO := pastDate.Format("2006-01-02")
+			weekday := strings.ToLower(pastDate.Weekday().String())
+			p := param.ServiceSlotParam{
+				BusinessID:       1,
+				ServiceOptionIDs: []int64{20},
+				Date:             pastISO,
+				StartTime:        startTime,
+				EndTime:          endTime,
+				AllowPast:        true,
+			}
+			slotRepo.EXPECT().OptionsBelongToBusiness(ctx, int64(1), []int64{20}).Return(true, nil).Once()
+			slotRepo.EXPECT().BusinessCoversTime(ctx, int64(1), weekday, startTime, endTime).Return(true, nil).Once()
+			serviceRepo.EXPECT().IsOptionEffectiveOn(ctx, int64(20), pastISO).Return(true, nil).Once()
+
+			dbMock.ExpectBegin()
+			slotRepo.EXPECT().
+				InsertServiceSlot(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(sp param.ServiceSlotParam) bool {
+					return sp.Date == pastISO
+				})).
+				Return(int64(200), nil).Once()
+			slotRepo.EXPECT().InsertServiceSlotOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(200), int64(20)).Return(nil).Once()
+			dbMock.ExpectCommit()
+			slotRepo.EXPECT().GetServiceSlotByID(ctx, int64(200), int64(1)).
+				Return(&param.ServiceSlotParam{ServiceSlotID: 200}, nil).Once()
+
+			result, err := slotSvc.CreateServiceSlot(ctx, p)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ServiceSlotID).To(Equal(int64(200)))
+		})
+
+		// UT-004 (Booking Business Rules).
+		It("refuses a backdated walk-in for an option that wasn't offered on that date", func() {
+			// The mirror case: an option that hadn't started yet must not be
+			// recordable against an earlier date, and the slot must not be
+			// left behind optionless.
+			pastDate := time.Now().AddDate(0, 0, -11)
+			pastISO := pastDate.Format("2006-01-02")
+			weekday := strings.ToLower(pastDate.Weekday().String())
+			p := param.ServiceSlotParam{
+				BusinessID:       1,
+				ServiceOptionIDs: []int64{20},
+				Date:             pastISO,
+				StartTime:        startTime,
+				EndTime:          endTime,
+				AllowPast:        true,
+			}
+			slotRepo.EXPECT().OptionsBelongToBusiness(ctx, int64(1), []int64{20}).Return(true, nil).Once()
+			slotRepo.EXPECT().BusinessCoversTime(ctx, int64(1), weekday, startTime, endTime).Return(true, nil).Once()
+			serviceRepo.EXPECT().IsOptionEffectiveOn(ctx, int64(20), pastISO).Return(false, nil).Once()
+
+			dbMock.ExpectBegin()
+			dbMock.ExpectRollback()
+
+			result, err := slotSvc.CreateServiceSlot(ctx, p)
+			Expect(result).To(BeNil())
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve[0].Field).To(Equal("serviceOptionIds"))
+			Expect(ve[0].Message).To(ContainSubstring(pastISO))
 		})
 
 		It("creates a recurring, owner-managed slot with its own recurring_schedules row", func() {
@@ -293,7 +387,71 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(result.ServiceSlotID).To(Equal(int64(200)))
 		})
 
-		// UT-019 (Slot Scheduling & Staff Assignment).
+		// UT-018 (Slot Scheduling & Staff Assignment).
+		It("bounds a recurring series by its own end date rather than the configured default", func() {
+			// The suite's default is 1 week; an end date three weeks out must
+			// win, producing three occurrences rather than one.
+			today := time.Now()
+			start := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, time.UTC)
+			offset := (int(time.Monday) - int(start.Weekday()) + 7) % 7
+			firstMonday := start.AddDate(0, 0, offset)
+			thirdMonday := firstMonday.AddDate(0, 0, 14)
+
+			p := param.ServiceSlotParam{
+				BusinessID:       1,
+				ServiceOptionIDs: []int64{20},
+				DaysOfWeek:       []string{"monday"},
+				StaffID:          &staffID,
+				StartTime:        startTime,
+				EndTime:          endTime,
+				RecurringEndDate: thirdMonday.Format("2006-01-02"),
+			}
+			slotRepo.EXPECT().OptionsBelongToBusiness(ctx, int64(1), []int64{20}).Return(true, nil).Once()
+			slotRepo.EXPECT().StaffBelongsToBusiness(ctx, staffID, int64(1)).Return(true, nil).Once()
+			slotRepo.EXPECT().StaffCoversTime(ctx, staffID, "monday", startTime, endTime).Return(true, nil).Once()
+			leaveRepo.EXPECT().IsStaffOnLeave(ctx, staffID, mock.AnythingOfType("string")).Return(false, nil).Times(3)
+			serviceRepo.EXPECT().IsOptionEffectiveOn(ctx, int64(20), mock.AnythingOfType("string")).Return(true, nil).Times(3)
+
+			dbMock.ExpectBegin()
+			slotRepo.EXPECT().
+				InsertRecurringSchedule(ctx, mock.AnythingOfType("*sql.Tx"), mock.Anything, "monday").
+				Return(int64(9), nil).Once()
+			slotRepo.EXPECT().
+				InsertServiceSlot(ctx, mock.AnythingOfType("*sql.Tx"), mock.Anything).
+				Return(int64(200), nil).Times(3)
+			slotRepo.EXPECT().
+				InsertServiceSlotOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(200), int64(20)).
+				Return(nil).Times(3)
+			dbMock.ExpectCommit()
+			slotRepo.EXPECT().GetServiceSlotByID(ctx, int64(200), int64(1)).
+				Return(&param.ServiceSlotParam{ServiceSlotID: 200}, nil).Once()
+
+			result, err := slotSvc.CreateServiceSlot(ctx, p)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ServiceSlotID).To(Equal(int64(200)))
+		})
+
+		// UT-018 (Slot Scheduling & Staff Assignment).
+		It("rejects an end date too early to catch any of the chosen weekdays", func() {
+			// Yesterday: no upcoming Monday can fall on or before it.
+			p := param.ServiceSlotParam{
+				BusinessID:       1,
+				ServiceOptionIDs: []int64{20},
+				DaysOfWeek:       []string{"monday"},
+				StartTime:        startTime,
+				EndTime:          endTime,
+				RecurringEndDate: time.Now().AddDate(0, 0, -1).Format("2006-01-02"),
+			}
+
+			// Refused by Validate before any repo call at all.
+			result, err := slotSvc.CreateServiceSlot(ctx, p)
+			Expect(result).To(BeNil())
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve[0].Field).To(Equal("recurringEndDate"))
+		})
+
+		// UT-015 (Slot Scheduling & Staff Assignment).
 		It("skips recurring occurrences that fall outside every selected option's effective window, instead of creating an empty slot", func() {
 			// 3-week horizon, but the option is only effective on the first
 			// occurrence (e.g. an option with an effectiveUntil date) — the
@@ -430,7 +588,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		// UT-020 (Slot Scheduling & Staff Assignment).
+		// UT-016 (Slot Scheduling & Staff Assignment).
 		It("returns an error when an affected occurrence already has a booking", func() {
 			p := param.ServiceSlotParam{
 				ServiceSlotID: 100, BusinessID: 1,
@@ -505,7 +663,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(result.ServiceSlotID).To(Equal(int64(100)))
 		})
 
-		// UT-017 (Slot Scheduling & Staff Assignment).
+		// UT-013 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the new staff does not belong to the business", func() {
 			existing := &param.ServiceSlotParam{ServiceSlotID: 100, BusinessID: 1, Date: futureDate}
 			slotRepo.EXPECT().GetServiceSlotByID(ctx, int64(100), int64(1)).Return(existing, nil).Once()
@@ -516,7 +674,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		// UT-017 (Slot Scheduling & Staff Assignment).
+		// UT-013 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the new staff does not cover the slot's time", func() {
 			existing := &param.ServiceSlotParam{ServiceSlotID: 100, BusinessID: 1, Date: futureDate, StartTime: startTime, EndTime: endTime}
 			slotRepo.EXPECT().GetServiceSlotByID(ctx, int64(100), int64(1)).Return(existing, nil).Once()
@@ -528,7 +686,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		// UT-017 (Slot Scheduling & Staff Assignment).
+		// UT-013 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the new staff is on approved leave on the slot's date", func() {
 			existing := &param.ServiceSlotParam{ServiceSlotID: 100, BusinessID: 1, Date: futureDate, StartTime: startTime, EndTime: endTime}
 			slotRepo.EXPECT().GetServiceSlotByID(ctx, int64(100), int64(1)).Return(existing, nil).Once()
@@ -584,7 +742,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(ve).To(ContainElement(errs.ValidationError{Field: "serviceSlotId", Message: "Service slot not found."}))
 		})
 
-		// UT-020 (Slot Scheduling & Staff Assignment).
+		// UT-016 (Slot Scheduling & Staff Assignment).
 		It("returns an error when the slot already has a booking", func() {
 			existing := &param.ServiceSlotParam{ServiceSlotID: 100, BusinessID: 1}
 			slotRepo.EXPECT().GetServiceSlotByID(ctx, int64(100), int64(1)).Return(existing, nil).Once()
@@ -609,7 +767,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		// UT-021 (Slot Scheduling & Staff Assignment).
+		// UT-017 (Slot Scheduling & Staff Assignment).
 		It("deletes every occurrence from the selected slot's own date onward — not from today", func() {
 			recurringID := int64(9)
 			// Deliberately far in the future relative to "now" — if the
@@ -630,7 +788,7 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		// UT-021 (Slot Scheduling & Staff Assignment).
+		// UT-017 (Slot Scheduling & Staff Assignment).
 		It("deletes available future recurring occurrences and reports booked ones that were skipped", func() {
 			recurringID := int64(9)
 			existing := &param.ServiceSlotParam{ServiceSlotID: 100, BusinessID: 1, Date: "2026-08-01", RecurringScheduleID: &recurringID}
@@ -659,7 +817,6 @@ var _ = Describe("ServiceSlotService", func() {
 
 	Describe("GetServiceSlots", func() {
 		It("delegates to the repository", func() {
-			slotRepo.EXPECT().GetRecurringSchedulesNeedingRenewal(ctx, int64(1), mock.Anything).Return(nil, nil).Once()
 			slots := []param.ServiceSlotParam{{ServiceSlotID: 100}}
 			slotRepo.EXPECT().GetServiceSlotsByBusinessAndDate(ctx, int64(1), futureDate, (*int64)(nil), (*int64)(nil), false).Return(slots, nil).Once()
 
@@ -669,68 +826,11 @@ var _ = Describe("ServiceSlotService", func() {
 		})
 
 		It("returns an error from the repository", func() {
-			slotRepo.EXPECT().GetRecurringSchedulesNeedingRenewal(ctx, int64(1), mock.Anything).Return(nil, nil).Once()
 			slotRepo.EXPECT().GetServiceSlotsByBusinessAndDate(ctx, int64(1), futureDate, (*int64)(nil), (*int64)(nil), false).Return(nil, fmt.Errorf("db error")).Once()
 
 			result, err := slotSvc.GetServiceSlots(ctx, 1, futureDate, nil, nil, false)
 			Expect(result).To(BeNil())
 			Expect(err).To(MatchError("db error"))
-		})
-
-		It("still returns the slots when the renewal check itself fails", func() {
-			// renewRecurringSchedules is best-effort (logged, not fatal) —
-			// same pattern as bookingService's SweepPastBookings — so a
-			// failure there shouldn't block the actual read.
-			slotRepo.EXPECT().GetRecurringSchedulesNeedingRenewal(ctx, int64(1), mock.Anything).Return(nil, fmt.Errorf("db error")).Once()
-			slots := []param.ServiceSlotParam{{ServiceSlotID: 100}}
-			slotRepo.EXPECT().GetServiceSlotsByBusinessAndDate(ctx, int64(1), futureDate, (*int64)(nil), (*int64)(nil), false).Return(slots, nil).Once()
-
-			result, err := slotSvc.GetServiceSlots(ctx, 1, futureDate, nil, nil, false)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(HaveLen(1))
-		})
-
-		It("renews a series that's fallen short of the horizon", func() {
-			// RecurringHorizonWeeks is 1 in this suite's setup, so the next
-			// occurrence of `target`'s weekday must fall within 7 days —
-			// picking tomorrow as the target and its own weekday, exactly one
-			// week earlier as the series' last known occurrence, guarantees
-			// weekdayOccurrencesFrom resolves to exactly [target].
-			target := time.Now().AddDate(0, 0, 1)
-			lastDate := target.AddDate(0, 0, -7).Format("2006-01-02")
-			targetDate := target.Format("2006-01-02")
-			weekday := strings.ToLower(target.Weekday().String())
-			schedules := []param.RecurringScheduleRenewalParam{{
-				RecurringScheduleID: 42, StaffID: &staffID, Day: weekday,
-				StartTime: startTime, EndTime: endTime, LastDate: lastDate,
-			}}
-			slotRepo.EXPECT().GetRecurringSchedulesNeedingRenewal(ctx, int64(1), mock.Anything).Return(schedules, nil).Once()
-			slotRepo.EXPECT().GetOptionIDsForRecurringSchedule(ctx, int64(42)).Return([]int64{9}, nil).Once()
-			serviceRepo.EXPECT().IsOptionEffectiveOn(ctx, int64(9), targetDate).Return(true, nil).Once()
-			dbMock.ExpectBegin()
-			slotRepo.EXPECT().InsertServiceSlot(ctx, mock.Anything, mock.MatchedBy(func(p param.ServiceSlotParam) bool {
-				return p.RecurringScheduleID != nil && *p.RecurringScheduleID == 42 &&
-					p.StaffID != nil && *p.StaffID == staffID && p.Date == targetDate
-			})).Return(int64(500), nil).Once()
-			slotRepo.EXPECT().InsertServiceSlotOption(ctx, mock.Anything, int64(500), int64(9)).Return(nil).Once()
-			dbMock.ExpectCommit()
-			slotRepo.EXPECT().GetServiceSlotsByBusinessAndDate(ctx, int64(1), futureDate, (*int64)(nil), (*int64)(nil), false).Return(nil, nil).Once()
-
-			_, err := slotSvc.GetServiceSlots(ctx, 1, futureDate, nil, nil, false)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("skips a series with no recorded options rather than erroring the read", func() {
-			schedules := []param.RecurringScheduleRenewalParam{{
-				RecurringScheduleID: 42, StaffID: &staffID, Day: "monday",
-				StartTime: startTime, EndTime: endTime, LastDate: "",
-			}}
-			slotRepo.EXPECT().GetRecurringSchedulesNeedingRenewal(ctx, int64(1), mock.Anything).Return(schedules, nil).Once()
-			slotRepo.EXPECT().GetOptionIDsForRecurringSchedule(ctx, int64(42)).Return(nil, nil).Once()
-			slotRepo.EXPECT().GetServiceSlotsByBusinessAndDate(ctx, int64(1), futureDate, (*int64)(nil), (*int64)(nil), false).Return(nil, nil).Once()
-
-			_, err := slotSvc.GetServiceSlots(ctx, 1, futureDate, nil, nil, false)
-			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 

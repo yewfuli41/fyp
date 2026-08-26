@@ -13,6 +13,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -35,7 +36,7 @@ func server(app *app.App, cfg *config.Config) {
 				Header().
 				Set(
 					"Content-Security-Policy",
-					"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';",
+					"default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline';",
 				)
 
 			return next(c)
@@ -66,8 +67,8 @@ func server(app *app.App, cfg *config.Config) {
 		),
 	)
 
-	e.Use(echoMiddleware.StaticWithConfig(echoMiddleware.StaticConfig{
-		Root:  "client",
+	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Root:  "./client",
 		HTML5: true,
 	}))
 

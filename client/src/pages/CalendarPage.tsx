@@ -7,13 +7,13 @@ import { getBusinessStaff, type Staff } from "../services/StaffService";
 import { getBusinessServices, type Service } from "../services/ServiceService";
 import {
     getServiceSlots, createServiceSlot, updateServiceSlot, reassignServiceSlotStaff, deleteServiceSlot,
-    getAvailableStaffForSlot, extractTime,
+    getAvailableStaffForSlot, getRecurringDefaultWeeks, extractTime,
     type ServiceSlot, type ServiceSlotInput,
 } from "../services/ServiceSlotService";
 import { applyGraphQLErrors, parseGraphQLErrors } from "../utils/graphqlErrors";
 import {
     DEFAULT_START, DEFAULT_END, NONE_COL, addDays, displayDate, emptyForm, openIntervals, timeLines, toISO,
-    weekdayName, type WorkingHour,
+    tomorrowISO, weekdayName, type WorkingHour,
 } from "../utils/serviceSlotHelpers";
 import AddServiceSlotModal, { type TimeRange } from "../modals/AddServiceSlotModal";
 import ManageServiceSlotModal from "../modals/ManageServiceSlotModal";
@@ -82,6 +82,7 @@ export default function CalendarPage() {
     // Record Walk-In modal
     const [showWalkIn, setShowWalkIn] = useState(false);
     const [walkInFormError, setWalkInFormError] = useState("");
+    const [walkInFieldErrors, setWalkInFieldErrors] = useState<Record<string, string>>({});
     const [isSavingWalkIn, setIsSavingWalkIn] = useState(false);
 
     // Manage modal
@@ -109,6 +110,19 @@ export default function CalendarPage() {
         if (result.errors?.length) setPageError(result.errors[0].message);
         else setSlots(result.data?.displayServiceSlots ?? []);
     }, [activeToken, selectedDate]);
+
+    // Only seeds the recurring end-date picker's default, so a failure here
+    // just leaves that field blank rather than blocking the calendar — the
+    // server applies the same default when no end date is sent.
+    const [defaultWeeks, setDefaultWeeks] = useState<number | null>(null);
+    useEffect(() => {
+        if (!activeToken) return;
+        let cancelled = false;
+        getRecurringDefaultWeeks(activeToken)
+            .then(res => { if (!cancelled) setDefaultWeeks(res.data?.recurringDefaultWeeks ?? null); })
+            .catch(() => { /* picker stays blank; server default applies */ });
+        return () => { cancelled = true; };
+    }, [activeToken]);
 
     const fetchBookings = useCallback(async () => {
         if (!activeToken) return;
@@ -327,8 +341,13 @@ export default function CalendarPage() {
     // ── Add helpers ───────────────────────────────────────────────────────────
     const openAdd = (prefill?: Partial<ServiceSlotInput>) => {
         const startTime = rangeStart, endTime = lines[1] ?? rangeEnd;
-        setForm({ ...emptyForm(isoDate), startTime, endTime, ...prefill, ...(isStaff ? { staffId: ownStaffId } : {}) });
-        setAddDates(prefill?.daysOfWeek?.length ? [""] : [isoDate]);
+        // A same-day slot almost always has no valid start time left (every
+        // working hour for today may already be behind "now"), which surfaces
+        // as a confusing "no working hours" message — so when the calendar is
+        // currently on today, prefill tomorrow instead of today.
+        const addDate = isoDate < tomorrowISO() ? tomorrowISO() : isoDate;
+        setForm({ ...emptyForm(addDate), startTime, endTime, ...prefill, ...(isStaff ? { staffId: ownStaffId } : {}) });
+        setAddDates(prefill?.daysOfWeek?.length ? [""] : [addDate]);
         setAddRanges([{ startTime, endTime }]);
         setFormServiceId("");
         setFormError("");
@@ -371,9 +390,13 @@ export default function CalendarPage() {
         if (!activeToken) return;
         setIsSavingWalkIn(true);
         setWalkInFormError("");
+        setWalkInFieldErrors({});
         try {
             const result = await recordWalkIn(activeToken, input);
-            if (applyGraphQLErrors(result, { setFormError: setWalkInFormError, fallbackMessage: "Failed to record walk-in" })) return;
+            if (applyGraphQLErrors(result, {
+                setFieldErrors: setWalkInFieldErrors, setFormError: setWalkInFormError,
+                fallbackMessage: "Failed to record walk-in",
+            })) return;
             setShowWalkIn(false);
             await Promise.all([fetchSlots(), fetchBookings()]);
         } catch {
@@ -526,7 +549,7 @@ export default function CalendarPage() {
 
             <CalendarToolbar
                 onAddClick={() => openAdd()}
-                onWalkInClick={() => { setWalkInFormError(""); setShowWalkIn(true); }}
+                onWalkInClick={() => { setWalkInFormError(""); setWalkInFieldErrors({}); setShowWalkIn(true); }}
                 dateLabel={displayDate(selectedDate)}
                 isoDate={isoDate}
                 dateInputRef={dateInputRef}
@@ -577,6 +600,7 @@ export default function CalendarPage() {
                 onSubmit={handleCreate}
                 isSaving={isSaving}
                 lockedStaffId={isStaff ? ownStaffId : undefined}
+                recurringDefaultWeeks={defaultWeeks}
             />
 
             <RecordWalkInModal
@@ -591,6 +615,8 @@ export default function CalendarPage() {
                 onSubmit={handleRecordWalkIn}
                 isSaving={isSavingWalkIn}
                 formError={walkInFormError}
+                fieldErrors={walkInFieldErrors}
+                setFieldErrors={setWalkInFieldErrors}
                 lockedStaffId={isStaff ? ownStaffId : undefined}
             />
 
@@ -648,7 +674,7 @@ export default function CalendarPage() {
             <ConfirmDeleteModal
                 show={confirmingDeleteSlot}
                 title="Delete service slot"
-                itemName={deleteFuture ? "this slot and every later occurrence of this series, from this date onward" : "this service slot"}
+                itemName={deleteFuture ? "this slot and all futrue slots of this series, from this date onward" : "this service slot"}
                 warningNote={deleteFuture ? "Slots that already have a booking are kept, not deleted. Earlier occurrences before this date are also kept." : undefined}
                 error={deleteSlotError}
                 isDeleting={manageBusy}

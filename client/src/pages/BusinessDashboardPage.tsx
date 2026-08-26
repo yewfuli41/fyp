@@ -18,6 +18,7 @@ import DashboardSlotUtilization from "../components/DashboardSlotUtilization";
 import DashboardStaffUtilization from "../components/DashboardStaffUtilization";
 import DashboardCustomerRetention from "../components/DashboardCustomerRetention";
 import DashboardCancellationAnalysis from "../components/DashboardCancellationAnalysis";
+import DashboardBookingTypeSplit from "../components/DashboardBookingTypeSplit";
 import "../styles/BusinessDashboard.css";
 
 type FilterMode = "years" | "months" | "dates";
@@ -365,7 +366,7 @@ export default function BusinessDashboardPage() {
             ) : (
                 <Row className="g-4">
                     <Col xs={12}>
-                        <DashboardBookingSummary summary={data.summary} />
+                        <DashboardBookingSummary summary={data.summary} cancellation={cancellation} />
                     </Col>
                     <Col xs={12} lg={7}>
                         <DashboardBookingTrend points={data.trend} />
@@ -385,9 +386,6 @@ export default function BusinessDashboardPage() {
                     <Col xs={12} lg={5}>
                         <DashboardStaffUtilization items={data.staffUtilization} />
                     </Col>
-                    <Col xs={12} lg={5}>
-                        <DashboardCustomerRetention retention={data.retention} />
-                    </Col>
                     <Col xs={12} lg={7}>
                         <DashboardCancellationAnalysis
                             analysis={cancellation}
@@ -400,6 +398,19 @@ export default function BusinessDashboardPage() {
                             onStaffChange={setCancelStaffIds}
                             onServiceNamesChange={setCancelServiceNames}
                         />
+                    </Col>
+                    {/* Bottom-right corner: New vs Returning stacked above
+                        Online vs Walk-in — the latter is the least important
+                        detail on the page, so it trails behind. */}
+                    <Col xs={12} lg={5}>
+                        <Row className="g-4">
+                            <Col xs={12}>
+                                <DashboardCustomerRetention retention={data.retention} />
+                            </Col>
+                            <Col xs={12}>
+                                <DashboardBookingTypeSplit summary={data.summary} />
+                            </Col>
+                        </Row>
                     </Col>
                 </Row>
             )}

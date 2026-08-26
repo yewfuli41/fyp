@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Spinner } from "react-bootstrap";
-import { getAvailableDates } from "../services/PublicService";
+import { getAvailableDates, type StaffUnavailability } from "../services/PublicService";
 import { toISO, todayISO } from "../utils/serviceSlotHelpers";
 import { IconChevronLeft, IconChevronRight } from "./icons";
 import "../styles/BookingDatePicker.css";
@@ -22,6 +22,10 @@ interface Props {
     // Narrows instead to owner-managed (no staff assigned) slots — wins over
     // staffId if both are somehow passed.
     unassignedOnly?: boolean;
+    // Hides one staff member's slots across a date range — see
+    // StaffUnavailability. Must match what the caller passes to
+    // getAvailableSlots, or a date colours green that can't actually be filled.
+    unavailable?: StaffUnavailability;
     value: string;
     onChange: (isoDate: string) => void;
 }
@@ -33,8 +37,9 @@ const MONTH_LABEL = (d: Date) => d.toLocaleDateString("en-GB", { month: "long", 
 // can't be styled per-day, so this replaces it wherever picking a date
 // should be informed by slot availability (booking, reschedule).
 export default function BookingDatePicker({
-    businessId, serviceId, serviceOptionId, staffId, unassignedOnly, value, onChange,
+    businessId, serviceId, serviceOptionId, staffId, unassignedOnly, unavailable, value, onChange,
 }: Props) {
+    const { staffId: unavailableStaffId, from: unavailableFrom, until: unavailableUntil } = unavailable ?? {};
     const today = todayISO();
     const selected = new Date(`${value || today}T00:00:00`);
     const [viewYear, setViewYear] = useState(selected.getFullYear());
@@ -44,13 +49,26 @@ export default function BookingDatePicker({
     useEffect(() => {
         const firstOfMonth = new Date(viewYear, viewMonth, 1);
         const lastOfMonth = new Date(viewYear, viewMonth + 1, 0);
+        // Guard against an earlier, broader fetch resolving last and painting
+        // its dates over a narrower one's — e.g. the caller filling in the
+        // service option a tick after mount would otherwise leave the
+        // unfiltered "any option" result on screen, colouring dates green
+        // that have nothing bookable for the option actually being picked.
+        let cancelled = false;
         setAvailableDates(null);
         getAvailableDates(
             businessId, toISO(firstOfMonth), toISO(lastOfMonth), serviceId, staffId, serviceOptionId, unassignedOnly,
+            unavailableStaffId ? { staffId: unavailableStaffId, from: unavailableFrom!, until: unavailableUntil! } : undefined,
         )
-            .then(res => setAvailableDates(new Set(res.data?.availableDates ?? [])))
-            .catch(() => setAvailableDates(new Set()));
-    }, [businessId, serviceId, serviceOptionId, staffId, unassignedOnly, viewYear, viewMonth]);
+            .then(res => { if (!cancelled) setAvailableDates(new Set(res.data?.availableDates ?? [])); })
+            .catch(() => { if (!cancelled) setAvailableDates(new Set()); });
+        return () => { cancelled = true; };
+        // Depends on the unavailability's three fields rather than the object
+        // itself — callers build it inline, so a new identity every render
+        // would refetch forever.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [businessId, serviceId, serviceOptionId, staffId, unassignedOnly, viewYear, viewMonth,
+        unavailableStaffId, unavailableFrom, unavailableUntil]);
 
     const firstOfMonth = new Date(viewYear, viewMonth, 1);
     const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();

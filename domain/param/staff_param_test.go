@@ -149,7 +149,7 @@ var _ = Describe("StaffParam", func() {
 			))
 		})
 
-		// UT-044 (Input & Parameter Validation (Domain Rules)).
+		// UT-046 (Input & Parameter Validation (Domain Rules)).
 		It("returns error for password shorter than the minimum length", func() {
 			p := validParam()
 			p.Password = "pass1"
@@ -160,7 +160,7 @@ var _ = Describe("StaffParam", func() {
 			))
 		})
 
-		// UT-044 (Input & Parameter Validation (Domain Rules)).
+		// UT-046 (Input & Parameter Validation (Domain Rules)).
 		It("returns nil for a password exactly at the minimum length", func() {
 			p := validParam()
 			p.Password = "12345678"

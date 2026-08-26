@@ -38,10 +38,10 @@ func (e *resendEmailService) send(toEmail, subject, plainText, htmlContent strin
 	return nil
 }
 
-func (e *resendEmailService) SendStaffWelcomeEmail(toEmail string) error {
+func (e *resendEmailService) SendStaffWelcomeEmail(toEmail, tempPassword string) error {
 	subject := "Welcome — your staff account is ready"
-	plainText := fmt.Sprintf("You have been added as a staff member.\n\nEmail: %s\n\nYour manager has set a temporary password for you — ask them for it, then log in and change it.", toEmail)
-	htmlContent := fmt.Sprintf("<p>You have been added as a staff member.</p><p><strong>Email:</strong> %s</p><p>Your manager has set a temporary password for you — ask them for it, then log in and change it.</p>", toEmail)
+	plainText := fmt.Sprintf("You have been added as a staff member.\n\nEmail: %s\nTemporary password: %s\n\nLog in with these details — you'll be asked to set your own password straight away.", toEmail, tempPassword)
+	htmlContent := fmt.Sprintf("<p>You have been added as a staff member.</p><p><strong>Email:</strong> %s<br><strong>Temporary password:</strong> %s</p><p>Log in with these details — you'll be asked to set your own password straight away.</p>", toEmail, tempPassword)
 	return e.send(toEmail, subject, plainText, htmlContent)
 }
 

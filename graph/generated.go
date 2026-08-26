@@ -155,7 +155,7 @@ type ComplexityRoot struct {
 		AcceptBooking            func(childComplexity int, bookingID string) int
 		AcceptReschedule         func(childComplexity int, bookingID string) int
 		ApplyLeave               func(childComplexity int, input model.ApplyLeaveInput) int
-		ApproveLeaveApplication  func(childComplexity int, leaveID string) int
+		ApproveLeaveApplication  func(childComplexity int, leaveID string, reschedules []*model.LeaveRescheduleInput) int
 		CancelBooking            func(childComplexity int, bookingID string) int
 		ChangePassword           func(childComplexity int, currentPassword string, newPassword string) int
 		CreateBooking            func(childComplexity int, slotOptionID string, description *string) int
@@ -186,8 +186,8 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AvailableDates             func(childComplexity int, businessID string, serviceID *string, serviceOptionID *string, staffID *string, unassignedOnly *bool, from string, until string) int
-		AvailableSlots             func(childComplexity int, businessID string, serviceOptionID string, date string, staffID *string, unassignedOnly *bool) int
+		AvailableDates             func(childComplexity int, businessID string, serviceID *string, serviceOptionID *string, staffID *string, unassignedOnly *bool, from string, until string, unavailableStaffID *string, unavailableFrom *string, unavailableUntil *string) int
+		AvailableSlots             func(childComplexity int, businessID string, serviceOptionID string, date string, staffID *string, unassignedOnly *bool, unavailableStaffID *string, unavailableFrom *string, unavailableUntil *string) int
 		AvailableStaffForSlot      func(childComplexity int, serviceSlotID string) int
 		BookingSummary             func(childComplexity int, from string, until string) int
 		BookingTrend               func(childComplexity int, from string, until string, granularity *model.TrendGranularity) int
@@ -206,6 +206,7 @@ type ComplexityRoot struct {
 		PublicServices             func(childComplexity int, businessID string) int
 		PublicStaff                func(childComplexity int, businessID string) int
 		RecentlyBookedBusinesses   func(childComplexity int) int
+		RecurringDefaultWeeks      func(childComplexity int) int
 		ServicePopularity          func(childComplexity int, from string, until string) int
 		SlotUtilization            func(childComplexity int, from string, until string, groupBy *model.SlotUtilizationGroupBy) int
 		StaffHoursConflicts        func(childComplexity int, staffID string, workingHours []*model.WorkingHourInput) int
@@ -404,7 +405,7 @@ type MutationResolver interface {
 	ApplyLeave(ctx context.Context, input model.ApplyLeaveInput) (*model.LeaveApplication, error)
 	UpdateLeaveApplication(ctx context.Context, leaveID string, justification *string) (*model.LeaveApplication, error)
 	DeleteLeaveApplication(ctx context.Context, leaveID string) (bool, error)
-	ApproveLeaveApplication(ctx context.Context, leaveID string) (*model.LeaveApplication, error)
+	ApproveLeaveApplication(ctx context.Context, leaveID string, reschedules []*model.LeaveRescheduleInput) (*model.LeaveApplication, error)
 	RejectLeaveApplication(ctx context.Context, leaveID string, remark string) (*model.LeaveApplication, error)
 	UpdateStaffWorkingHours(ctx context.Context, staffID string, workingHours []*model.WorkingHourInput, reassignments []*model.SlotReassignmentInput) (*model.Staff, error)
 	CreateService(ctx context.Context, service model.ServiceInput) (*model.Service, error)
@@ -436,8 +437,8 @@ type QueryResolver interface {
 	PublicBusinesses(ctx context.Context) ([]*model.BusinessProfile, error)
 	PublicServices(ctx context.Context, businessID string) ([]*model.Service, error)
 	PublicStaff(ctx context.Context, businessID string) ([]*model.Staff, error)
-	AvailableSlots(ctx context.Context, businessID string, serviceOptionID string, date string, staffID *string, unassignedOnly *bool) ([]*model.ServiceSlot, error)
-	AvailableDates(ctx context.Context, businessID string, serviceID *string, serviceOptionID *string, staffID *string, unassignedOnly *bool, from string, until string) ([]string, error)
+	AvailableSlots(ctx context.Context, businessID string, serviceOptionID string, date string, staffID *string, unassignedOnly *bool, unavailableStaffID *string, unavailableFrom *string, unavailableUntil *string) ([]*model.ServiceSlot, error)
+	AvailableDates(ctx context.Context, businessID string, serviceID *string, serviceOptionID *string, staffID *string, unassignedOnly *bool, from string, until string, unavailableStaffID *string, unavailableFrom *string, unavailableUntil *string) ([]string, error)
 	RecentlyBookedBusinesses(ctx context.Context) ([]*model.BusinessProfile, error)
 	BusinessBookings(ctx context.Context) ([]*model.BookingDetail, error)
 	MyAppointments(ctx context.Context) ([]*model.BookingDetail, error)
@@ -447,6 +448,7 @@ type QueryResolver interface {
 	DisplayServices(ctx context.Context) ([]*model.Service, error)
 	DisplayServiceSlots(ctx context.Context, date string, staffID *string, serviceID *string, unassignedOnly *bool) ([]*model.ServiceSlot, error)
 	AvailableStaffForSlot(ctx context.Context, serviceSlotID string) ([]*model.Staff, error)
+	RecurringDefaultWeeks(ctx context.Context) (int32, error)
 	DisplayStaff(ctx context.Context) ([]*model.Staff, error)
 	UserProfile(ctx context.Context) (*model.User, error)
 }
@@ -1016,7 +1018,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Mutation.ApproveLeaveApplication(childComplexity, args["leaveId"].(string)), true
+		return e.ComplexityRoot.Mutation.ApproveLeaveApplication(childComplexity, args["leaveId"].(string), args["reschedules"].([]*model.LeaveRescheduleInput)), true
 	case "Mutation.cancelBooking":
 		if e.ComplexityRoot.Mutation.CancelBooking == nil {
 			break
@@ -1325,7 +1327,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Query.AvailableDates(childComplexity, args["businessId"].(string), args["serviceId"].(*string), args["serviceOptionId"].(*string), args["staffId"].(*string), args["unassignedOnly"].(*bool), args["from"].(string), args["until"].(string)), true
+		return e.ComplexityRoot.Query.AvailableDates(childComplexity, args["businessId"].(string), args["serviceId"].(*string), args["serviceOptionId"].(*string), args["staffId"].(*string), args["unassignedOnly"].(*bool), args["from"].(string), args["until"].(string), args["unavailableStaffId"].(*string), args["unavailableFrom"].(*string), args["unavailableUntil"].(*string)), true
 	case "Query.availableSlots":
 		if e.ComplexityRoot.Query.AvailableSlots == nil {
 			break
@@ -1336,7 +1338,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Query.AvailableSlots(childComplexity, args["businessId"].(string), args["serviceOptionId"].(string), args["date"].(string), args["staffId"].(*string), args["unassignedOnly"].(*bool)), true
+		return e.ComplexityRoot.Query.AvailableSlots(childComplexity, args["businessId"].(string), args["serviceOptionId"].(string), args["date"].(string), args["staffId"].(*string), args["unassignedOnly"].(*bool), args["unavailableStaffId"].(*string), args["unavailableFrom"].(*string), args["unavailableUntil"].(*string)), true
 	case "Query.availableStaffForSlot":
 		if e.ComplexityRoot.Query.AvailableStaffForSlot == nil {
 			break
@@ -1486,6 +1488,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.RecentlyBookedBusinesses(childComplexity), true
+	case "Query.recurringDefaultWeeks":
+		if e.ComplexityRoot.Query.RecurringDefaultWeeks == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.RecurringDefaultWeeks(childComplexity), true
 	case "Query.servicePopularity":
 		if e.ComplexityRoot.Query.ServicePopularity == nil {
 			break
@@ -2280,6 +2288,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputApplyLeaveInput,
 		ec.unmarshalInputBusinessProfileInput,
+		ec.unmarshalInputLeaveRescheduleInput,
 		ec.unmarshalInputLogInInput,
 		ec.unmarshalInputServiceInput,
 		ec.unmarshalInputServiceOptionInput,
@@ -3141,6 +3150,14 @@ func (ec *executionContext) field_Mutation_approveLeaveApplication_args(ctx cont
 		return nil, err
 	}
 	args["leaveId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "reschedules",
+		func(ctx context.Context, v any) ([]*model.LeaveRescheduleInput, error) {
+			return ec.unmarshalOLeaveRescheduleInput2ᚕᚖfypᚋgraphᚋmodelᚐLeaveRescheduleInputᚄ(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["reschedules"] = arg1
 	return args, nil
 }
 
@@ -3699,6 +3716,30 @@ func (ec *executionContext) field_Query_availableDates_args(ctx context.Context,
 		return nil, err
 	}
 	args["until"] = arg6
+	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "unavailableStaffId",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOID2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["unavailableStaffId"] = arg7
+	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "unavailableFrom",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalODate2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["unavailableFrom"] = arg8
+	arg9, err := graphql.ProcessArgField(ctx, rawArgs, "unavailableUntil",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalODate2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["unavailableUntil"] = arg9
 	return args, nil
 }
 
@@ -3745,6 +3786,30 @@ func (ec *executionContext) field_Query_availableSlots_args(ctx context.Context,
 		return nil, err
 	}
 	args["unassignedOnly"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "unavailableStaffId",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOID2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["unavailableStaffId"] = arg5
+	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "unavailableFrom",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalODate2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["unavailableFrom"] = arg6
+	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "unavailableUntil",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalODate2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["unavailableUntil"] = arg7
 	return args, nil
 }
 
@@ -6726,7 +6791,7 @@ func (ec *executionContext) _Mutation_approveLeaveApplication(ctx context.Contex
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().ApproveLeaveApplication(ctx, fc.Args["leaveId"].(string))
+			return ec.Resolvers.Mutation().ApproveLeaveApplication(ctx, fc.Args["leaveId"].(string), fc.Args["reschedules"].([]*model.LeaveRescheduleInput))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *model.LeaveApplication) graphql.Marshaler {
@@ -8001,7 +8066,7 @@ func (ec *executionContext) _Query_availableSlots(ctx context.Context, field gra
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().AvailableSlots(ctx, fc.Args["businessId"].(string), fc.Args["serviceOptionId"].(string), fc.Args["date"].(string), fc.Args["staffId"].(*string), fc.Args["unassignedOnly"].(*bool))
+			return ec.Resolvers.Query().AvailableSlots(ctx, fc.Args["businessId"].(string), fc.Args["serviceOptionId"].(string), fc.Args["date"].(string), fc.Args["staffId"].(*string), fc.Args["unassignedOnly"].(*bool), fc.Args["unavailableStaffId"].(*string), fc.Args["unavailableFrom"].(*string), fc.Args["unavailableUntil"].(*string))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v []*model.ServiceSlot) graphql.Marshaler {
@@ -8045,7 +8110,7 @@ func (ec *executionContext) _Query_availableDates(ctx context.Context, field gra
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().AvailableDates(ctx, fc.Args["businessId"].(string), fc.Args["serviceId"].(*string), fc.Args["serviceOptionId"].(*string), fc.Args["staffId"].(*string), fc.Args["unassignedOnly"].(*bool), fc.Args["from"].(string), fc.Args["until"].(string))
+			return ec.Resolvers.Query().AvailableDates(ctx, fc.Args["businessId"].(string), fc.Args["serviceId"].(*string), fc.Args["serviceOptionId"].(*string), fc.Args["staffId"].(*string), fc.Args["unassignedOnly"].(*bool), fc.Args["from"].(string), fc.Args["until"].(string), fc.Args["unavailableStaffId"].(*string), fc.Args["unavailableFrom"].(*string), fc.Args["unavailableUntil"].(*string))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v []string) graphql.Marshaler {
@@ -8401,6 +8466,29 @@ func (ec *executionContext) fieldContext_Query_availableStaffForSlot(ctx context
 		return fc, err
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _Query_recurringDefaultWeeks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_recurringDefaultWeeks(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().RecurringDefaultWeeks(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_recurringDefaultWeeks(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Query", field, true, true, errors.New("field of type Int does not have child fields"))
 }
 
 func (ec *executionContext) _Query_displayStaff(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12714,6 +12802,43 @@ func (ec *executionContext) unmarshalInputBusinessProfileInput(ctx context.Conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputLeaveRescheduleInput(ctx context.Context, obj any) (model.LeaveRescheduleInput, error) {
+	var it model.LeaveRescheduleInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"bookingId", "newSlotOptionId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "bookingId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("bookingId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BookingID = data
+		case "newSlotOptionId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("newSlotOptionId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NewSlotOptionID = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputLogInInput(ctx context.Context, obj any) (model.LogInInput, error) {
 	var it model.LogInInput
 	if obj == nil {
@@ -12908,7 +13033,7 @@ func (ec *executionContext) unmarshalInputServiceSlotInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"staffId", "date", "daysOfWeek", "startTime", "endTime", "serviceOptionIds"}
+	fieldsInOrder := [...]string{"staffId", "date", "daysOfWeek", "recurringEndDate", "startTime", "endTime", "serviceOptionIds"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -12936,6 +13061,13 @@ func (ec *executionContext) unmarshalInputServiceSlotInput(ctx context.Context, 
 				return it, err
 			}
 			it.DaysOfWeek = data
+		case "recurringEndDate":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("recurringEndDate"))
+			data, err := ec.unmarshalODate2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RecurringEndDate = data
 		case "startTime":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTime"))
 			data, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
@@ -14796,6 +14928,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_availableStaffForSlot(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "recurringDefaultWeeks":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_recurringDefaultWeeks(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -16808,6 +16962,11 @@ func (ec *executionContext) marshalNLeaveApplication2ᚖfypᚋgraphᚋmodelᚐLe
 	return ec._LeaveApplication(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNLeaveRescheduleInput2ᚖfypᚋgraphᚋmodelᚐLeaveRescheduleInput(ctx context.Context, v any) (*model.LeaveRescheduleInput, error) {
+	res, err := ec.unmarshalInputLeaveRescheduleInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNLeaveStatus2fypᚋgraphᚋmodelᚐLeaveStatus(ctx context.Context, v any) (model.LeaveStatus, error) {
 	var res model.LeaveStatus
 	err := res.UnmarshalGQL(v)
@@ -17766,6 +17925,24 @@ func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.Se
 	_ = ctx
 	res := graphql.MarshalID(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOLeaveRescheduleInput2ᚕᚖfypᚋgraphᚋmodelᚐLeaveRescheduleInputᚄ(ctx context.Context, v any) ([]*model.LeaveRescheduleInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.LeaveRescheduleInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNLeaveRescheduleInput2ᚖfypᚋgraphᚋmodelᚐLeaveRescheduleInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOSlotUtilizationGroupBy2ᚖfypᚋgraphᚋmodelᚐSlotUtilizationGroupBy(ctx context.Context, v any) (*model.SlotUtilizationGroupBy, error) {

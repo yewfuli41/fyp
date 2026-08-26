@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"fyp/domain/param"
 	"fyp/internal/interfaces"
 	"fyp/internal/repository"
 	"regexp"
@@ -451,7 +452,7 @@ var _ = Describe("BookingRepo", func() {
 				WillReturnRows(sqlmock.NewRows(pkgCols).
 					AddRow(20, 10, "Deep Tissue", 5, "Massage"))
 
-			results, err := repo.GetAvailableSlots(ctx, 1, 10, "2026-08-10", nil, false)
+			results, err := repo.GetAvailableSlots(ctx, 1, 10, "2026-08-10", nil, false, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(results).To(HaveLen(1))
 			Expect(results[0].ServiceSlotID).To(Equal(int64(200)))
@@ -465,7 +466,7 @@ var _ = Describe("BookingRepo", func() {
 				WithArgs(int64(1), "2026-08-10", int64(10), staffID).
 				WillReturnRows(sqlmock.NewRows(slotCols))
 
-			results, err := repo.GetAvailableSlots(ctx, 1, 10, "2026-08-10", &staffID, false)
+			results, err := repo.GetAvailableSlots(ctx, 1, 10, "2026-08-10", &staffID, false, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(results).To(BeEmpty())
 		})
@@ -476,7 +477,19 @@ var _ = Describe("BookingRepo", func() {
 				WithArgs(int64(1), "2026-08-10", int64(10)).
 				WillReturnRows(sqlmock.NewRows(slotCols))
 
-			results, err := repo.GetAvailableSlots(ctx, 1, 10, "2026-08-10", &staffID, true)
+			results, err := repo.GetAvailableSlots(ctx, 1, 10, "2026-08-10", &staffID, true, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(results).To(BeEmpty())
+		})
+
+		// UT-027 (Leave Application Rules).
+		It("excludes a staff member's own slots across the range they can't work", func() {
+			unavailable := &param.StaffUnavailability{StaffID: 4, From: "2026-08-30", Until: "2026-09-01"}
+			mock.ExpectQuery(regexp.QuoteMeta("AND NOT (ss.staff_id = $4 AND ss.date BETWEEN $5::date AND $6::date)")).
+				WithArgs(int64(1), "2026-08-31", int64(10), int64(4), "2026-08-30", "2026-09-01").
+				WillReturnRows(sqlmock.NewRows(slotCols))
+
+			results, err := repo.GetAvailableSlots(ctx, 1, 10, "2026-08-31", nil, false, unavailable)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(results).To(BeEmpty())
 		})
@@ -490,7 +503,7 @@ var _ = Describe("BookingRepo", func() {
 					AddRow("2026-08-10").
 					AddRow("2026-08-12"))
 
-			dates, err := repo.GetAvailableDates(ctx, 1, nil, nil, nil, false, "2026-08-01", "2026-08-31")
+			dates, err := repo.GetAvailableDates(ctx, 1, nil, nil, nil, false, "2026-08-01", "2026-08-31", nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dates).To(Equal([]string{"2026-08-10", "2026-08-12"}))
 		})
@@ -504,7 +517,7 @@ var _ = Describe("BookingRepo", func() {
 				WithArgs(int64(1), "2026-08-01", "2026-08-31", serviceID, serviceOptionID, staffID).
 				WillReturnRows(sqlmock.NewRows([]string{"date"}))
 
-			dates, err := repo.GetAvailableDates(ctx, 1, &serviceID, &serviceOptionID, &staffID, false, "2026-08-01", "2026-08-31")
+			dates, err := repo.GetAvailableDates(ctx, 1, &serviceID, &serviceOptionID, &staffID, false, "2026-08-01", "2026-08-31", nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dates).To(BeEmpty())
 		})
@@ -515,7 +528,21 @@ var _ = Describe("BookingRepo", func() {
 				WithArgs(int64(1), "2026-08-01", "2026-08-31").
 				WillReturnRows(sqlmock.NewRows([]string{"date"}))
 
-			dates, err := repo.GetAvailableDates(ctx, 1, nil, nil, &staffID, true, "2026-08-01", "2026-08-31")
+			dates, err := repo.GetAvailableDates(ctx, 1, nil, nil, &staffID, true, "2026-08-01", "2026-08-31", nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dates).To(BeEmpty())
+		})
+
+		// UT-027 (Leave Application Rules). The calendar must apply
+		// exactly the same exclusion as the slot list above, or it would paint
+		// a date green that the slot list then refuses to fill.
+		It("excludes a staff member's own slots across the range they can't work", func() {
+			unavailable := &param.StaffUnavailability{StaffID: 4, From: "2026-08-30", Until: "2026-09-01"}
+			mock.ExpectQuery(regexp.QuoteMeta("AND NOT (ss.staff_id = $4 AND ss.date BETWEEN $5::date AND $6::date)")).
+				WithArgs(int64(1), "2026-08-01", "2026-08-31", int64(4), "2026-08-30", "2026-09-01").
+				WillReturnRows(sqlmock.NewRows([]string{"date"}))
+
+			dates, err := repo.GetAvailableDates(ctx, 1, nil, nil, nil, false, "2026-08-01", "2026-08-31", unavailable)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dates).To(BeEmpty())
 		})

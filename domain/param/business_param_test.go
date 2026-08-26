@@ -67,7 +67,7 @@ var _ = Describe("BusinessProfileParam", func() {
 			))
 		})
 
-		// UT-047 (Input & Parameter Validation (Domain Rules)).
+		// UT-049 (Input & Parameter Validation (Domain Rules)).
 		It("returns error when start time is not before end time", func() {
 			p := validParam()
 			p.WorkingHours = []param.WorkingHourParam{
@@ -80,7 +80,7 @@ var _ = Describe("BusinessProfileParam", func() {
 			))
 		})
 
-		// UT-046 (Input & Parameter Validation (Domain Rules)).
+		// UT-048 (Input & Parameter Validation (Domain Rules)).
 		It("returns error for overlapping working hours on the same day", func() {
 			start1 := time.Date(0, 1, 1, 10, 0, 0, 0, time.UTC)
 			end1 := time.Date(0, 1, 1, 12, 0, 0, 0, time.UTC)
@@ -102,7 +102,7 @@ var _ = Describe("BusinessProfileParam", func() {
 			Expect(fields).To(ContainElements("workingHours[0]", "workingHours[1]"))
 		})
 
-		// UT-046 (Input & Parameter Validation (Domain Rules)).
+		// UT-048 (Input & Parameter Validation (Domain Rules)).
 		It("allows touching working hours on the same day (end == next start)", func() {
 			start1 := time.Date(0, 1, 1, 10, 0, 0, 0, time.UTC)
 			end1 := time.Date(0, 1, 1, 12, 0, 0, 0, time.UTC)
@@ -117,7 +117,7 @@ var _ = Describe("BusinessProfileParam", func() {
 			Expect(p.ValidateRegisterBusinessProfile()).To(Succeed())
 		})
 
-		// UT-046 (Input & Parameter Validation (Domain Rules)).
+		// UT-048 (Input & Parameter Validation (Domain Rules)).
 		It("allows overlapping hours on different days", func() {
 			p := validParam()
 			p.WorkingHours = []param.WorkingHourParam{

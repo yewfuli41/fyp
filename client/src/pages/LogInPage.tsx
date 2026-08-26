@@ -21,7 +21,7 @@ export default function LogInPage() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      navigate(user?.staffProfile && user.mustResetPassword ? "/reset-password" : "/book");
+      navigate(user?.staffProfile && user.mustResetPassword ? "/reset-password" : "/");
     }
     const msg = sessionStorage.getItem("authMessage");
     if(msg){

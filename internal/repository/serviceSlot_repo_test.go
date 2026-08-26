@@ -443,57 +443,6 @@ var _ = Describe("ServiceSlotRepo", func() {
 		})
 	})
 
-	Describe("GetRecurringSchedulesNeedingRenewal", func() {
-		It("returns schedules whose horizon has fallen short", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_recurring_schedules rs")).
-				WithArgs(int64(1), "2026-09-01").
-				WillReturnRows(sqlmock.NewRows(
-					[]string{"recurring_schedule_id", "staff_id", "day", "start_time", "end_time", "last_date"},
-				).
-					AddRow(42, 5, "monday", startTime, endTime, "2026-08-10").
-					AddRow(43, 6, "friday", startTime, endTime, nil))
-
-			results, err := repo.GetRecurringSchedulesNeedingRenewal(ctx, 1, "2026-09-01")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(results).To(HaveLen(2))
-			Expect(results[0].RecurringScheduleID).To(Equal(int64(42)))
-			Expect(results[0].LastDate).To(Equal("2026-08-10"))
-			Expect(results[1].LastDate).To(Equal("")) // no active occurrences left at all
-		})
-
-		It("returns an error when the query fails", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_recurring_schedules rs")).
-				WithArgs(int64(1), "2026-09-01").
-				WillReturnError(fmt.Errorf("db error"))
-
-			results, err := repo.GetRecurringSchedulesNeedingRenewal(ctx, 1, "2026-09-01")
-			Expect(err).To(MatchError("db error"))
-			Expect(results).To(BeNil())
-		})
-	})
-
-	Describe("GetOptionIDsForRecurringSchedule", func() {
-		It("returns every option ever attached to the series", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slot_options sso")).
-				WithArgs(int64(42)).
-				WillReturnRows(sqlmock.NewRows([]string{"service_option_id"}).AddRow(9).AddRow(11))
-
-			ids, err := repo.GetOptionIDsForRecurringSchedule(ctx, 42)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(ids).To(Equal([]int64{9, 11}))
-		})
-
-		It("returns an error when the query fails", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_service_slot_options sso")).
-				WithArgs(int64(42)).
-				WillReturnError(fmt.Errorf("db error"))
-
-			ids, err := repo.GetOptionIDsForRecurringSchedule(ctx, 42)
-			Expect(err).To(MatchError("db error"))
-			Expect(ids).To(BeNil())
-		})
-	})
-
 	Describe("GetSlotDates", func() {
 		It("returns the dates of the given slots, sorted", func() {
 			ids := []int64{100, 101}

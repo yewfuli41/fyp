@@ -17,7 +17,22 @@ func NewBookingRepo(db *sql.DB) interfaces.IBookingRepo {
 	return &bookingRepo{DB: db}
 }
 
-func (r *bookingRepo) GetAvailableSlots(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool) ([]param.ServiceSlotParam, error) {
+// excludeUnavailableStaff appends the clause that hides a staff member's slots
+// across the range they can't work. Kept as one helper so GetAvailableSlots and
+// GetAvailableDates can never drift apart on it — a date the calendar paints
+// green must be a date the slot list can actually fill.
+func excludeUnavailableStaff(query string, args []any, u *param.StaffUnavailability) (string, []any) {
+	if u == nil {
+		return query, args
+	}
+	args = append(args, u.StaffID, u.From, u.Until)
+	return query + fmt.Sprintf(
+		" AND NOT (ss.staff_id = $%d AND ss.date BETWEEN $%d::date AND $%d::date)",
+		len(args)-2, len(args)-1, len(args),
+	), args
+}
+
+func (r *bookingRepo) GetAvailableSlots(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool, unavailable *param.StaffUnavailability) ([]param.ServiceSlotParam, error) {
 	query := `
 		SELECT
 			ss.service_slot_id,
@@ -54,6 +69,7 @@ func (r *bookingRepo) GetAvailableSlots(ctx context.Context, businessID int64, s
 		args = append(args, *staffID)
 		query += fmt.Sprintf(" AND ss.staff_id = $%d", len(args))
 	}
+	query, args = excludeUnavailableStaff(query, args, unavailable)
 	query += " ORDER BY ss.start_time, ss.service_slot_id"
 
 	rows, err := r.DB.QueryContext(ctx, query, args...)
@@ -93,7 +109,7 @@ func (r *bookingRepo) GetAvailableSlots(ctx context.Context, businessID int64, s
 // service_slot's date is checked against the effective window of the
 // specific option version it was booked under — a version-agnostic version
 // of the check GetAvailableSlots does for one already-resolved option.
-func (r *bookingRepo) GetAvailableDates(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string) ([]string, error) {
+func (r *bookingRepo) GetAvailableDates(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string, unavailable *param.StaffUnavailability) ([]string, error) {
 	query := `
 		SELECT DISTINCT to_char(ss.date, 'YYYY-MM-DD')
 		FROM fyp_fuli_service_slots ss
@@ -128,6 +144,7 @@ func (r *bookingRepo) GetAvailableDates(ctx context.Context, businessID int64, s
 		args = append(args, *staffID)
 		query += fmt.Sprintf(" AND ss.staff_id = $%d", len(args))
 	}
+	query, args = excludeUnavailableStaff(query, args, unavailable)
 	query += " ORDER BY 1"
 
 	rows, err := r.DB.QueryContext(ctx, query, args...)
@@ -545,6 +562,24 @@ func (r *bookingRepo) GetSlotOptionStaffUserID(ctx context.Context, slotOptionID
 		return &staffUserID.Int64, nil
 	}
 	return nil, nil
+}
+
+func (r *bookingRepo) GetSlotOptionAssignment(ctx context.Context, slotOptionID int64) (*int64, string, error) {
+	var staffID sql.NullInt64
+	var date string
+	err := r.DB.QueryRowContext(ctx, `
+		SELECT ss.staff_id, to_char(ss.date, 'YYYY-MM-DD')
+		FROM fyp_fuli_service_slot_options ssp
+		JOIN fyp_fuli_service_slots ss ON ss.service_slot_id = ssp.service_slot_id
+		WHERE ssp.slot_option_id = $1
+	`, slotOptionID).Scan(&staffID, &date)
+	if err != nil {
+		return nil, "", err
+	}
+	if staffID.Valid {
+		return &staffID.Int64, date, nil
+	}
+	return nil, date, nil
 }
 
 func (r *bookingRepo) InsertBooking(ctx context.Context, userID int64, slotOptionID int64, description *string) (*param.BookingParam, error) {

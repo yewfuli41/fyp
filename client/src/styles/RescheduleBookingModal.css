@@ -1,0 +1,33 @@
+@import "./booking-theme.css";
+
+/* The appointment being moved. Deliberately reads as a quiet, factual
+   summary rather than a call to action — the buttons below it are what the
+   owner is meant to act on. */
+.rb-current {
+    border: 1px solid var(--bk-border);
+    border-left: 3px solid var(--bk-primary);
+    border-radius: var(--bk-radius-sm);
+    background: var(--bk-surface-muted);
+    padding: 0.6rem 0.85rem;
+}
+
+.rb-current-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bk-text-faint);
+    margin-bottom: 0.15rem;
+}
+
+.rb-current-when {
+    font-weight: 700;
+    color: var(--bk-text);
+    line-height: 1.35;
+}
+
+.rb-current-meta {
+    font-size: 0.85rem;
+    color: var(--bk-text-muted);
+    line-height: 1.35;
+}

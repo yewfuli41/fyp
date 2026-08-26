@@ -29,21 +29,21 @@ func NewBookingService(db *sql.DB, bookingRepo interfaces.IBookingRepo, emailSer
 	}
 }
 
-func (s *bookingService) GetAvailableSlots(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool) ([]param.ServiceSlotParam, error) {
+func (s *bookingService) GetAvailableSlots(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool, unavailable *param.StaffUnavailability) ([]param.ServiceSlotParam, error) {
 	if err := s.bookingRepo.SweepPastBookings(ctx); err != nil {
 		log.Errorf("failed to sweep past bookings: %v", err)
 	}
 	// bookingRepo.GetAvailableSlots itself checks the option's own
 	// [effective_from, effective_until] window against date, so a slot only
 	// comes back if the option is actually offerable then.
-	return s.bookingRepo.GetAvailableSlots(ctx, businessID, serviceOptionID, date, staffID, unassignedOnly)
+	return s.bookingRepo.GetAvailableSlots(ctx, businessID, serviceOptionID, date, staffID, unassignedOnly, unavailable)
 }
 
-func (s *bookingService) GetAvailableDates(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string) ([]string, error) {
+func (s *bookingService) GetAvailableDates(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string, unavailable *param.StaffUnavailability) ([]string, error) {
 	if err := s.bookingRepo.SweepPastBookings(ctx); err != nil {
 		log.Errorf("failed to sweep past bookings: %v", err)
 	}
-	return s.bookingRepo.GetAvailableDates(ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until)
+	return s.bookingRepo.GetAvailableDates(ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until, unavailable)
 }
 
 func (s *bookingService) GetRecentlyBookedBusinesses(ctx context.Context, userID int64) ([]param.BusinessProfileParam, error) {
@@ -85,7 +85,7 @@ func (s *bookingService) CreateBooking(ctx context.Context, userID int64, slotOp
 	}
 	booking, err := s.bookingRepo.InsertBooking(ctx, userID, slotOptionID, description)
 	if err != nil {
-		if database.IsUniqueViolation(err, "uq_active_booking_per_slot") {
+		if database.IsUniqueViolation(err, database.ConstraintActiveBookingPerSlot) {
 			return nil, errs.ValidationErrors{{Field: "slotOptionId", Message: "This time slot has already been booked"}}
 		}
 		return nil, err
@@ -352,7 +352,7 @@ func (s *bookingService) RescheduleBooking(ctx context.Context, userID int64, bo
 		}
 		return s.serviceRepo.DropSlotOptionIfExpired(ctx, tx, freedSlotOptionID)
 	}); err != nil {
-		if database.IsUniqueViolation(err, "uq_active_booking_per_slot") {
+		if database.IsUniqueViolation(err, database.ConstraintActiveBookingPerSlot) {
 			return nil, errs.ValidationErrors{{Field: "newSlotOptionId", Message: "The selected time slot is no longer available."}}
 		}
 		return nil, err

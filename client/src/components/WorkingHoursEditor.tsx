@@ -16,7 +16,7 @@ interface WorkingHoursEditorProps {
 }
 
 // Shared by RegisterStaffPage (setting a new staff's initial hours) and
-// StaffAvailabilityPage (editing an existing staff's hours) — a list of
+// StaffSchedulePage (editing an existing staff's hours) — a list of
 // day/start/end rows, each bounded by the business's own hours for that day.
 export default function WorkingHoursEditor({
     businessWorkingHours, workingHours, setWorkingHours, fieldErrors, setFieldErrors,

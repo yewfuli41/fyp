@@ -18,19 +18,22 @@ type leaveService struct {
 	serviceSlotRepo interfaces.IServiceSlotRepo
 	bookingRepo     interfaces.IBookingRepo
 	businessRepo    interfaces.IBusinessRepo
+	serviceRepo     interfaces.IServiceRepo
 	emailService    interfaces.IEmailService
 	tx              *database.Transaction
 }
 
 func NewLeaveService(
 	db *sql.DB, leaveRepo interfaces.ILeaveRepo, serviceSlotRepo interfaces.IServiceSlotRepo,
-	bookingRepo interfaces.IBookingRepo, businessRepo interfaces.IBusinessRepo, emailService interfaces.IEmailService,
+	bookingRepo interfaces.IBookingRepo, businessRepo interfaces.IBusinessRepo,
+	serviceRepo interfaces.IServiceRepo, emailService interfaces.IEmailService,
 ) interfaces.ILeaveService {
 	return &leaveService{
 		leaveRepo:       leaveRepo,
 		serviceSlotRepo: serviceSlotRepo,
 		bookingRepo:     bookingRepo,
 		businessRepo:    businessRepo,
+		serviceRepo:     serviceRepo,
 		emailService:    emailService,
 		tx:              database.NewTransaction(db),
 	}
@@ -148,11 +151,10 @@ func (s *leaveService) GetMyLeaveApplications(ctx context.Context, staffID int64
 
 // GetBusinessLeaveApplications attaches, to every PENDING or APPROVED
 // application, the active bookings its staff still has in that date range —
-// for a pending one, that's what the owner should weigh before deciding; for
-// an approved one, approving never auto-resolves a booked slot (see
-// ApproveLeaveApplication), so this keeps listing each one under the leave
-// until the owner reschedules it elsewhere, at which point it naturally
-// drops off (it's no longer this staff's booking in this date range).
+// for a pending one, that's the list the owner has to settle before the leave
+// can be approved at all (see ApproveLeaveApplication); each booking drops off
+// as it is rescheduled elsewhere (it's no longer this staff's booking in this
+// date range), so an approved application normally shows none left.
 // Rejected applications skip this (nothing left to act on).
 func (s *leaveService) GetBusinessLeaveApplications(ctx context.Context, businessID int64) ([]param.LeaveApplicationParam, error) {
 	apps, err := s.leaveRepo.GetLeaveApplicationsByBusinessID(ctx, businessID)
@@ -177,14 +179,21 @@ func (s *leaveService) GetBusinessLeaveApplications(ctx context.Context, busines
 	return apps, nil
 }
 
-// ApproveLeaveApplication never blocks on picking replacements: a slot with
-// no booking is freed back to owner-managed right away, while a booked slot
-// is simply left alone (still assigned, still visible) — the customer's
-// booking is unaffected until the owner explicitly reschedules it (via the
-// ordinary RescheduleBooking flow, which already requires the customer to
-// accept the new time). GetBusinessLeaveApplications keeps surfacing any
-// such booking under this leave as AffectedBookings until that happens.
-func (s *leaveService) ApproveLeaveApplication(ctx context.Context, businessID int64, leaveID int64) (*param.LeaveApplicationParam, error) {
+// ApproveLeaveApplication only goes through once every booking the leave
+// affects has been handed a replacement time: a slot with no booking is freed
+// back to owner-managed, but a slot still holding a customer's booking blocks
+// the approval outright, since granting the leave would otherwise leave that
+// customer with nobody to serve them.
+// reschedules, when supplied, moves each named booking onto a new slot as part
+// of the same transaction as the approval itself. Nothing is written until
+// every one of them has been validated, so an approval the owner abandons
+// half-way through — or one that fails on the last booking — leaves the leave
+// pending and every booking exactly where the customer left it. Without that,
+// each booking was committed (and the customer emailed) the moment it was
+// picked, stranding customers on new times for leave that was never granted.
+func (s *leaveService) ApproveLeaveApplication(
+	ctx context.Context, businessID int64, leaveID int64, reschedules []param.LeaveRescheduleParam,
+) (*param.LeaveApplicationParam, error) {
 	leave, err := s.getOwnLeave(ctx, leaveID)
 	if err != nil {
 		return nil, err
@@ -196,16 +205,48 @@ func (s *leaveService) ApproveLeaveApplication(ctx context.Context, businessID i
 		return nil, errs.ValidationErrors{{Field: "leaveId", Message: "Only pending leave applications can be approved."}}
 	}
 
+	moves, err := s.planLeaveReschedules(ctx, businessID, leave, reschedules)
+	if err != nil {
+		return nil, err
+	}
+
 	affected, err := s.serviceSlotRepo.GetAssignedSlotsInRange(ctx, leave.StaffID, leave.StartDate, leave.EndDate)
 	if err != nil {
 		return nil, err
 	}
 
+	movedSlots := make(map[int64]bool, len(moves))
+	for _, m := range moves {
+		movedSlots[m.booking.ServiceSlotID] = true
+	}
+
+	// Approving is all-or-nothing: a customer already booked with this staff
+	// member has to be handed a new time — on someone else's slot — before the
+	// leave can go through, or approving would quietly leave that booking with
+	// nobody to serve it. The owner settles every affected booking first.
+	for _, slot := range affected {
+		if slot.HasBooking && !movedSlots[slot.ServiceSlotID] {
+			return nil, errs.ValidationErrors{{
+				Field:   "reschedules",
+				Message: "Every booking affected by this leave must be rescheduled to a replacement staff member's time slot before the leave can be approved.",
+			}}
+		}
+	}
+
 	err = s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
-		for _, slot := range affected {
-			if slot.HasBooking {
-				continue
+		for _, m := range moves {
+			if err := s.bookingRepo.UpdateBookingSlotOption(ctx, tx, m.booking.BookingID, m.newSlotOptionID, "rescheduled"); err != nil {
+				return err
 			}
+			// The slot being vacated may offer an option whose effective
+			// window has since closed — same cleanup RescheduleBooking does.
+			if err := s.serviceRepo.DropSlotOptionIfExpired(ctx, tx, m.booking.SlotOptionID); err != nil {
+				return err
+			}
+		}
+		// Every remaining slot is now free of bookings (the guard above
+		// proved it), so it is safe to unassign the whole range.
+		for _, slot := range affected {
 			if err := s.serviceSlotRepo.ReassignStaff(ctx, tx, slot.ServiceSlotID, businessID, nil); err != nil {
 				return err
 			}
@@ -213,10 +254,108 @@ func (s *leaveService) ApproveLeaveApplication(ctx context.Context, businessID i
 		return s.leaveRepo.UpdateLeaveStatus(ctx, tx, leaveID, "approved", nil)
 	})
 	if err != nil {
+		if database.IsUniqueViolation(err, database.ConstraintActiveBookingPerSlot) {
+			return nil, errs.ValidationErrors{{Field: "reschedules", Message: "One of the selected time slots was just taken. Please pick another."}}
+		}
 		return nil, err
 	}
 
+	// Only once the whole approval is committed does anyone hear about it.
+	for _, m := range moves {
+		s.notifyRescheduled(ctx, m.booking.BookingID)
+	}
+
 	return s.leaveRepo.GetLeaveApplicationByID(ctx, leaveID)
+}
+
+type leaveMove struct {
+	booking         param.BookingDetailParam
+	newSlotOptionID int64
+}
+
+// planLeaveReschedules validates every requested move up front — before the
+// transaction opens — so a bad pick is reported without touching anything.
+func (s *leaveService) planLeaveReschedules(
+	ctx context.Context, businessID int64, leave *param.LeaveApplicationParam, reschedules []param.LeaveRescheduleParam,
+) ([]leaveMove, error) {
+	if len(reschedules) == 0 {
+		return nil, nil
+	}
+
+	bookings, err := s.bookingRepo.GetBusinessBookings(ctx, businessID, &leave.StaffID)
+	if err != nil {
+		return nil, err
+	}
+	affected := make(map[int64]param.BookingDetailParam, len(bookings))
+	for _, b := range bookings {
+		if b.Date >= leave.StartDate && b.Date <= leave.EndDate {
+			affected[b.BookingID] = b
+		}
+	}
+
+	moves := make([]leaveMove, 0, len(reschedules))
+	seenBooking := make(map[int64]bool, len(reschedules))
+	seenTarget := make(map[int64]bool, len(reschedules))
+	for _, r := range reschedules {
+		booking, ok := affected[r.BookingID]
+		if !ok {
+			return nil, errs.ValidationErrors{{Field: "reschedules", Message: "A booking being rescheduled is not affected by this leave."}}
+		}
+		if seenBooking[r.BookingID] {
+			return nil, errs.ValidationErrors{{Field: "reschedules", Message: "The same booking was rescheduled twice."}}
+		}
+		// Two bookings sent to one slot would otherwise be caught only by the
+		// database constraint, half-way through the transaction.
+		if seenTarget[r.NewSlotOptionID] {
+			return nil, errs.ValidationErrors{{Field: "reschedules", Message: "Two bookings were moved onto the same time slot."}}
+		}
+		seenBooking[r.BookingID] = true
+		seenTarget[r.NewSlotOptionID] = true
+
+		available, err := s.bookingRepo.SlotOptionIsAvailable(ctx, r.NewSlotOptionID)
+		if err != nil {
+			return nil, err
+		}
+		if !available {
+			return nil, errs.ValidationErrors{{Field: "reschedules", Message: "One of the selected time slots is no longer available."}}
+		}
+
+		// Moving a booking onto one of this staff member's own slots inside
+		// the very leave being approved is no better than leaving it where it
+		// is — they're off on that date either way. The picker already hides
+		// these, but that's a client-side rule; enforce it here too so a stale
+		// page (or anything not going through the picker) can't slip one past.
+		targetStaffID, targetDate, err := s.bookingRepo.GetSlotOptionAssignment(ctx, r.NewSlotOptionID)
+		if err != nil {
+			return nil, err
+		}
+		if targetStaffID != nil && *targetStaffID == leave.StaffID &&
+			targetDate >= leave.StartDate && targetDate <= leave.EndDate {
+			return nil, errs.ValidationErrors{{
+				Field:   "reschedules",
+				Message: "One of the selected time slots is this staff member's own, on a day covered by this leave. Pick a slot on another date, or one covered by someone else.",
+			}}
+		}
+		moves = append(moves, leaveMove{booking: booking, newSlotOptionID: r.NewSlotOptionID})
+	}
+	return moves, nil
+}
+
+// notifyRescheduled emails the customer that the business moved their booking.
+// Best-effort: the reschedule is already committed, so a failed send is logged
+// rather than surfaced as an approval failure.
+func (s *leaveService) notifyRescheduled(ctx context.Context, bookingID int64) {
+	c, err := s.bookingRepo.GetBookingContext(ctx, bookingID)
+	if err != nil {
+		log.Errorf("failed to load booking context for leave-reschedule email (booking %d): %v", bookingID, err)
+		return
+	}
+	if c.CustomerEmail == "" {
+		return
+	}
+	if err := s.emailService.SendBookingStatusEmail(c.CustomerEmail, c.CustomerName, c.BusinessName, "rescheduled"); err != nil {
+		log.Errorf("failed to send leave-reschedule email to %s: %v", c.CustomerEmail, err)
+	}
 }
 
 // RejectLeaveApplication also doubles as "reverse an approval": rejecting an

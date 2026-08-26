@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { Alert, Button, Form, Modal } from "react-bootstrap";
 import type { Service } from "../services/ServiceService";
 import type { Staff } from "../services/StaffService";
 import type { LeaveApplication } from "../services/LeaveService";
-import { computeTimeOptions, defaultOptionId, isOptionSelectableFor, todayISO, type WorkingHour } from "../utils/serviceSlotHelpers";
+import { computeTimeOptions, isOptionOfferedOn, type WorkingHour } from "../utils/serviceSlotHelpers";
 
 export interface WalkInSubmission {
     serviceOptionId: string;
@@ -27,6 +27,8 @@ interface RecordWalkInModalProps {
     onSubmit: (input: WalkInSubmission) => void;
     isSaving: boolean;
     formError: string;
+    fieldErrors: Record<string, string>;
+    setFieldErrors: Dispatch<SetStateAction<Record<string, string>>>;
     // When set (a staff member, not the owner, is recording the walk-in), the
     // Staff field is hidden — the backend forces it onto this staff ID anyway.
     lockedStaffId?: string;
@@ -36,7 +38,8 @@ interface RecordWalkInModalProps {
 // service (one option, not several), who it's for, and a single date + time
 // range — same shape as a regular slot, just created and booked in one step.
 export default function RecordWalkInModal({
-    show, onHide, services, staff, workingHours, lines, leaves, initialDate, onSubmit, isSaving, formError, lockedStaffId,
+    show, onHide, services, staff, workingHours, lines, leaves, initialDate, onSubmit, isSaving, formError,
+    fieldErrors, setFieldErrors, lockedStaffId,
 }: RecordWalkInModalProps) {
     const [serviceId, setServiceId] = useState("");
     const [optionId, setOptionId] = useState("");
@@ -52,19 +55,46 @@ export default function RecordWalkInModal({
         setStaffId(lockedStaffId ?? "");
         setDate(initialDate);
         setRange({ startTime: "", endTime: "" });
-    }, [show, lockedStaffId, initialDate]);
+        setFieldErrors({});
+    }, [show, lockedStaffId, initialDate, setFieldErrors]);
 
-    const selectableServices = services.filter(s => s.serviceOptions.some(o => isOptionSelectableFor(o, date, [])));
+    // A walk-in is a record of what was actually sold on the date it's being
+    // logged for, so options are filtered by that date's own effective window
+    // — not by today's catalog. Judging by today would both admit options
+    // that hadn't started yet and hide ones that have since ended, which are
+    // exactly the ones a backdated walk-in needs.
+    const offeredOnDate = (opt: { effectiveFrom?: string; effectiveUntil?: string }) => isOptionOfferedOn(opt, date);
+    const selectableServices = services.filter(s => s.serviceOptions.some(offeredOnDate));
     const selectedService = services.find(s => s.serviceId === serviceId);
-    const activeOptions = selectedService?.serviceOptions.filter(o => isOptionSelectableFor(o, date, [])) ?? [];
+    const activeOptions = selectedService?.serviceOptions.filter(offeredOnDate) ?? [];
+
+    // Changing the date can invalidate what's already picked, so drop a
+    // selection the new date doesn't offer rather than submitting it and
+    // having the backend reject it.
+    useEffect(() => {
+        if (!show) return;
+        if (serviceId && !services.some(s => s.serviceId === serviceId && s.serviceOptions.some(offeredOnDate))) {
+            setServiceId("");
+            setOptionId("");
+            return;
+        }
+        if (optionId && !activeOptions.some(o => o.serviceOptionId === optionId)) {
+            setOptionId("");
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [date, show, serviceId, optionId, services]);
 
     const handleServiceChange = (id: string) => {
         setServiceId(id);
-        setOptionId(defaultOptionId(services, id, date, []) ?? "");
+        const firstOption = services.find(s => s.serviceId === id)?.serviceOptions.find(offeredOnDate);
+        setOptionId(firstOption?.serviceOptionId ?? "");
+        setFieldErrors(prev => ({ ...prev, serviceOptionIds: "" }));
     };
 
     const timeOptions = useMemo(
-        () => computeTimeOptions({ staffId, date, daysOfWeek: [], startTime: "", endTime: "", serviceOptionIds: [] }, staff, workingHours, lines),
+        // allowPastTimes: a walk-in is recorded after it already happened, so
+        // today's already-passed times must stay selectable.
+        () => computeTimeOptions({ staffId, date, daysOfWeek: [], startTime: "", endTime: "", serviceOptionIds: [] }, staff, workingHours, lines, true),
         [staffId, date, staff, workingHours, lines],
     );
 
@@ -88,10 +118,18 @@ export default function RecordWalkInModal({
     const onLeave = !!staffId && leaves.some(l =>
         l.staffId === staffId && l.status === "APPROVED" && l.startDate <= date && l.endDate >= date);
 
-    const canSubmit = !!optionId && timeOptions.length >= 2 && !onLeave;
-
+    // Save stays enabled and clicking it surfaces exactly why it can't go
+    // through yet, pinned to the relevant field, rather than leaving the
+    // button silently disabled or the reason stuck in a generic banner.
+    // onLeave/no-working-hours already replace the time pickers with an
+    // inline explanation below, so they just block the submit here.
     const handleSubmit = () => {
-        if (!canSubmit) return;
+        if (!optionId) {
+            setFieldErrors({ serviceOptionIds: "Please select a service and its option." });
+            return;
+        }
+        if (onLeave || timeOptions.length < 2 || !startTime || !endTime) return;
+        setFieldErrors({});
         onSubmit({
             serviceOptionId: optionId,
             staffId: lockedStaffId ?? staffId,
@@ -111,13 +149,20 @@ export default function RecordWalkInModal({
                         <option value="">Select a service</option>
                         {selectableServices.map(s => <option key={s.serviceId} value={s.serviceId}>{s.serviceName}</option>)}
                     </Form.Select>
+                    {!selectedService && fieldErrors.serviceOptionIds && (
+                        <div className="text-danger small mt-1">{fieldErrors.serviceOptionIds}</div>
+                    )}
                 </Form.Group>
 
                 {selectedService && (
                     <Form.Group className="mb-3">
                         <Form.Label>Option <span className="text-danger">*</span></Form.Label>
                         {activeOptions.length === 0 && (
-                            <div className="text-muted small">This service has no options.</div>
+                            <div className="text-muted small">
+                                {selectedService.serviceOptions.length === 0
+                                    ? "This service has no options."
+                                    : `None of this service's options were offered on ${date}.`}
+                            </div>
                         )}
                         {activeOptions.map(opt => (
                             <Form.Check
@@ -128,15 +173,16 @@ export default function RecordWalkInModal({
                                     ? `${opt.serviceOptionName} - ${opt.serviceOptionItems.map(i => i.serviceOptionItemName).join(", ")}`
                                     : opt.serviceOptionName}
                                 checked={optionId === opt.serviceOptionId}
-                                onChange={() => setOptionId(opt.serviceOptionId)}
+                                onChange={() => { setOptionId(opt.serviceOptionId); setFieldErrors(prev => ({ ...prev, serviceOptionIds: "" })); }}
                             />
                         ))}
+                        {fieldErrors.serviceOptionIds && <div className="text-danger small">{fieldErrors.serviceOptionIds}</div>}
                     </Form.Group>
                 )}
 
                 {lockedStaffId === undefined && (
                     <Form.Group className="mb-3">
-                        <Form.Label>Staff</Form.Label>
+                        <Form.Label>Staff (Optional)</Form.Label>
                         <Form.Select value={staffId} onChange={e => setStaffId(e.target.value)}>
                             <option value="">Owner-managed</option>
                             {staff.map(s => <option key={s.staffId} value={s.staffId}>{s.name}</option>)}
@@ -149,7 +195,6 @@ export default function RecordWalkInModal({
                     <Form.Control
                         type="date"
                         value={date}
-                        min={todayISO()}
                         onChange={e => setDate(e.target.value)}
                     />
                 </Form.Group>
@@ -192,7 +237,7 @@ export default function RecordWalkInModal({
             </Modal.Body>
             <Modal.Footer>
                 <Button variant="outline-secondary" onClick={onHide}>Cancel</Button>
-                <Button variant="primary" onClick={handleSubmit} disabled={isSaving || !canSubmit}>
+                <Button variant="primary" onClick={handleSubmit} disabled={isSaving}>
                     {isSaving ? "Saving..." : "Save"}
                 </Button>
             </Modal.Footer>

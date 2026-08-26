@@ -58,12 +58,17 @@ func (r *mutationResolver) CreateServiceSlot(ctx context.Context, input model.Se
 	for _, d := range input.DaysOfWeek {
 		daysOfWeek = append(daysOfWeek, string(d))
 	}
+	recurringEndDate := ""
+	if input.RecurringEndDate != nil {
+		recurringEndDate = *input.RecurringEndDate
+	}
 
 	p := param.ServiceSlotParam{
 		BusinessID:       businessID,
 		StaffID:          staffID,
 		Date:             date,
 		DaysOfWeek:       daysOfWeek,
+		RecurringEndDate: recurringEndDate,
 		StartTime:        input.StartTime,
 		EndTime:          input.EndTime,
 		ServiceOptionIDs: packageIDs,
@@ -125,6 +130,10 @@ func (r *mutationResolver) UpdateServiceSlot(ctx context.Context, serviceSlotID 
 	for _, d := range input.DaysOfWeek {
 		daysOfWeek = append(daysOfWeek, string(d))
 	}
+	recurringEndDate := ""
+	if input.RecurringEndDate != nil {
+		recurringEndDate = *input.RecurringEndDate
+	}
 
 	p := param.ServiceSlotParam{
 		ServiceSlotID:    slotID,
@@ -132,6 +141,7 @@ func (r *mutationResolver) UpdateServiceSlot(ctx context.Context, serviceSlotID 
 		StaffID:          staffID,
 		Date:             date,
 		DaysOfWeek:       daysOfWeek,
+		RecurringEndDate: recurringEndDate,
 		StartTime:        input.StartTime,
 		EndTime:          input.EndTime,
 		ServiceOptionIDs: packageIDs,
@@ -284,4 +294,9 @@ func (r *queryResolver) AvailableStaffForSlot(ctx context.Context, serviceSlotID
 		result[i] = graph.MapStaff(&staffList[i])
 	}
 	return result, nil
+}
+
+// RecurringDefaultWeeks is the resolver for the recurringDefaultWeeks field.
+func (r *queryResolver) RecurringDefaultWeeks(ctx context.Context) (int32, error) {
+	return int32(r.App.ServiceSlotConfig.RecurringHorizonWeeks), nil
 }

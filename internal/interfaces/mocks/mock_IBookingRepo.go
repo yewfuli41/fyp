@@ -40,8 +40,8 @@ func (_m *MockIBookingRepo) EXPECT() *MockIBookingRepo_Expecter {
 }
 
 // GetAvailableDates provides a mock function for the type MockIBookingRepo
-func (_mock *MockIBookingRepo) GetAvailableDates(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string) ([]string, error) {
-	ret := _mock.Called(ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until)
+func (_mock *MockIBookingRepo) GetAvailableDates(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string, unavailable *param.StaffUnavailability) ([]string, error) {
+	ret := _mock.Called(ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until, unavailable)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAvailableDates")
@@ -49,18 +49,18 @@ func (_mock *MockIBookingRepo) GetAvailableDates(ctx context.Context, businessID
 
 	var r0 []string
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *int64, *int64, *int64, bool, string, string) ([]string, error)); ok {
-		return returnFunc(ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *int64, *int64, *int64, bool, string, string, *param.StaffUnavailability) ([]string, error)); ok {
+		return returnFunc(ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until, unavailable)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *int64, *int64, *int64, bool, string, string) []string); ok {
-		r0 = returnFunc(ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *int64, *int64, *int64, bool, string, string, *param.StaffUnavailability) []string); ok {
+		r0 = returnFunc(ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until, unavailable)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]string)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *int64, *int64, *int64, bool, string, string) error); ok {
-		r1 = returnFunc(ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *int64, *int64, *int64, bool, string, string, *param.StaffUnavailability) error); ok {
+		r1 = returnFunc(ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until, unavailable)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -81,11 +81,12 @@ type MockIBookingRepo_GetAvailableDates_Call struct {
 //   - unassignedOnly bool
 //   - from string
 //   - until string
-func (_e *MockIBookingRepo_Expecter) GetAvailableDates(ctx interface{}, businessID interface{}, serviceID interface{}, serviceOptionID interface{}, staffID interface{}, unassignedOnly interface{}, from interface{}, until interface{}) *MockIBookingRepo_GetAvailableDates_Call {
-	return &MockIBookingRepo_GetAvailableDates_Call{Call: _e.mock.On("GetAvailableDates", ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until)}
+//   - unavailable *param.StaffUnavailability
+func (_e *MockIBookingRepo_Expecter) GetAvailableDates(ctx interface{}, businessID interface{}, serviceID interface{}, serviceOptionID interface{}, staffID interface{}, unassignedOnly interface{}, from interface{}, until interface{}, unavailable interface{}) *MockIBookingRepo_GetAvailableDates_Call {
+	return &MockIBookingRepo_GetAvailableDates_Call{Call: _e.mock.On("GetAvailableDates", ctx, businessID, serviceID, serviceOptionID, staffID, unassignedOnly, from, until, unavailable)}
 }
 
-func (_c *MockIBookingRepo_GetAvailableDates_Call) Run(run func(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string)) *MockIBookingRepo_GetAvailableDates_Call {
+func (_c *MockIBookingRepo_GetAvailableDates_Call) Run(run func(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string, unavailable *param.StaffUnavailability)) *MockIBookingRepo_GetAvailableDates_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -119,6 +120,10 @@ func (_c *MockIBookingRepo_GetAvailableDates_Call) Run(run func(ctx context.Cont
 		if args[7] != nil {
 			arg7 = args[7].(string)
 		}
+		var arg8 *param.StaffUnavailability
+		if args[8] != nil {
+			arg8 = args[8].(*param.StaffUnavailability)
+		}
 		run(
 			arg0,
 			arg1,
@@ -128,6 +133,7 @@ func (_c *MockIBookingRepo_GetAvailableDates_Call) Run(run func(ctx context.Cont
 			arg5,
 			arg6,
 			arg7,
+			arg8,
 		)
 	})
 	return _c
@@ -138,14 +144,14 @@ func (_c *MockIBookingRepo_GetAvailableDates_Call) Return(strings []string, err 
 	return _c
 }
 
-func (_c *MockIBookingRepo_GetAvailableDates_Call) RunAndReturn(run func(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string) ([]string, error)) *MockIBookingRepo_GetAvailableDates_Call {
+func (_c *MockIBookingRepo_GetAvailableDates_Call) RunAndReturn(run func(ctx context.Context, businessID int64, serviceID *int64, serviceOptionID *int64, staffID *int64, unassignedOnly bool, from string, until string, unavailable *param.StaffUnavailability) ([]string, error)) *MockIBookingRepo_GetAvailableDates_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetAvailableSlots provides a mock function for the type MockIBookingRepo
-func (_mock *MockIBookingRepo) GetAvailableSlots(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool) ([]param.ServiceSlotParam, error) {
-	ret := _mock.Called(ctx, businessID, serviceOptionID, date, staffID, unassignedOnly)
+func (_mock *MockIBookingRepo) GetAvailableSlots(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool, unavailable *param.StaffUnavailability) ([]param.ServiceSlotParam, error) {
+	ret := _mock.Called(ctx, businessID, serviceOptionID, date, staffID, unassignedOnly, unavailable)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAvailableSlots")
@@ -153,18 +159,18 @@ func (_mock *MockIBookingRepo) GetAvailableSlots(ctx context.Context, businessID
 
 	var r0 []param.ServiceSlotParam
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, string, *int64, bool) ([]param.ServiceSlotParam, error)); ok {
-		return returnFunc(ctx, businessID, serviceOptionID, date, staffID, unassignedOnly)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, string, *int64, bool, *param.StaffUnavailability) ([]param.ServiceSlotParam, error)); ok {
+		return returnFunc(ctx, businessID, serviceOptionID, date, staffID, unassignedOnly, unavailable)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, string, *int64, bool) []param.ServiceSlotParam); ok {
-		r0 = returnFunc(ctx, businessID, serviceOptionID, date, staffID, unassignedOnly)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, string, *int64, bool, *param.StaffUnavailability) []param.ServiceSlotParam); ok {
+		r0 = returnFunc(ctx, businessID, serviceOptionID, date, staffID, unassignedOnly, unavailable)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]param.ServiceSlotParam)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, int64, string, *int64, bool) error); ok {
-		r1 = returnFunc(ctx, businessID, serviceOptionID, date, staffID, unassignedOnly)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, int64, string, *int64, bool, *param.StaffUnavailability) error); ok {
+		r1 = returnFunc(ctx, businessID, serviceOptionID, date, staffID, unassignedOnly, unavailable)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -183,11 +189,12 @@ type MockIBookingRepo_GetAvailableSlots_Call struct {
 //   - date string
 //   - staffID *int64
 //   - unassignedOnly bool
-func (_e *MockIBookingRepo_Expecter) GetAvailableSlots(ctx interface{}, businessID interface{}, serviceOptionID interface{}, date interface{}, staffID interface{}, unassignedOnly interface{}) *MockIBookingRepo_GetAvailableSlots_Call {
-	return &MockIBookingRepo_GetAvailableSlots_Call{Call: _e.mock.On("GetAvailableSlots", ctx, businessID, serviceOptionID, date, staffID, unassignedOnly)}
+//   - unavailable *param.StaffUnavailability
+func (_e *MockIBookingRepo_Expecter) GetAvailableSlots(ctx interface{}, businessID interface{}, serviceOptionID interface{}, date interface{}, staffID interface{}, unassignedOnly interface{}, unavailable interface{}) *MockIBookingRepo_GetAvailableSlots_Call {
+	return &MockIBookingRepo_GetAvailableSlots_Call{Call: _e.mock.On("GetAvailableSlots", ctx, businessID, serviceOptionID, date, staffID, unassignedOnly, unavailable)}
 }
 
-func (_c *MockIBookingRepo_GetAvailableSlots_Call) Run(run func(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool)) *MockIBookingRepo_GetAvailableSlots_Call {
+func (_c *MockIBookingRepo_GetAvailableSlots_Call) Run(run func(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool, unavailable *param.StaffUnavailability)) *MockIBookingRepo_GetAvailableSlots_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -213,6 +220,10 @@ func (_c *MockIBookingRepo_GetAvailableSlots_Call) Run(run func(ctx context.Cont
 		if args[5] != nil {
 			arg5 = args[5].(bool)
 		}
+		var arg6 *param.StaffUnavailability
+		if args[6] != nil {
+			arg6 = args[6].(*param.StaffUnavailability)
+		}
 		run(
 			arg0,
 			arg1,
@@ -220,6 +231,7 @@ func (_c *MockIBookingRepo_GetAvailableSlots_Call) Run(run func(ctx context.Cont
 			arg3,
 			arg4,
 			arg5,
+			arg6,
 		)
 	})
 	return _c
@@ -230,7 +242,7 @@ func (_c *MockIBookingRepo_GetAvailableSlots_Call) Return(serviceSlotParams []pa
 	return _c
 }
 
-func (_c *MockIBookingRepo_GetAvailableSlots_Call) RunAndReturn(run func(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool) ([]param.ServiceSlotParam, error)) *MockIBookingRepo_GetAvailableSlots_Call {
+func (_c *MockIBookingRepo_GetAvailableSlots_Call) RunAndReturn(run func(ctx context.Context, businessID int64, serviceOptionID int64, date string, staffID *int64, unassignedOnly bool, unavailable *param.StaffUnavailability) ([]param.ServiceSlotParam, error)) *MockIBookingRepo_GetAvailableSlots_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -645,6 +657,80 @@ func (_c *MockIBookingRepo_GetRecentlyBookedBusinesses_Call) Return(businessProf
 }
 
 func (_c *MockIBookingRepo_GetRecentlyBookedBusinesses_Call) RunAndReturn(run func(ctx context.Context, userID int64) ([]param.BusinessProfileParam, error)) *MockIBookingRepo_GetRecentlyBookedBusinesses_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetSlotOptionAssignment provides a mock function for the type MockIBookingRepo
+func (_mock *MockIBookingRepo) GetSlotOptionAssignment(ctx context.Context, slotOptionID int64) (*int64, string, error) {
+	ret := _mock.Called(ctx, slotOptionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetSlotOptionAssignment")
+	}
+
+	var r0 *int64
+	var r1 string
+	var r2 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (*int64, string, error)); ok {
+		return returnFunc(ctx, slotOptionID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) *int64); ok {
+		r0 = returnFunc(ctx, slotOptionID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*int64)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) string); ok {
+		r1 = returnFunc(ctx, slotOptionID)
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+	if returnFunc, ok := ret.Get(2).(func(context.Context, int64) error); ok {
+		r2 = returnFunc(ctx, slotOptionID)
+	} else {
+		r2 = ret.Error(2)
+	}
+	return r0, r1, r2
+}
+
+// MockIBookingRepo_GetSlotOptionAssignment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSlotOptionAssignment'
+type MockIBookingRepo_GetSlotOptionAssignment_Call struct {
+	*mock.Call
+}
+
+// GetSlotOptionAssignment is a helper method to define mock.On call
+//   - ctx context.Context
+//   - slotOptionID int64
+func (_e *MockIBookingRepo_Expecter) GetSlotOptionAssignment(ctx interface{}, slotOptionID interface{}) *MockIBookingRepo_GetSlotOptionAssignment_Call {
+	return &MockIBookingRepo_GetSlotOptionAssignment_Call{Call: _e.mock.On("GetSlotOptionAssignment", ctx, slotOptionID)}
+}
+
+func (_c *MockIBookingRepo_GetSlotOptionAssignment_Call) Run(run func(ctx context.Context, slotOptionID int64)) *MockIBookingRepo_GetSlotOptionAssignment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetSlotOptionAssignment_Call) Return(staffID *int64, date string, err error) *MockIBookingRepo_GetSlotOptionAssignment_Call {
+	_c.Call.Return(staffID, date, err)
+	return _c
+}
+
+func (_c *MockIBookingRepo_GetSlotOptionAssignment_Call) RunAndReturn(run func(ctx context.Context, slotOptionID int64) (*int64, string, error)) *MockIBookingRepo_GetSlotOptionAssignment_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -109,10 +109,28 @@ export const businessLeaveApplications = async (token: string) => {
 // left as-is until the owner reschedules that booking separately (see
 // rescheduleBooking in BookingService — it already requires the customer to
 // accept the new time before it's final).
-export const approveLeaveApplication = async (token: string, leaveId: string) => {
+export interface LeaveReschedule {
+    bookingId: string;
+    newSlotOptionId: string;
+}
+
+// The owner settles every affected booking in the UI first and the whole set
+// is sent here with the approval, so the server can move them in the same
+// transaction. Nothing is written — and no customer is emailed — if the owner
+// abandons the flow part-way, leaving the leave pending and every booking put.
+export const approveLeaveApplication = async (
+    token: string,
+    leaveId: string,
+    reschedules: LeaveReschedule[] = [],
+) => {
+    const reschedulesArg = reschedules.length
+        ? `, reschedules: [${reschedules
+            .map(r => `{bookingId: "${r.bookingId}", newSlotOptionId: "${r.newSlotOptionId}"}`)
+            .join(", ")}]`
+        : "";
     const query = `
         mutation {
-            approveLeaveApplication(leaveId: "${leaveId}") {
+            approveLeaveApplication(leaveId: "${leaveId}"${reschedulesArg}) {
                 ${LEAVE_FIELDS}
             }
         }

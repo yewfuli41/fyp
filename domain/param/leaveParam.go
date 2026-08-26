@@ -7,6 +7,28 @@ import (
 	"unicode/utf8"
 )
 
+// StaffUnavailability marks one staff member as unable to work across a date
+// range, so their slots in it are not offered as reschedule targets. Needed
+// while approving a leave: the application is still pending at that point, so
+// ILeaveRepo.IsStaffOnLeave — which only counts approved leave — can't see it,
+// and the owner would otherwise be offered the very slots the staff member is
+// taking off.
+type StaffUnavailability struct {
+	StaffID int64
+	From    string // "YYYY-MM-DD"
+	Until   string // "YYYY-MM-DD"
+}
+
+// LeaveRescheduleParam is one "move this booking to that slot" decision made
+// while approving a leave. The owner settles every affected booking in the UI
+// first and the whole set is submitted with the approval, so no customer is
+// moved for a leave that is still pending — see
+// ILeaveService.ApproveLeaveApplication.
+type LeaveRescheduleParam struct {
+	BookingID       int64
+	NewSlotOptionID int64
+}
+
 // LeaveApplicationParam is a staff member's leave request. Deliberately has
 // no "type" (annual/personal/medical, ...) — just a date range and a
 // free-text reason.

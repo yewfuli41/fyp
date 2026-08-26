@@ -43,9 +43,11 @@ type ILeaveService interface {
 	DeleteLeaveApplication(ctx context.Context, staffID int64, leaveID int64) error
 	GetMyLeaveApplications(ctx context.Context, staffID int64) ([]param.LeaveApplicationParam, error)
 	GetBusinessLeaveApplications(ctx context.Context, businessID int64) ([]param.LeaveApplicationParam, error)
-	// ApproveLeaveApplication never blocks on picking replacements — see its
-	// doc comment for why.
-	ApproveLeaveApplication(ctx context.Context, businessID int64, leaveID int64) (*param.LeaveApplicationParam, error)
+	// ApproveLeaveApplication approves a pending leave, optionally moving the
+	// bookings it affects to new slots in the same transaction. reschedules
+	// may be nil (approve and leave booked slots as they are); when supplied,
+	// either the whole approval lands or none of it does — see its doc comment.
+	ApproveLeaveApplication(ctx context.Context, businessID int64, leaveID int64, reschedules []param.LeaveRescheduleParam) (*param.LeaveApplicationParam, error)
 	// RejectLeaveApplication also reverses an already-approved leave (moving
 	// it to rejected, with a required remark) — there is no separate cancel.
 	RejectLeaveApplication(ctx context.Context, businessID int64, leaveID int64, remark string) (*param.LeaveApplicationParam, error)

@@ -41,7 +41,7 @@ func (s *authService) SignUp(ctx context.Context, signupParam param.SignUpParam)
 
 	user, err := s.authRepo.SignUp(ctx, signupParam)
 	if err != nil {
-		if database.IsUniqueViolation(err, "users_email_key") {
+		if database.IsUniqueViolation(err, database.ConstraintUserEmail) {
 			return nil, errs.ValidationErrors{
 				{Field: "email", Message: "This email is already registered"},
 			}

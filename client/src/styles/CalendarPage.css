@@ -2,6 +2,9 @@
   min-height: 50vh;
 }
 
+/* The toolbar's two action buttons are styled by styles/toolbarButtons.css,
+   shared with Staff Management so the pairing reads the same on both. */
+
 .calendar-page-alert {
   max-width: 1200px;
 }

@@ -26,7 +26,11 @@ extend type Query {
   # staffId narrows to one staff member; unassignedOnly (true) narrows instead
   # to owner-managed slots (no staff assigned) and takes precedence over
   # staffId if both are somehow passed. Both omitted/false = any.
-  availableSlots(businessId: ID!, serviceOptionId: ID!, date: Date!, staffId: ID, unassignedOnly: Boolean): [ServiceSlot!]!
+  # unavailableStaffId, with unavailableFrom/unavailableUntil, hides that staff
+  # member's slots across that date range. Used while approving their leave:
+  # the application is still pending then, so nothing else knows to keep the
+  # owner from moving a customer onto a day the staff is about to take off.
+  availableSlots(businessId: ID!, serviceOptionId: ID!, date: Date!, staffId: ID, unassignedOnly: Boolean, unavailableStaffId: ID, unavailableFrom: Date, unavailableUntil: Date): [ServiceSlot!]!
   # Dates within [from, until] that have at least one bookable slot, used to
   # colour a date picker. serviceId narrows to one service (omitted = any
   # service in the business, e.g. for reschedule); serviceOptionId narrows
@@ -37,7 +41,10 @@ extend type Query {
   # reschedule picker passes their own id so only their slots show as
   # available); unassignedOnly (true) narrows instead to owner-managed slots
   # and takes precedence over staffId if both are somehow passed.
-  availableDates(businessId: ID!, serviceId: ID, serviceOptionId: ID, staffId: ID, unassignedOnly: Boolean, from: Date!, until: Date!): [Date!]!
+  # unavailableStaffId/unavailableFrom/unavailableUntil behave exactly as they
+  # do on availableSlots — they must, or the calendar would colour a date green
+  # that the slot list then refuses to fill.
+  availableDates(businessId: ID!, serviceId: ID, serviceOptionId: ID, staffId: ID, unassignedOnly: Boolean, from: Date!, until: Date!, unavailableStaffId: ID, unavailableFrom: Date, unavailableUntil: Date): [Date!]!
   recentlyBookedBusinesses: [BusinessProfile!]!
   businessBookings: [BookingDetail!]!
   myAppointments: [BookingDetail!]!

@@ -2,6 +2,10 @@ input ServiceSlotInput {
   staffId: ID
   date: Date                 # a single specific date, OR ...
   daysOfWeek: [DayOfWeek!]   # ... recurring weekdays (mutually exclusive)
+  # Last date a weekday series generates an occurrence for. Omitted => the
+  # configured default (see recurringDefaultWeeks). Occurrences are generated
+  # once, at creation, so this is the series' full extent.
+  recurringEndDate: Date
   startTime: Time!
   endTime: Time!
   serviceOptionIds: [ID!]!
@@ -10,6 +14,10 @@ input ServiceSlotInput {
 extend type Query {
   displayServiceSlots(date: Date!, staffId: ID, serviceId: ID, unassignedOnly: Boolean): [ServiceSlot!]!
   availableStaffForSlot(serviceSlotId: ID!): [Staff!]!
+  # Default length, in weeks, of a new weekly-recurring series — used to seed
+  # the end-date picker. Served from the same config the generation falls back
+  # to, so the default the UI offers matches what an omitted end date produces.
+  recurringDefaultWeeks: Int!
 }
 
 extend type Mutation {

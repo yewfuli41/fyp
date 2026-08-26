@@ -1,0 +1,76 @@
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: postgresdb
+      POSTGRES_PASSWORD: postgresdb
+      POSTGRES_DB: fyp_booking
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgresdb -d fyp_booking"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: postgres:14
+    environment:
+      PGPASSWORD: postgresdb
+    volumes:
+      - ./database/schema.sql:/schema.sql:ro
+    command:
+      - psql
+      - -U
+      - postgresdb
+      - -h
+      - postgres
+      - -d
+      - fyp_booking
+      - -p
+      - "5432"
+      - -f
+      - /schema.sql
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  seed:
+    image: golang:1.25.6-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: go run ./database/seed
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgresdb
+      DB_PASSWORD: postgresdb
+      DB_NAME: fyp_booking
+      DB_SSLMODE: disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgresdb
+      DB_PASSWORD: postgresdb
+      DB_NAME: fyp_booking
+      DB_SSLMODE: disable
+
+      JWT_SECRET: ${JWT_SECRET}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      FROM_EMAIL: ${FROM_EMAIL}
+      FROM_NAME: ${FROM_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully

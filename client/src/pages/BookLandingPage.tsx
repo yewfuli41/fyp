@@ -3,12 +3,11 @@ import { Button, Col, Container, Form, Row, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import {
-    getPublicBusinesses, getPublicServices, getRecentlyBookedBusinesses,
-    type PublicBusiness, type PublicService,
+    getPublicBusinesses, getRecentlyBookedBusinesses,
+    type PublicBusiness,
 } from "../services/PublicService";
-import { findBookableOptionIds, isCurrentOption } from "../utils/serviceAvailability";
 import { businessAvatarColor } from "../utils/businessColor";
-import { IconCalendar, IconChevronRight, IconClock, IconPin, IconSearch, IconUser } from "../components/icons";
+import { IconCalendar, IconChevronRight, IconClock, IconMail, IconPhone, IconPin, IconSearch, IconUser } from "../components/icons";
 import "../styles/BookLandingPage.css";
 
 // A stable-per-visit sample of 3 — reshuffled only when the underlying list
@@ -59,45 +58,18 @@ export default function BookLandingPage() {
     const [focused, setFocused] = useState(false);
     const [businesses, setBusinesses] = useState<PublicBusiness[]>([]);
     const [businessesLoading, setBusinessesLoading] = useState(true);
-    const [servicesByBusiness, setServicesByBusiness] = useState<Record<string, PublicService[]>>({});
-    // Which options are still actually bookable — same "current + has a real
-    // upcoming slot" check the services-browsing page uses, so a suggestion
-    // never advertises an option with nothing to book.
-    const [bookableOptionIds, setBookableOptionIds] = useState<Set<string>>(new Set());
     const [recent, setRecent] = useState<PublicBusiness[]>([]);
     const [recentLoading, setRecentLoading] = useState(false);
 
-    // Loaded once for the type-ahead suggestions (name, description, and
-    // each business's currently bookable options).
+    // Loaded once for the type-ahead suggestions and the featured list.
     useEffect(() => {
         const load = async () => {
             try {
                 const res = await getPublicBusinesses();
-                const list = res.data?.publicBusinesses ?? [];
-                setBusinesses(list);
-                setBusinessesLoading(false);
-
-                const servicesEntries = await Promise.all(
-                    list.map(async biz => {
-                        try {
-                            const svcRes = await getPublicServices(biz.businessId);
-                            return [biz.businessId, svcRes.data?.publicServices ?? []] as const;
-                        } catch {
-                            return [biz.businessId, []] as const;
-                        }
-                    })
-                );
-                setServicesByBusiness(Object.fromEntries(servicesEntries));
-
-                const bookableEntries = await Promise.all(
-                    servicesEntries.map(([businessId, services]) => {
-                        const currentOptions = services.flatMap(s => s.serviceOptions.filter(isCurrentOption));
-                        return findBookableOptionIds(businessId, currentOptions);
-                    })
-                );
-                setBookableOptionIds(new Set(bookableEntries.flatMap(set => [...set])));
+                setBusinesses(res.data?.publicBusinesses ?? []);
             } catch {
                 setBusinesses([]);
+            } finally {
                 setBusinessesLoading(false);
             }
         };
@@ -138,13 +110,6 @@ export default function BookLandingPage() {
         : [];
     const showSuggestions = focused && suggestions.length > 0;
 
-    // Flattened, currently-bookable options for one business — capped for
-    // the compact dropdown row rather than every option it offers.
-    const bookableOptionsFor = (businessId: string) =>
-        (servicesByBusiness[businessId] ?? [])
-            .flatMap(s => s.serviceOptions)
-            .filter(o => isCurrentOption(o) && bookableOptionIds.has(o.serviceOptionId));
-
     return (
         <Container className="py-4">
             <div className="book-hero">
@@ -169,35 +134,34 @@ export default function BookLandingPage() {
                         />
                         {showSuggestions && (
                             <ul className="book-autocomplete">
-                                {suggestions.map(b => {
-                                    const options = bookableOptionsFor(b.businessId);
-                                    return (
-                                        <li
-                                            key={b.businessId}
-                                            // onMouseDown fires before the input's blur, so the click registers.
-                                            onMouseDown={() => goToBusiness(b.businessId)}
-                                        >
-                                            <div className="book-suggestion-name">{b.businessName}</div>
-                                            {b.description && (
-                                                <div className="book-suggestion-desc">{b.description}</div>
-                                            )}
-                                            {options.length > 0 && (
-                                                <div className="book-suggestion-options">
-                                                    {options.slice(0, 4).map(o => (
-                                                        <span key={o.serviceOptionId} className="book-suggestion-option-pill">
-                                                            {o.serviceOptionName}
-                                                        </span>
-                                                    ))}
-                                                    {options.length > 4 && (
-                                                        <span className="text-muted small align-self-center">
-                                                            +{options.length - 4} more
-                                                        </span>
-                                                    )}
+                                {suggestions.map(b => (
+                                    <li
+                                        key={b.businessId}
+                                        // onMouseDown fires before the input's blur, so the click registers.
+                                        onMouseDown={() => goToBusiness(b.businessId)}
+                                    >
+                                        <div className="d-flex align-items-start gap-3">
+                                            {b.imageUrl ? (
+                                                <img className="book-suggestion-avatar" src={b.imageUrl} alt={b.businessName} />
+                                            ) : (
+                                                <div
+                                                    className="book-suggestion-avatar"
+                                                    style={{ background: businessAvatarColor(b.businessId) }}
+                                                >
+                                                    {b.businessName.charAt(0).toUpperCase()}
                                                 </div>
                                             )}
-                                        </li>
-                                    );
-                                })}
+                                            <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                                                <div className="book-suggestion-name">{b.businessName}</div>
+                                                {b.address && (
+                                                    <div className="book-suggestion-detail"><IconPin size={13} />{b.address}</div>
+                                                )}
+                                                <div className="book-suggestion-detail"><IconMail size={13} />{b.businessEmail}</div>
+                                                <div className="book-suggestion-detail"><IconPhone size={13} />{b.businessContactNumber}</div>
+                                            </div>
+                                        </div>
+                                    </li>
+                                ))}
                             </ul>
                         )}
                     </div>

@@ -13,6 +13,7 @@ import { parseGraphQLErrors } from "../utils/graphqlErrors";
 import { FIELD_LIMITS, shouldClearEmailError } from "../utils/fieldLimits";
 import lockIcon from "../assets/lock.png";
 import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
+import "../styles/toolbarButtons.css";
 
 // Backend validation fields → table columns being edited.
 type RowErrors = Partial<Record<"staffName" | "staffEmail" | "staffContactNumber" | "position", string>>;
@@ -210,9 +211,26 @@ export default function StaffManagementPage() {
 
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2 className="h4 fw-bold mb-0 text-start">Staff Table</h2>
-                <Button variant="primary" onClick={() => navigate("/register-staff")}>
-                    + Add Staff
-                </Button>
+                <div className="d-flex gap-2">
+                    {/* Working hours live on their own page — this is the only
+                        way in, since the nav's fifth tab is Staff Leave. Styled
+                        as the lighter half of the pair, like the Calendar
+                        toolbar's "Record Walk-In" next to "Add Service Slots". */}
+                    <Button
+                        className="toolbar-btn toolbar-btn-soft"
+                        variant="outline-primary"
+                        onClick={() => navigate("/staff-schedule")}
+                    >
+                        Manage Staff Schedule
+                    </Button>
+                    <Button
+                        className="toolbar-btn"
+                        variant="primary"
+                        onClick={() => navigate("/register-staff")}
+                    >
+                        + Add Staff
+                    </Button>
+                </div>
             </div>
 
             {pageError && <Alert variant="danger">{pageError}</Alert>}

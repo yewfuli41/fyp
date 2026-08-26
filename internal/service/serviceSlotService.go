@@ -12,8 +12,6 @@ import (
 	"fyp/internal/interfaces"
 	"strings"
 	"time"
-
-	"github.com/labstack/gommon/log"
 )
 
 type serviceSlotService struct {
@@ -72,32 +70,26 @@ func weekdayOccurrences(weekday string, count int) []string {
 	return dates
 }
 
-// weekdayOccurrencesFrom returns every date on the given weekday, strictly
-// after `after` (or from today if after is ""), up to and including
-// horizonEnd — used by RenewRecurringSchedules to fill in exactly the
-// occurrences a series is missing, picking up where it left off rather than
-// starting over from today like weekdayOccurrences does.
-func weekdayOccurrencesFrom(weekday string, after string, horizonEnd time.Time) []string {
+// weekdayOccurrencesUntil returns every date on the given weekday from today
+// through endDate inclusive. The owner picks the end date per series, so this
+// is what actually bounds a series — weekdayOccurrences' fixed count only
+// supplies the default when none was given.
+func weekdayOccurrencesUntil(weekday string, endDate string) []string {
 	target, ok := weekdayIndex[strings.ToLower(weekday)]
 	if !ok {
 		return nil
 	}
-	var start time.Time
-	if after != "" {
-		parsed, err := time.Parse("2006-01-02", after)
-		if err != nil {
-			return nil
-		}
-		start = parsed.AddDate(0, 0, 1)
-	} else {
-		today := time.Now()
-		start = time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, time.UTC)
+	end, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		return nil
 	}
+	today := time.Now()
+	start := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, time.UTC)
 	offset := (int(target) - int(start.Weekday()) + 7) % 7
 	first := start.AddDate(0, 0, offset)
 
 	var dates []string
-	for d := first; !d.After(horizonEnd); d = d.AddDate(0, 0, 7) {
+	for d := first; !d.After(end); d = d.AddDate(0, 0, 7) {
 		dates = append(dates, d.Format("2006-01-02"))
 	}
 	return dates
@@ -117,14 +109,36 @@ type scheduledDate struct {
 
 // resolveSchedule expands a slot param into the concrete dates to create and
 // the weekdays they cover — a single date, or every occurrence of each
-// selected weekday over the next recurringHorizonWeeks.
+// selected weekday over the next recurringHorizonWeeks. This is the only time
+// a series' occurrences are ever generated: what's created here is what the
+// series will ever have.
 func (s *serviceSlotService) resolveSchedule(p param.ServiceSlotParam) ([]scheduledDate, []string, error) {
 	if len(p.DaysOfWeek) > 0 {
+		// An explicit end date wins; without one the series runs for the
+		// configured default number of weeks.
+		endDate := strings.TrimSpace(p.RecurringEndDate)
 		var scheduled []scheduledDate
 		for _, wd := range p.DaysOfWeek {
-			for _, date := range weekdayOccurrences(wd, s.serviceSlotConfig.RecurringHorizonWeeks) {
+			var dates []string
+			if endDate != "" {
+				dates = weekdayOccurrencesUntil(wd, endDate)
+			} else {
+				dates = weekdayOccurrences(wd, s.serviceSlotConfig.RecurringHorizonWeeks)
+			}
+			for _, date := range dates {
 				scheduled = append(scheduled, scheduledDate{Date: date, Weekday: wd})
 			}
+		}
+		// Only when an end date was actually supplied: an end date too close
+		// to today can select none of the chosen weekdays, and saying so is
+		// far clearer than the generic "no valid dates" further down. Without
+		// one, zero dates can only mean an unrecognised weekday, which keeps
+		// its existing handling.
+		if endDate != "" && len(scheduled) == 0 {
+			return nil, nil, errs.ValidationErrors{{
+				Field:   "recurringEndDate",
+				Message: "The end date is too early. Please select a later date.",
+			}}
 		}
 		return scheduled, p.DaysOfWeek, nil
 	}
@@ -218,12 +232,36 @@ func (s *serviceSlotService) insertSlotsForSchedule(
 ) (int64, error) {
 	var createdID int64
 	for _, sd := range scheduled {
+		// A backdated walk-in resolves against its own date like anything
+		// else: it's a record of what was actually sold that day, so the
+		// option must have been in effect then — not merely still on the
+		// menu now. Judging by today's catalog got this wrong both ways,
+		// admitting options that hadn't started yet and rejecting ones that
+		// had since ended.
 		optionIDs, err := s.resolveOptionsForDate(ctx, p.ServiceOptionIDs, sd.Date)
 		if err != nil {
 			return 0, err
 		}
-		if isRecurring && len(optionIDs) == 0 {
-			continue
+		// A recurring occurrence with no effective option is simply skipped —
+		// the series continues on later dates where an option does apply.
+		// Everything else (a single slot, walk-in or not) must never be left
+		// with zero bookable options: fail loudly instead of creating an
+		// optionless slot the caller can't book against. Inside the
+		// transaction, so nothing is left behind either way.
+		if len(optionIDs) == 0 {
+			if isRecurring {
+				continue
+			}
+			if p.AllowPast {
+				return 0, errs.ValidationErrors{{
+					Field:   "serviceOptionIds",
+					Message: "That service option wasn't offered on " + sd.Date + ". Pick one that was available then.",
+				}}
+			}
+			return 0, errs.ValidationErrors{{
+				Field:   "serviceOptionIds",
+				Message: "None of the selected options are offered on " + sd.Date + ".",
+			}}
 		}
 
 		slot := p
@@ -275,8 +313,7 @@ func (s *serviceSlotService) resolveOptionsForDate(ctx context.Context, optionID
 // per selected weekday and returns a weekday -> recurring_schedule_id lookup
 // for insertSlotsForSchedule to attach to each generated slot — including
 // owner-managed slots (p.StaffID nil), so their series is renewable too (see
-// renewRecurringSchedules) and deletable-as-a-series (see DeleteServiceSlot's
-// deleteFutureRecurring).
+// deletable-as-a-series (see DeleteServiceSlot's deleteFutureRecurring).
 func (s *serviceSlotService) insertRecurringSchedules(ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam, weekdays []string) (map[string]int64, error) {
 	ids := make(map[string]int64, len(weekdays))
 	for _, wd := range weekdays {
@@ -556,10 +593,8 @@ func (s *serviceSlotService) DeleteServiceSlot(ctx context.Context, serviceSlotI
 		}
 		if slot.RecurringScheduleID != nil {
 			// Retire the series here regardless of any booked occurrence(s)
-			// left in place — otherwise the schedule row stays active and
-			// renewRecurringSchedules "tops it back up" to the horizon on
-			// the next calendar read, silently recreating exactly what was
-			// just deleted.
+			// left in place, so nothing keeps pointing at a series the owner
+			// has deleted.
 			return s.serviceSlotRepo.SoftDeleteRecurringSchedule(ctx, tx, businessID, *slot.RecurringScheduleID)
 		}
 		return nil
@@ -584,75 +619,7 @@ func (s *serviceSlotService) DeleteServiceSlot(ctx context.Context, serviceSlotI
 }
 
 func (s *serviceSlotService) GetServiceSlots(ctx context.Context, businessID int64, date string, staffID *int64, serviceID *int64, unassignedOnly bool) ([]param.ServiceSlotParam, error) {
-	if err := s.renewRecurringSchedules(ctx, businessID); err != nil {
-		log.Errorf("failed to renew recurring schedules: %v", err)
-	}
 	return s.serviceSlotRepo.GetServiceSlotsByBusinessAndDate(ctx, businessID, date, staffID, serviceID, unassignedOnly)
-}
-
-// renewRecurringSchedules tops up every active weekday-recurring series for
-// businessID back to the configured horizon (RecurringHorizonWeeks). A
-// series only gets its occurrences generated once, eagerly, at creation time
-// (see resolveSchedule) — without this, it simply runs dry once that fixed
-// window passes, with nothing to regenerate it. Run lazily on every calendar
-// read rather than on a timer, same as bookingService's SweepPastBookings.
-func (s *serviceSlotService) renewRecurringSchedules(ctx context.Context, businessID int64) error {
-	horizonEnd := time.Now().AddDate(0, 0, s.serviceSlotConfig.RecurringHorizonWeeks*7)
-	schedules, err := s.serviceSlotRepo.GetRecurringSchedulesNeedingRenewal(ctx, businessID, horizonEnd.Format("2006-01-02"))
-	if err != nil {
-		return err
-	}
-	for _, sched := range schedules {
-		// One bad series shouldn't block the rest from renewing.
-		if err := s.renewOne(ctx, sched, horizonEnd); err != nil {
-			log.Errorf("failed to renew recurring schedule %d: %v", sched.RecurringScheduleID, err)
-		}
-	}
-	return nil
-}
-
-func (s *serviceSlotService) renewOne(ctx context.Context, sched param.RecurringScheduleRenewalParam, horizonEnd time.Time) error {
-	dates := weekdayOccurrencesFrom(sched.Day, sched.LastDate, horizonEnd)
-	if len(dates) == 0 {
-		return nil
-	}
-	// recurring_schedules doesn't store which options were originally
-	// requested — the union of options ever attached to this series' past
-	// occurrences is the closest available record of that intent.
-	optionIDs, err := s.serviceSlotRepo.GetOptionIDsForRecurringSchedule(ctx, sched.RecurringScheduleID)
-	if err != nil {
-		return err
-	}
-	if len(optionIDs) == 0 {
-		return nil // series never had a bookable option — nothing to renew with
-	}
-
-	return s.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
-		for _, date := range dates {
-			resolvedOptionIDs, err := s.resolveOptionsForDate(ctx, optionIDs, date)
-			if err != nil {
-				return err
-			}
-			if len(resolvedOptionIDs) == 0 {
-				continue // matches insertSlotsForSchedule's skip-if-empty for recurring occurrences
-			}
-			slot := param.ServiceSlotParam{
-				StaffID:             sched.StaffID, // nil => owner-managed, same as at creation time
-				RecurringScheduleID: &sched.RecurringScheduleID,
-				Date:                date,
-				StartTime:           sched.StartTime,
-				EndTime:             sched.EndTime,
-			}
-			id, err := s.serviceSlotRepo.InsertServiceSlot(ctx, tx, slot)
-			if err != nil {
-				return err
-			}
-			if err := s.insertSlotPackages(ctx, tx, id, resolvedOptionIDs); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
 }
 
 func (s *serviceSlotService) GetAvailableStaffForSlot(ctx context.Context, serviceSlotID int64, businessID int64) ([]param.StaffParam, error) {

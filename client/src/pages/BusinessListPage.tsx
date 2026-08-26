@@ -82,7 +82,7 @@ export default function BusinessListPage() {
                     <h2 className="mb-0 fw-bold">Businesses</h2>
                 </Col>
                 <Col xs="auto">
-                    <div className="search-field" style={{ width: 340 }}>
+                    <div className="search-field" style={{ width: 400 }}>
                         <span className="search-icon"><IconSearch size={16} /></span>
                         <Form.Control
                             className="search-input"

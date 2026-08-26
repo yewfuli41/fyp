@@ -23,7 +23,7 @@ func (s *profileService) UpdateProfile(ctx context.Context, param param.ProfileP
 		return err
 	}
 	if err := s.profileRepo.UpdateUser(ctx, param); err != nil {
-		if database.IsUniqueViolation(err, "users_email_key") {
+		if database.IsUniqueViolation(err, database.ConstraintUserEmail) {
 			return errs.ValidationErrors{
 				{Field: "email", Message: "This email is already registered"},
 			}

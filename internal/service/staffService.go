@@ -143,7 +143,7 @@ func (s *staffService) RegisterStaff(ctx context.Context, ownerParam *param.Busi
 		staffParam.UserID = userProfile.UserID
 		staffID, err := s.staffRepo.InsertStaff(ctx, tx, staffParam)
 		if err != nil {
-			if database.IsUniqueViolation(err, "staff_user_id_key") {
+			if database.IsUniqueViolation(err, database.ConstraintStaffUserID) {
 				return errs.ValidationErrors{
 					{Field: "staffEmail", Message: "A staff profile already exists for this email."},
 				}
@@ -160,11 +160,14 @@ func (s *staffService) RegisterStaff(ctx context.Context, ownerParam *param.Busi
 	if err != nil {
 		return err
 	}
+	// The staff profile is already committed by this point, so a failed
+	// welcome email must not turn the whole registration into an error — the
+	// owner did nothing wrong and retrying would just hit "a staff profile
+	// already exists for this email". Logged for the operator instead, same
+	// as every other notification in this codebase.
 	if createdNewUser {
-		err = s.emailService.SendStaffWelcomeEmail(staffParam.StaffEmail)
-		if err != nil {
-			log.Errorf("Failed to send welcome email to %s: %v", staffParam.StaffEmail, err)
-			return fmt.Errorf("staff created, but the welcome email could not be sent — let them know their temporary password directly")
+		if err := s.emailService.SendStaffWelcomeEmail(staffParam.StaffEmail, staffParam.Password); err != nil {
+			log.Errorf("failed to send welcome email to %s: %v", staffParam.StaffEmail, err)
 		}
 	}
 	return nil
@@ -268,7 +271,7 @@ func (s *staffService) updateStaffEmail(ctx context.Context, tx *sql.Tx, current
 	}
 
 	if err := s.authRepo.UpdateUserEmailTx(ctx, tx, current.UserID, newEmail); err != nil {
-		if database.IsUniqueViolation(err, "users_email_key") {
+		if database.IsUniqueViolation(err, database.ConstraintUserEmail) {
 			return errs.ValidationErrors{{Field: "staffEmail", Message: "This email address is already in use."}}
 		}
 		return err

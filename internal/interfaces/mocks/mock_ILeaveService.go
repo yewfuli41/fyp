@@ -113,8 +113,8 @@ func (_c *MockILeaveService_ApplyLeave_Call) RunAndReturn(run func(ctx context.C
 }
 
 // ApproveLeaveApplication provides a mock function for the type MockILeaveService
-func (_mock *MockILeaveService) ApproveLeaveApplication(ctx context.Context, businessID int64, leaveID int64) (*param.LeaveApplicationParam, error) {
-	ret := _mock.Called(ctx, businessID, leaveID)
+func (_mock *MockILeaveService) ApproveLeaveApplication(ctx context.Context, businessID int64, leaveID int64, reschedules []param.LeaveRescheduleParam) (*param.LeaveApplicationParam, error) {
+	ret := _mock.Called(ctx, businessID, leaveID, reschedules)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ApproveLeaveApplication")
@@ -122,18 +122,18 @@ func (_mock *MockILeaveService) ApproveLeaveApplication(ctx context.Context, bus
 
 	var r0 *param.LeaveApplicationParam
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64) (*param.LeaveApplicationParam, error)); ok {
-		return returnFunc(ctx, businessID, leaveID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, []param.LeaveRescheduleParam) (*param.LeaveApplicationParam, error)); ok {
+		return returnFunc(ctx, businessID, leaveID, reschedules)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64) *param.LeaveApplicationParam); ok {
-		r0 = returnFunc(ctx, businessID, leaveID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, int64, []param.LeaveRescheduleParam) *param.LeaveApplicationParam); ok {
+		r0 = returnFunc(ctx, businessID, leaveID, reschedules)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*param.LeaveApplicationParam)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, int64) error); ok {
-		r1 = returnFunc(ctx, businessID, leaveID)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, int64, []param.LeaveRescheduleParam) error); ok {
+		r1 = returnFunc(ctx, businessID, leaveID, reschedules)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -149,11 +149,12 @@ type MockILeaveService_ApproveLeaveApplication_Call struct {
 //   - ctx context.Context
 //   - businessID int64
 //   - leaveID int64
-func (_e *MockILeaveService_Expecter) ApproveLeaveApplication(ctx interface{}, businessID interface{}, leaveID interface{}) *MockILeaveService_ApproveLeaveApplication_Call {
-	return &MockILeaveService_ApproveLeaveApplication_Call{Call: _e.mock.On("ApproveLeaveApplication", ctx, businessID, leaveID)}
+//   - reschedules []param.LeaveRescheduleParam
+func (_e *MockILeaveService_Expecter) ApproveLeaveApplication(ctx interface{}, businessID interface{}, leaveID interface{}, reschedules interface{}) *MockILeaveService_ApproveLeaveApplication_Call {
+	return &MockILeaveService_ApproveLeaveApplication_Call{Call: _e.mock.On("ApproveLeaveApplication", ctx, businessID, leaveID, reschedules)}
 }
 
-func (_c *MockILeaveService_ApproveLeaveApplication_Call) Run(run func(ctx context.Context, businessID int64, leaveID int64)) *MockILeaveService_ApproveLeaveApplication_Call {
+func (_c *MockILeaveService_ApproveLeaveApplication_Call) Run(run func(ctx context.Context, businessID int64, leaveID int64, reschedules []param.LeaveRescheduleParam)) *MockILeaveService_ApproveLeaveApplication_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -167,10 +168,15 @@ func (_c *MockILeaveService_ApproveLeaveApplication_Call) Run(run func(ctx conte
 		if args[2] != nil {
 			arg2 = args[2].(int64)
 		}
+		var arg3 []param.LeaveRescheduleParam
+		if args[3] != nil {
+			arg3 = args[3].([]param.LeaveRescheduleParam)
+		}
 		run(
 			arg0,
 			arg1,
 			arg2,
+			arg3,
 		)
 	})
 	return _c
@@ -181,7 +187,7 @@ func (_c *MockILeaveService_ApproveLeaveApplication_Call) Return(leaveApplicatio
 	return _c
 }
 
-func (_c *MockILeaveService_ApproveLeaveApplication_Call) RunAndReturn(run func(ctx context.Context, businessID int64, leaveID int64) (*param.LeaveApplicationParam, error)) *MockILeaveService_ApproveLeaveApplication_Call {
+func (_c *MockILeaveService_ApproveLeaveApplication_Call) RunAndReturn(run func(ctx context.Context, businessID int64, leaveID int64, reschedules []param.LeaveRescheduleParam) (*param.LeaveApplicationParam, error)) *MockILeaveService_ApproveLeaveApplication_Call {
 	_c.Call.Return(run)
 	return _c
 }

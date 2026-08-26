@@ -2,23 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import { Badge, Container, Dropdown, Form, Nav, Navbar, Button } from "react-bootstrap";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useViewMode, type ViewMode } from "../view/ViewModeContext";
 import { getBusinessBookings } from "../services/BookingService";
 import { businessLeaveApplications, myLeaveApplications } from "../services/LeaveService";
 import { onPendingCountsChanged } from "../utils/pendingCounts";
 import { todayISO } from "../utils/serviceSlotHelpers";
 import "../styles/AppNavbar.css";
-
-type ViewMode = "business" | "staff" | "customer";
-
-function getInitialMode(isOwner: boolean, isStaff: boolean): ViewMode {
-    const saved = localStorage.getItem("viewMode") as ViewMode | null;
-    if (saved === "business" && isOwner) return "business";
-    if (saved === "staff" && isStaff) return "staff";
-    if (saved === "customer") return "customer";
-    if (isOwner) return "business";
-    if (isStaff) return "staff";
-    return "customer";
-}
 
 // Small badge overlay for a nav link that needs the owner/staff's attention
 // — same pill-in-the-corner treatment ServicePage uses on its "Manage
@@ -41,33 +30,23 @@ function NavCountBadge({ count }: { count: number }) {
 export default function AppNavbar() {
     const { isLoggedIn, user, hasRoles, logout, token } = useAuth();
     const navigate = useNavigate();
+    const { viewMode, availableModes, switchMode } = useViewMode();
     const isOwner = hasRoles(["OWNER"]);
     const isStaff = hasRoles(["STAFF"]);
     const activeToken = token ?? localStorage.getItem("token");
 
-    const [viewMode, setViewMode] = useState<ViewMode>(() => getInitialMode(isOwner, isStaff));
     const [pendingBookingCount, setPendingBookingCount] = useState(0);
     const [pendingLeaveCount, setPendingLeaveCount] = useState(0);
     const [decidedMyLeaveCount, setDecidedMyLeaveCount] = useState(0);
 
-    const switchMode = (mode: ViewMode) => {
-        setViewMode(mode);
-        localStorage.setItem("viewMode", mode);
-        if (mode === "business" || mode === "staff") navigate("/");
-        else navigate("/book");
+    // Every mode now lands on "/" — the home page reads the same view mode and
+    // decides what belongs there, so customer mode no longer needs its own URL.
+    const handleModeChange = (mode: ViewMode) => {
+        switchMode(mode);
+        navigate("/");
     };
 
-    const availableModes: { value: ViewMode; label: string }[] = [
-        ...(isOwner ? [{ value: "business" as ViewMode, label: "Business Mode" }] : []),
-        ...(isStaff ? [{ value: "staff" as ViewMode, label: "Staff Mode" }] : []),
-        { value: "customer", label: "Customer Mode" },
-    ];
-
     const showModeSwitcher = isLoggedIn && availableModes.length > 1;
-
-    useEffect(() => {
-    setViewMode(getInitialMode(isOwner, isStaff));
-}, [isOwner, isStaff]);
 
     // Pending-count badges — bookings scope to the caller either way (all of
     // them for an owner, just their own for a staff member), so both modes
@@ -131,7 +110,7 @@ export default function AppNavbar() {
                 {/* Logo */}
                 <Navbar.Brand
                     as={NavLink}
-                    to={!isLoggedIn ? "/" : viewMode === "customer" ? "/book" : "/"}
+                    to="/"
                     className="fw-bold fs-4 px-3 py-1 border border-2 border-dark rounded text-dark me-4"
                     style={{ letterSpacing: "-0.5px" }}
                 >
@@ -158,7 +137,7 @@ export default function AppNavbar() {
                                 </span>
                                 <Nav.Link as={NavLink} to="/staff">Staff</Nav.Link>
                                 <span className="position-relative">
-                                    <Nav.Link as={NavLink} to="/staff-availability">Staff Availability</Nav.Link>
+                                    <Nav.Link as={NavLink} to="/staff-leave">Staff Leave</Nav.Link>
                                     <NavCountBadge count={pendingLeaveCount} />
                                 </span>
                             </>
@@ -185,7 +164,7 @@ export default function AppNavbar() {
                             <Form.Select
                                 size="sm"
                                 value={viewMode}
-                                onChange={e => switchMode(e.target.value as ViewMode)}
+                                onChange={e => handleModeChange(e.target.value as ViewMode)}
                                 style={{ width: "auto" }}
                             >
                                 {availableModes.map(m => (
@@ -217,7 +196,16 @@ export default function AppNavbar() {
                                         <Dropdown.Item as={NavLink} to="/register-business">Register Business Profile</Dropdown.Item>
                                     )}
                                     <Dropdown.Divider />
-                                    <Dropdown.Item onClick={logout} className="text-danger">Log out</Dropdown.Item>
+                                    {/* Land on the home page rather than wherever they
+                                        happened to be — a protected route would other-
+                                        wise bounce them to /login, which is for
+                                        returning users whose session lapsed. */}
+                                    <Dropdown.Item
+                                        onClick={() => { logout(); navigate("/"); }}
+                                        className="text-danger"
+                                    >
+                                        Log out
+                                    </Dropdown.Item>
                                 </Dropdown.Menu>
                             </Dropdown>
                         ) : (

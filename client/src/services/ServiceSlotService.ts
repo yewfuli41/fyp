@@ -23,6 +23,9 @@ export interface ServiceSlotInput {
     staffId: string;        // "" => unassigned (owner-managed)
     date?: string;          // "YYYY-MM-DD" single date, OR ...
     daysOfWeek: string[];   // ... recurring weekdays e.g. ["monday"]
+    // Last date a recurring series generates a slot for. Only sent alongside
+    // daysOfWeek; omitted => the server's configured default length.
+    recurringEndDate?: string;
     startTime: string;      // "HH:MM"
     endTime: string;        // "HH:MM"
     serviceOptionIds: string[];
@@ -63,6 +66,7 @@ const buildInputBody = (input: ServiceSlotInput): string => {
     // Either recurring weekdays (GraphQL enum literals, unquoted) or a single date.
     const scheduleLine = input.daysOfWeek.length > 0
         ? `daysOfWeek: [${input.daysOfWeek.join(", ")}],`
+          + (input.recurringEndDate ? `recurringEndDate: "${input.recurringEndDate}",` : "")
         : `date: "${input.date}",`;
     return `
         ${staffLine}
@@ -150,4 +154,16 @@ export const getAvailableStaffForSlot = async (token: string, serviceSlotId: str
         }
     `;
     return await doGraphQL<{ availableStaffForSlot: { staffId: string; name: string }[] }>(query, token);
+};
+
+// Default length, in weeks, of a new recurring series — used to seed the
+// end-date picker. Read from the server rather than hard-coded here, since
+// it's the same value generation falls back to when no end date is given.
+export const getRecurringDefaultWeeks = async (token: string) => {
+    const query = `
+        query {
+            recurringDefaultWeeks
+        }
+    `;
+    return await doGraphQL<{ recurringDefaultWeeks: number }>(query, token);
 };

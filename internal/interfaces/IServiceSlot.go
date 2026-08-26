@@ -51,17 +51,6 @@ type IServiceSlotRepo interface {
 	// slots from fromDate onward — used to check a working-hours edit
 	// against them.
 	GetFutureAssignedSlotWindows(ctx context.Context, staffID int64, fromDate string) ([]param.AssignedSlotParam, error)
-
-	// GetRecurringSchedulesNeedingRenewal returns every active recurring
-	// series for businessID whose latest active occurrence falls short of
-	// horizonEnd — including series with none left at all.
-	GetRecurringSchedulesNeedingRenewal(ctx context.Context, businessID int64, horizonEnd string) ([]param.RecurringScheduleRenewalParam, error)
-	// GetOptionIDsForRecurringSchedule returns every service option ever
-	// attached to an occurrence of this series — the closest available
-	// record of what was originally requested, since recurring_schedules
-	// itself doesn't store it (options are only ever attached per-occurrence,
-	// each already resolved against that occurrence's own date).
-	GetOptionIDsForRecurringSchedule(ctx context.Context, recurringScheduleID int64) ([]int64, error)
 }
 
 type IServiceSlotService interface {

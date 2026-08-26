@@ -143,6 +143,9 @@ func (r *mutationResolver) RecordWalkIn(ctx context.Context, input model.WalkInI
 		EndTime:          input.EndTime,
 		ServiceOptionIDs: []int64{optID},
 		CreatedBy:        currentUser.UserID,
+		// A walk-in is recorded after it already happened, so its date/time
+		// window may legitimately be in the past — unlike an ordinary slot.
+		AllowPast: true,
 	})
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
@@ -209,7 +212,7 @@ func (r *queryResolver) PublicStaff(ctx context.Context, businessID string) ([]*
 }
 
 // AvailableSlots returns slots with no active booking for a given service option and date.
-func (r *queryResolver) AvailableSlots(ctx context.Context, businessID string, serviceOptionID string, date string, staffID *string, unassignedOnly *bool) ([]*model.ServiceSlot, error) {
+func (r *queryResolver) AvailableSlots(ctx context.Context, businessID string, serviceOptionID string, date string, staffID *string, unassignedOnly *bool, unavailableStaffID *string, unavailableFrom *string, unavailableUntil *string) ([]*model.ServiceSlot, error) {
 	bid, err := parseID(businessID)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
@@ -226,7 +229,11 @@ func (r *queryResolver) AvailableSlots(ctx context.Context, businessID string, s
 		}
 		sid = &v
 	}
-	slots, err := r.App.BookingService.GetAvailableSlots(ctx, bid, optID, date, sid, unassignedOnly != nil && *unassignedOnly)
+	unavailable, err := parseStaffUnavailability(unavailableStaffID, unavailableFrom, unavailableUntil)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	slots, err := r.App.BookingService.GetAvailableSlots(ctx, bid, optID, date, sid, unassignedOnly != nil && *unassignedOnly, unavailable)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
 	}
@@ -241,7 +248,7 @@ func (r *queryResolver) AvailableSlots(ctx context.Context, businessID string, s
 // one bookable slot — used to colour a date picker. serviceId/serviceOptionId/
 // staffId narrow the check; any may be omitted to mean "any". unassignedOnly
 // narrows instead to owner-managed (unassigned) slots and wins over staffId.
-func (r *queryResolver) AvailableDates(ctx context.Context, businessID string, serviceID *string, serviceOptionID *string, staffID *string, unassignedOnly *bool, from string, until string) ([]string, error) {
+func (r *queryResolver) AvailableDates(ctx context.Context, businessID string, serviceID *string, serviceOptionID *string, staffID *string, unassignedOnly *bool, from string, until string, unavailableStaffID *string, unavailableFrom *string, unavailableUntil *string) ([]string, error) {
 	bid, err := parseID(businessID)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
@@ -270,7 +277,11 @@ func (r *queryResolver) AvailableDates(ctx context.Context, businessID string, s
 		}
 		sid = &v
 	}
-	dates, err := r.App.BookingService.GetAvailableDates(ctx, bid, svcID, optID, sid, unassignedOnly != nil && *unassignedOnly, from, until)
+	unavailable, err := parseStaffUnavailability(unavailableStaffID, unavailableFrom, unavailableUntil)
+	if err != nil {
+		return nil, graphErrs.ToGraphQLError(err)
+	}
+	dates, err := r.App.BookingService.GetAvailableDates(ctx, bid, svcID, optID, sid, unassignedOnly != nil && *unassignedOnly, from, until, unavailable)
 	if err != nil {
 		return nil, graphErrs.ToGraphQLError(err)
 	}

@@ -85,8 +85,7 @@ func (r *serviceSlotRepo) InsertServiceSlotOption(ctx context.Context, tx *sql.T
 // not per package, since a slot's bookable packages are attached separately
 // via service_slot_options regardless of how many there are. staff_id is
 // nullable (owner-managed), so business_id is what scopes the series in
-// that case — see GetRecurringSchedulesNeedingRenewal and
-// SoftDeleteRecurringSchedule.
+// that case — see SoftDeleteRecurringSchedule.
 func (r *serviceSlotRepo) InsertRecurringSchedule(ctx context.Context, tx *sql.Tx, p param.ServiceSlotParam, day string) (int64, error) {
 	var id int64
 	err := tx.QueryRowContext(ctx, `
@@ -514,70 +513,6 @@ func (r *serviceSlotRepo) GetAvailableStaff(ctx context.Context, businessID int6
 		staffList = append(staffList, *staff)
 	}
 	return staffList, rows.Err()
-}
-
-// GetRecurringSchedulesNeedingRenewal returns every active recurring series
-// for businessID whose latest active occurrence is before horizonEnd —
-// including series with no active occurrences left at all (MAX(date) IS NULL,
-// e.g. every occurrence was individually deleted without deleting the series).
-func (r *serviceSlotRepo) GetRecurringSchedulesNeedingRenewal(ctx context.Context, businessID int64, horizonEnd string) ([]param.RecurringScheduleRenewalParam, error) {
-	rows, err := r.DB.QueryContext(ctx, `
-		SELECT rs.recurring_schedule_id, rs.staff_id, rs.day, rs.start_time, rs.end_time,
-			to_char(MAX(ss.date), 'YYYY-MM-DD')
-		FROM fyp_fuli_recurring_schedules rs
-		LEFT JOIN fyp_fuli_service_slots ss ON ss.recurring_schedule_id = rs.recurring_schedule_id AND ss.deleted_at IS NULL
-		WHERE rs.deleted_at IS NULL
-			AND rs.business_id = $1
-		GROUP BY rs.recurring_schedule_id, rs.staff_id, rs.day, rs.start_time, rs.end_time
-		HAVING MAX(ss.date) IS NULL OR MAX(ss.date) < $2::date
-	`, businessID, horizonEnd)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var results []param.RecurringScheduleRenewalParam
-	for rows.Next() {
-		var s param.RecurringScheduleRenewalParam
-		var staffID sql.NullInt64
-		var lastDate sql.NullString
-		if err := rows.Scan(&s.RecurringScheduleID, &staffID, &s.Day, &s.StartTime, &s.EndTime, &lastDate); err != nil {
-			return nil, err
-		}
-		if staffID.Valid {
-			s.StaffID = &staffID.Int64
-		}
-		s.LastDate = lastDate.String
-		results = append(results, s)
-	}
-	return results, rows.Err()
-}
-
-// GetOptionIDsForRecurringSchedule returns every service option ever
-// attached to an occurrence of this series.
-func (r *serviceSlotRepo) GetOptionIDsForRecurringSchedule(ctx context.Context, recurringScheduleID int64) ([]int64, error) {
-	rows, err := r.DB.QueryContext(ctx, `
-		SELECT DISTINCT sso.service_option_id
-		FROM fyp_fuli_service_slot_options sso
-		JOIN fyp_fuli_service_slots ss ON ss.service_slot_id = sso.service_slot_id
-		WHERE ss.recurring_schedule_id = $1
-			AND ss.deleted_at IS NULL
-			AND sso.deleted_at IS NULL
-	`, recurringScheduleID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var ids []int64
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, rows.Err()
 }
 
 func scanServiceSlot(row rowScannerService) (*param.ServiceSlotParam, error) {

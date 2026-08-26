@@ -1,7 +1,11 @@
 package interfaces
 
 type IEmailService interface {
-	SendStaffWelcomeEmail(toEmail string) error
+	// SendStaffWelcomeEmail carries the temporary password the owner set, so a
+	// new staff member can log in without having to be told it separately.
+	// Only ever sent to a freshly created account, and that account is forced
+	// to change the password on first login (MustResetPassword).
+	SendStaffWelcomeEmail(toEmail, tempPassword string) error
 	// SendBookingStatusEmail — withName is whoever the booking is "with" from
 	// the recipient's side: the business name for a customer, or the
 	// customer's name for the owner/staff (never their own business name).

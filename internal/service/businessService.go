@@ -111,9 +111,9 @@ func (s *businessService) RegisterBusinessProfile(ctx context.Context, businessP
 		return nil
 	})
 	if err != nil {
-		if database.IsUniqueViolation(err, "business_profiles_owner_user_id_key") {
+		if database.IsUniqueViolation(err, database.ConstraintBusinessOwner) {
 			return nil, fmt.Errorf("You already registered a business profile")
-		} else if database.IsForeignKeyViolation(err, "business_profiles_owner_user_id_fkey") {
+		} else if database.IsForeignKeyViolation(err, database.ConstraintBusinessOwnerRef) {
 			return nil, fmt.Errorf("Unable to register business profile. Please log in again.")
 		}
 		return nil, err

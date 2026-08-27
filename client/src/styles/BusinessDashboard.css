@@ -22,24 +22,6 @@
   --seq-700: #0d366b;
 }
 
-@media (prefers-color-scheme: dark) {
-  .dashboard-page {
-    --chart-surface: #1a1a19;
-    --chart-text-primary: #ffffff;
-    --chart-text-secondary: #c3c2b7;
-    --chart-muted: #898781;
-    --chart-grid: #2c2c2a;
-    --chart-axis: #383835;
-    --series-1: #3987e5;
-    --series-2: #d95926;
-    --series-3: #199e70;
-    --series-4: #c98500;
-    --series-5: #d55181;
-    --series-6: #008300;
-    --series-7: #9085e9;
-    --series-8: #e66767;
-  }
-}
 
 .dashboard-card {
   height: 100%;

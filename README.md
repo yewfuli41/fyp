@@ -5,8 +5,7 @@
 ## How to Start
 
 1. Clone or download this project.
-2. Open a terminal in the project root directory.
-3. Add a <kbd>.env.local</kbd> with the following:
+2. Add a <kbd>.env.local</kbd> with the following:
     ```
     JWT_SECRET=replace-with-your-secret
 
@@ -16,6 +15,7 @@
     FROM_NAME=replace-with-your-name
     ```
     `SENDGRID_API_KEY`, `RESEND_API_KEY`, `FROM_EMAIL`, and `FROM_NAME` are optional.
+3. Open a terminal in the project root directory.
 4. Start the application:
     ``` 
     docker compose up --build

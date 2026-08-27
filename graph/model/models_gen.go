@@ -303,6 +303,7 @@ type Staff struct {
 	User               *User                `json:"user"`
 	BusinessID         string               `json:"businessId"`
 	Business           *BusinessProfile     `json:"business"`
+	BusinessName       string               `json:"businessName"`
 	Name               string               `json:"name"`
 	Email              string               `json:"email"`
 	MustResetPassword  bool                 `json:"mustResetPassword"`

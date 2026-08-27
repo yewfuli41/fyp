@@ -210,6 +210,7 @@ func MapStaff(staff *param.StaffParam) *model.Staff {
 		StaffID:            staffIDStr,
 		UserID:             strconv.FormatInt(staff.UserID, 10),
 		BusinessID:         strconv.FormatInt(staff.BusinessID, 10),
+		BusinessName:       staff.BusinessName,
 		Name:               staff.StaffName,
 		Email:              staff.StaffEmail,
 		MustResetPassword:  staff.MustResetPassword,

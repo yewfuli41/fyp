@@ -25,6 +25,7 @@ export const userProfile= async(token: string) => {
                 }
                 staffProfile {
                     staffId
+                    businessName
                     workingHours {
                         day
                         startTime

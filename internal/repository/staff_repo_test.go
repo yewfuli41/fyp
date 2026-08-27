@@ -203,10 +203,12 @@ var _ = Describe("StaffRepo", func() {
 
 	Describe("GetStaffByUserID", func() {
 		It("returns the staff profile for the given user", func() {
-			mock.ExpectQuery(regexp.QuoteMeta("FROM fyp_fuli_staff")).
+			// This lookup alone joins the business in — a staff member's own
+			// screens name the business they work for.
+			mock.ExpectQuery(regexp.QuoteMeta("JOIN fyp_fuli_business_profiles")).
 				WithArgs(int64(1)).
-				WillReturnRows(sqlmock.NewRows(staffCols).
-					AddRow(9, 1, 2, "Alice", "0123456789", "Therapist"))
+				WillReturnRows(sqlmock.NewRows(append(append([]string{}, staffCols...), "business_name")).
+					AddRow(9, 1, 2, "Alice", "0123456789", "Therapist", "PayNet Wellness Spa"))
 
 			result, err := repo.GetStaffByUserID(ctx, 1)
 
@@ -214,6 +216,7 @@ var _ = Describe("StaffRepo", func() {
 			Expect(result.StaffID).To(Equal(int64(9)))
 			Expect(result.StaffName).To(Equal("Alice"))
 			Expect(result.Position).To(Equal("Therapist"))
+			Expect(result.BusinessName).To(Equal("PayNet Wellness Spa"))
 		})
 
 		It("returns sql.ErrNoRows when the staff member is not found", func() {

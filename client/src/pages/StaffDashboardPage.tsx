@@ -86,7 +86,7 @@ function AppointmentRow({ booking, showDate }: { booking: BookingDetail; showDat
 // as badges on the two shortcut tiles rather than a separate notification
 // bell, so there's one consistent place to look instead of two.
 export default function StaffDashboardPage() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
     const activeToken = token ?? localStorage.getItem("token");
     const navigate = useNavigate();
 
@@ -126,6 +126,8 @@ export default function StaffDashboardPage() {
     const pendingBookingCount = useMemo(() => bookings.filter(b => b.status === "PENDING").length, [bookings]);
     const confirmed = useMemo(() => bookings.filter(b => b.status === "ACCEPTED"), [bookings]);
 
+    const businessName = user?.staffProfile?.businessName;
+
     const today = todayISO();
     const todayAppointments = useMemo(
         () => confirmed.filter(b => b.date === today).sort((a, b) => a.startTime.localeCompare(b.startTime)),
@@ -151,7 +153,9 @@ export default function StaffDashboardPage() {
 
     return (
         <Container className="dashboard-page py-4" style={{ maxWidth: 960 }}>
-            <h1 className="fs-2 fw-bold mb-4">Staff Dashboard</h1>
+            <div className="mb-4">
+                <h1 className="fs-2 fw-bold mb-0">{businessName || "Staff Dashboard"}</h1>
+            </div>
 
             <Row className="g-3 mb-4 align-items-stretch">
                 <Col xs={6} md={3}>

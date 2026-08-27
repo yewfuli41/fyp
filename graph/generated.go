@@ -316,6 +316,7 @@ type ComplexityRoot struct {
 	Staff struct {
 		Business           func(childComplexity int) int
 		BusinessID         func(childComplexity int) int
+		BusinessName       func(childComplexity int) int
 		ContactNumber      func(childComplexity int) int
 		DeletedAt          func(childComplexity int) int
 		Email              func(childComplexity int) int
@@ -1981,6 +1982,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Staff.BusinessID(childComplexity), true
+	case "Staff.businessName":
+		if e.ComplexityRoot.Staff.BusinessName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Staff.BusinessName(childComplexity), true
 	case "Staff.contactNumber":
 		if e.ComplexityRoot.Staff.ContactNumber == nil {
 			break
@@ -2839,6 +2846,8 @@ func (ec *executionContext) childFields_Staff(ctx context.Context, field graphql
 		return ec.fieldContext_Staff_businessId(ctx, field)
 	case "business":
 		return ec.fieldContext_Staff_business(ctx, field)
+	case "businessName":
+		return ec.fieldContext_Staff_businessName(ctx, field)
 	case "name":
 		return ec.fieldContext_Staff_name(ctx, field)
 	case "email":
@@ -10504,6 +10513,29 @@ func (ec *executionContext) fieldContext_Staff_business(_ context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Staff_businessName(ctx context.Context, field graphql.CollectedField, obj *model.Staff) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Staff_businessName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.BusinessName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Staff_businessName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Staff", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _Staff_name(ctx context.Context, field graphql.CollectedField, obj *model.Staff) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -15704,6 +15736,11 @@ func (ec *executionContext) _Staff(ctx context.Context, sel ast.SelectionSet, ob
 			}
 		case "business":
 			out.Values[i] = ec._Staff_business(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "businessName":
+			out.Values[i] = ec._Staff_businessName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

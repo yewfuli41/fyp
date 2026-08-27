@@ -92,15 +92,17 @@ func (s *staffRepo) InsertStaffWorkingHours(ctx context.Context, tx *sql.Tx, par
 func (s *staffRepo) GetStaffByUserID(ctx context.Context, userID int64) (*param.StaffParam, error) {
 	row := s.DB.QueryRowContext(ctx, `
 		SELECT
-			staff_id,
-			user_id,
-			business_id,
-			staff_name,
-			staff_contact_number,
-			position
-		FROM fyp_fuli_staff
-		WHERE user_id = $1
-			AND deleted_at IS NULL
+			st.staff_id,
+			st.user_id,
+			st.business_id,
+			st.staff_name,
+			st.staff_contact_number,
+			st.position,
+			bp.business_name
+		FROM fyp_fuli_staff st
+		JOIN fyp_fuli_business_profiles bp ON bp.business_id = st.business_id
+		WHERE st.user_id = $1
+			AND st.deleted_at IS NULL
 	`, userID)
 
 	var staff param.StaffParam
@@ -113,6 +115,7 @@ func (s *staffRepo) GetStaffByUserID(ctx context.Context, userID int64) (*param.
 		&staff.StaffName,
 		&contactNumber,
 		&position,
+		&staff.BusinessName,
 	); err != nil {
 		return nil, err
 	}

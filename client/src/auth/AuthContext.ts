@@ -17,6 +17,9 @@ export type BusinessProfile = {
 
 export type Staff = {
   staffId: number;
+  // Which business this staff member works for — shown on their dashboard,
+  // since a staff account has no business profile of its own to read it from.
+  businessName?: string;
   workingHours?: WorkingHour[];
 }
 

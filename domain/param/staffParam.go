@@ -19,11 +19,14 @@ type StaffParam struct {
 	// staffService.RegisterStaff); ignored otherwise.
 	Password          string
 	MustResetPassword bool
-	WorkingHours       []WorkingHourParam //from businessParam.go
+	WorkingHours      []WorkingHourParam //from businessParam.go
 	// true once this staff member has an active (pending/accepted/rescheduled)
 	// booking on any of their slots — loaded for display, mirrors
 	// ServiceOptionParam.HasBooking.
 	HasBooking bool
+	// Filled by GetStaffByUserID only — the staff member's own screens show
+	// which business they belong to.
+	BusinessName string
 }
 
 func (p StaffParam) ValidateRegisterStaff() error {

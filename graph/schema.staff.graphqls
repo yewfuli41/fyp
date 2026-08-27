@@ -4,6 +4,11 @@ type Staff {
   user: User!
   businessId: ID!
   business: BusinessProfile!
+  # The name of the business this staff member works for, carried on the staff
+  # record itself so a staff-side screen can show it without being able to read
+  # the whole business profile. Blank where the caller already knows the
+  # business (e.g. the owner's own staff list).
+  businessName: String!
   name: String!
   email: String!
   mustResetPassword: Boolean!

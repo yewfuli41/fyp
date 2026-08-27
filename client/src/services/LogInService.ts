@@ -24,6 +24,7 @@ export const logIn = async(
 
                     staffProfile {
                         staffId
+                        businessName
                         workingHours {
                             day
                             startTime

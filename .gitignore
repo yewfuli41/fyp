@@ -5,3 +5,4 @@ coverage.out
 coverage.html
 .vite/
 .claude/
+.DS_Store

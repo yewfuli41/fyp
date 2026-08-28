@@ -4,12 +4,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { userProfile } from "../services/ProfileService";
 import { registerBusinessProfile, type BusinessProfileInput, type WorkingHour } from "../services/BusinessService";
+import { useViewMode } from "../view/ViewModeContext";
 import { applyGraphQLErrors } from "../utils/graphqlErrors";
 import { FIELD_LIMITS, shouldClearEmailError, shouldClearContactNumberError } from "../utils/fieldLimits";
 import { DAYS_OF_WEEK, startTimeSlice, endTimeSlice, toTimeInputValue} from "../utils/time";
 
 export default function RegisterBusinessPage() {
     const navigate = useNavigate();
+    const { switchMode } = useViewMode();
     const { token, login, isLoggedIn } = useAuth();
     const activeToken = token ?? localStorage.getItem("token");
 
@@ -109,7 +111,11 @@ export default function RegisterBusinessPage() {
                     staffProfile: profile.staffProfile,
                 });
             }
-            navigate("/profile");
+            // They registered as a customer, so they are still wearing the
+            // customer hat — switch it before leaving, or "/" would show them
+            // the booking screen instead of the dashboard they just earned.
+            switchMode("business");
+            navigate("/");
         } catch {
             setFormError("Something went wrong. Please try again.");
         } finally {
@@ -291,7 +297,7 @@ export default function RegisterBusinessPage() {
                 {formError && <Alert variant="danger">{formError}</Alert>}
 
                 <div className="d-flex gap-2 justify-content-end">
-                    <Button variant="outline-secondary" onClick={() => navigate("/profile")}>
+                    <Button variant="outline-secondary" onClick={() => navigate(-1)}>
                         Cancel
                     </Button>
                     <Button variant="primary" type="submit" disabled={isSubmitting}>

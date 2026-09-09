@@ -66,6 +66,14 @@ export function AuthProvider({
   );
   const [message, setMessage] = useState("");
 
+  // Clears both halves of the flag: the stored key so a future page load
+  // doesn't re-arm it, and the state so navigating back to "/" within this
+  // same page session isn't bounced again.
+  const acknowledgeSessionExpired = () => {
+    localStorage.removeItem(SESSION_EXPIRED_KEY);
+    setSessionExpired(false);
+  };
+
   const login = (token: string, user: User) => {
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
@@ -114,6 +122,7 @@ export function AuthProvider({
         token,
         message,
         sessionExpired,
+        acknowledgeSessionExpired,
         login,
         logout,
         hasRoles,

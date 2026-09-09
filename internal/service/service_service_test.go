@@ -252,7 +252,7 @@ var _ = Describe("ServiceService", func() {
 			Expect(result.ServiceOptions[0].ServiceOptionID).To(Equal(int64(31)))
 		})
 
-		It("moves a non-default option's effective-from date forward", func() {
+		It("rejects moving an existing option's effective-from date, even to a future date", func() {
 			newFrom := editFrom // "2030-01-01"
 			p := param.ServiceParam{
 				ServiceID:   10,
@@ -276,17 +276,17 @@ var _ = Describe("ServiceService", func() {
 				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}, nil).Once()
 			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
 				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
-			serviceRepo.EXPECT().SetOptionWindow(ctx, mock.AnythingOfType("*sql.Tx"), int64(31), newFrom, (*string)(nil)).Return(nil).Once()
-			serviceRepo.EXPECT().SetServiceDefaultOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(30)).Return(nil).Once()
-			dbMock.ExpectCommit()
+			dbMock.ExpectRollback()
 
-			result, err := serviceSvc.UpdateService(ctx, p)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result.ServiceOptions).To(HaveLen(2))
-			Expect(result.ServiceOptions[1].EffectiveFrom).To(Equal(newFrom))
+			_, err := serviceSvc.UpdateService(ctx, p)
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions[1]", Message: "An option's effective-from date can't be changed after it's created. Delete this option and add a replacement with the dates you want.",
+			}))
 		})
 
-		It("sets an effective-until date on an existing option", func() {
+		It("rejects setting an effective-until date on an existing option", func() {
 			until := editUntil // "2030-01-31"
 			p := param.ServiceParam{
 				ServiceID:   10,
@@ -310,17 +310,17 @@ var _ = Describe("ServiceService", func() {
 				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}, nil).Once()
 			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
 				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
-			serviceRepo.EXPECT().SetOptionWindow(ctx, mock.AnythingOfType("*sql.Tx"), int64(31), "2020-01-01", &until).Return(nil).Once()
-			serviceRepo.EXPECT().SetServiceDefaultOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(30)).Return(nil).Once()
-			dbMock.ExpectCommit()
+			dbMock.ExpectRollback()
 
-			result, err := serviceSvc.UpdateService(ctx, p)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result.ServiceOptions).To(HaveLen(2))
-			Expect(result.ServiceOptions[1].EffectiveUntil).To(Equal(&until))
+			_, err := serviceSvc.UpdateService(ctx, p)
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions[1]", Message: "An option's effective-until date can't be changed after it's created. Delete this option and add a replacement with the dates you want.",
+			}))
 		})
 
-		It("clears an existing option's saved effective-until date, reviving it", func() {
+		It("rejects clearing an existing option's saved effective-until date", func() {
 			until := editUntil
 			p := param.ServiceParam{
 				ServiceID:   10,
@@ -343,18 +343,18 @@ var _ = Describe("ServiceService", func() {
 				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}, nil).Once()
 			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
 				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
-			serviceRepo.EXPECT().SetOptionWindow(ctx, mock.AnythingOfType("*sql.Tx"), int64(31), "2020-01-01", (*string)(nil)).Return(nil).Once()
-			serviceRepo.EXPECT().SetServiceDefaultOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(30)).Return(nil).Once()
-			dbMock.ExpectCommit()
+			dbMock.ExpectRollback()
 
-			result, err := serviceSvc.UpdateService(ctx, p)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result.ServiceOptions).To(HaveLen(2))
-			Expect(result.ServiceOptions[1].EffectiveUntil).To(BeNil())
+			_, err := serviceSvc.UpdateService(ctx, p)
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions[1]", Message: "An option's effective-until date can't be removed after it's created. Delete this option and add a replacement with the dates you want.",
+			}))
 		})
 
 		// UT-008 (Service & Option Constraints).
-		It("rejects an effective-until in the past for an existing option", func() {
+		It("rejects an effective-until in the past for an existing option — the window is fixed either way", func() {
 			past := "2000-01-01"
 			p := param.ServiceParam{
 				ServiceID:   10,
@@ -384,7 +384,7 @@ var _ = Describe("ServiceService", func() {
 			ve, ok := err.(errs.ValidationErrors)
 			Expect(ok).To(BeTrue())
 			Expect(ve).To(ContainElement(errs.ValidationError{
-				Field: "serviceOptions[1]", Message: "Effective until cannot be in the past",
+				Field: "serviceOptions[1]", Message: "An option's effective-until date can't be changed after it's created. Delete this option and add a replacement with the dates you want.",
 			}))
 		})
 
@@ -542,7 +542,7 @@ var _ = Describe("ServiceService", func() {
 		})
 
 		// UT-011 (Service & Option Constraints).
-		It("moves the default option's effective-from date into the future", func() {
+		It("rejects moving the default option's effective-from date into the future", func() {
 			future := editFrom // "2030-01-01"
 			p := param.ServiceParam{
 				ServiceID:   10,
@@ -561,18 +561,18 @@ var _ = Describe("ServiceService", func() {
 			}, nil).Once()
 			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(30)).
 				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}, nil).Once()
-			serviceRepo.EXPECT().SetOptionWindow(ctx, mock.AnythingOfType("*sql.Tx"), int64(30), future, (*string)(nil)).Return(nil).Once()
-			serviceRepo.EXPECT().SetServiceDefaultOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(30)).Return(nil).Once()
-			dbMock.ExpectCommit()
+			dbMock.ExpectRollback()
 
-			result, err := serviceSvc.UpdateService(ctx, p)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result.ServiceOptions).To(HaveLen(1))
-			Expect(result.ServiceOptions[0].EffectiveFrom).To(Equal(future))
+			_, err := serviceSvc.UpdateService(ctx, p)
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions[0]", Message: "An option's effective-from date can't be changed after it's created. Delete this option and add a replacement with the dates you want.",
+			}))
 		})
 
 		// UT-011 (Service & Option Constraints).
-		It("rejects a past effective-from date for the default option", func() {
+		It("rejects a past effective-from date for the default option — the window is fixed either way", func() {
 			past := "2000-01-01"
 			p := param.ServiceParam{
 				ServiceID:   10,
@@ -597,7 +597,7 @@ var _ = Describe("ServiceService", func() {
 			ve, ok := err.(errs.ValidationErrors)
 			Expect(ok).To(BeTrue())
 			Expect(ve).To(ContainElement(errs.ValidationError{
-				Field: "serviceOptions[0]", Message: "The default option's effective-from date cannot be in the past.",
+				Field: "serviceOptions[0]", Message: "An option's effective-from date can't be changed after it's created. Delete this option and add a replacement with the dates you want.",
 			}))
 		})
 
@@ -662,11 +662,11 @@ var _ = Describe("ServiceService", func() {
 			ve, ok := err.(errs.ValidationErrors)
 			Expect(ok).To(BeTrue())
 			Expect(ve).To(ContainElement(errs.ValidationError{
-				Field: "serviceOptions[0]", Message: "This option has an effective-until date set. Clear it (or delete this option and add a replacement without one), then set it as default.",
+				Field: "serviceOptions[0]", Message: "This option was created with an effective-until date, which can't be changed. Delete it and add a replacement without an end date to use it as the default.",
 			}))
 		})
 
-		It("promotes an option to default while clearing its saved end date in the same save", func() {
+		It("rejects promoting an option to default even when the same save asks to clear its end date", func() {
 			until := editUntil
 			p := param.ServiceParam{
 				ServiceID:   10,
@@ -689,15 +689,14 @@ var _ = Describe("ServiceService", func() {
 				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Base"}}, nil).Once()
 			serviceRepo.EXPECT().GetServiceOptionItemsByOptionID(ctx, int64(31)).
 				Return([]param.ServiceOptionItemParam{{ServiceOptionItemName: "Lotion"}}, nil).Once()
-			serviceRepo.EXPECT().SetOptionWindow(ctx, mock.AnythingOfType("*sql.Tx"), int64(31), "2020-01-01", (*string)(nil)).Return(nil).Once()
-			serviceRepo.EXPECT().SetServiceDefaultOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), int64(31)).Return(nil).Once()
-			dbMock.ExpectCommit()
+			dbMock.ExpectRollback()
 
-			result, err := serviceSvc.UpdateService(ctx, p)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result.ServiceOptions).To(HaveLen(2))
-			Expect(result.ServiceOptions[0].ServiceOptionID).To(Equal(int64(31)))
-			Expect(result.ServiceOptions[0].EffectiveUntil).To(BeNil())
+			_, err := serviceSvc.UpdateService(ctx, p)
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve).To(ContainElement(errs.ValidationError{
+				Field: "serviceOptions[0]", Message: "This option was created with an effective-until date, which can't be changed. Delete it and add a replacement without an end date to use it as the default.",
+			}))
 		})
 
 		It("rejects an option ID that doesn't belong to this service", func() {

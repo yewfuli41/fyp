@@ -1,60 +1,55 @@
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+type LeaveApplication {
+  leaveId: ID!
+  staffId: ID!
+  staff: Staff!
+  staffName: String!
+  position: String
+  startDate: Date!
+  endDate: Date!
+  justification: String
+  fileUrl: String
+  status: LeaveStatus!
+  remark: String
+  decidedAt: DateTime
+  deletedAt: DateTime
+  createdAt: DateTime!
+  affectedBookings: [BookingDetail!]!
+}
+
 input ApplyLeaveInput {
   startDate: Date!
   endDate: Date!
   justification: String
-  # Base64 data URI (e.g. "data:application/pdf;base64,...") of a supporting
-  # document such as a medical certificate. Stored as-is in file_url.
   fileUrl: String
 }
 
-# Assigns (or, when staffId is omitted, unassigns — owner-managed) a
-# replacement staff for one service slot affected by a leave approval or a
-# working-hours edit.
 input SlotReassignmentInput {
   serviceSlotId: ID!
   staffId: ID
 }
 
-extend type Query {
-  # The current staff user's own leave applications.
-  myLeaveApplications: [LeaveApplication!]!
-  # Every leave application for the owner's business (pending, approved and
-  # rejected), each carrying the bookings it would affect if approved.
-  businessLeaveApplications: [LeaveApplication!]!
-  # Precheck for updateStaffWorkingHours — the staff's currently-booked slots
-  # that would fall outside the proposed hours, so the owner can be shown a
-  # replacement-staff picker before committing the change.
-  staffHoursConflicts(staffId: ID!, workingHours: [WorkingHourInput!]!): [ServiceSlot!]!
-}
-
-# One "move this booking onto that slot" decision taken while approving a
-# leave. The owner settles every affected booking before approving, and the
-# whole set is submitted with the approval so nothing is written — and no
-# customer is emailed — for a leave that is still pending.
 input LeaveRescheduleInput {
   bookingId: ID!
   newSlotOptionId: ID!
 }
 
+extend type Query {
+  myLeaveApplications: [LeaveApplication!]!
+  businessLeaveApplications: [LeaveApplication!]!
+  staffHoursConflicts(staffId: ID!, workingHours: [WorkingHourInput!]!): [ServiceSlot!]!
+}
+
 extend type Mutation {
   applyLeave(input: ApplyLeaveInput!): LeaveApplication!
-  # Lets the applying staff member edit just their reason while the
-  # application is still pending — the date range can't be changed here.
   updateLeaveApplication(leaveId: ID!, justification: String): LeaveApplication!
   deleteLeaveApplication(leaveId: ID!): Boolean!
-  # Every booking the leave affects must appear in reschedules — leaving one
-  # out is rejected and the leave stays pending, since approving would strand
-  # that customer with no staff member. Each move happens in the same
-  # transaction as the approval, so an approval the owner abandons part-way
-  # leaves the leave pending and every booking untouched. A slot with no
-  # booking is simply freed back to owner-managed.
   approveLeaveApplication(leaveId: ID!, reschedules: [LeaveRescheduleInput!]): LeaveApplication!
-  # Also reverses an already-approved leave (moving it to rejected, with a
-  # required remark) — there is no separate cancel. Does not undo any staff
-  # reassignments already made when it was approved.
   rejectLeaveApplication(leaveId: ID!, remark: String!): LeaveApplication!
-  # Edits a staff member's weekly working hours. Any of their booked slots
-  # that would fall outside the new hours must be covered by reassignments —
-  # call staffHoursConflicts first to find out which ones, if any.
   updateStaffWorkingHours(staffId: ID!, workingHours: [WorkingHourInput!]!, reassignments: [SlotReassignmentInput!]!): Staff!
 }

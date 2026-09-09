@@ -161,21 +161,6 @@ var _ = Describe("ServiceRepo", func() {
 		})
 	})
 
-	Describe("SetOptionWindow", func() {
-		It("resizes an option's validity window", func() {
-			mock.ExpectBegin()
-			tx, _ := db.Begin()
-
-			until := "2026-06-30"
-			mock.ExpectExec(regexp.QuoteMeta("UPDATE fyp_fuli_service_options")).
-				WithArgs(int64(20), "2026-01-01", &until).
-				WillReturnResult(sqlmock.NewResult(0, 1))
-
-			err := repo.SetOptionWindow(ctx, tx, 20, "2026-01-01", &until)
-			Expect(err).NotTo(HaveOccurred())
-		})
-	})
-
 	Describe("SetServiceDefaultOption", func() {
 		It("marks the given option as default and every other option under the service as not-default", func() {
 			mock.ExpectBegin()

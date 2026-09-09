@@ -13,14 +13,26 @@
           "if (!pm.collectionVariables.get(\"stamp\")) {",
           "    pm.collectionVariables.set(\"stamp\", String(Date.now()));",
           "}",
-          "const iso = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);",
+          "// Dates are worked out in LOCAL time, not UTC: the server compares them",
+          "// against its own clock, so before 08:00 in a UTC+8 timezone the UTC date is",
+          "// still yesterday, which would put \"today\" in the past and fail the run.",
+          "const iso = (n) => {",
+          "    const d = new Date(Date.now() + n * 86400000);",
+          "    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);",
+          "};",
           "pm.collectionVariables.set(\"today\", iso(0));",
           "pm.collectionVariables.set(\"monthAgo\", iso(-30));",
           "pm.collectionVariables.set(\"dateA\", iso(7));",
           "pm.collectionVariables.set(\"dateB\", iso(8));",
           "pm.collectionVariables.set(\"dateC\", iso(9));",
           "pm.collectionVariables.set(\"dateE\", iso(20));",
-          "pm.collectionVariables.set(\"dateF\", iso(25));"
+          "pm.collectionVariables.set(\"dateF\", iso(25));",
+          "pm.collectionVariables.set(\"dateG\", iso(21));",
+          "// The weekly series repeats on whatever weekday falls 14 days out, so the",
+          "// run never depends on which day of the week it happens to start.",
+          "const WD = [\"sunday\",\"monday\",\"tuesday\",\"wednesday\",\"thursday\",\"friday\",\"saturday\"];",
+          "pm.collectionVariables.set(\"seriesWeekday\", WD[new Date(iso(14) + \"T12:00:00Z\").getUTCDay()]);",
+          "pm.collectionVariables.set(\"stDate\", iso(30));"
         ]
       }
     }
@@ -1081,14 +1093,9 @@
               ]
             }
           }
-        }
-      ]
-    },
-    {
-      "name": "UC-6 Manage Services",
-      "item": [
+        },
         {
-          "name": "IT-23 Owner creates a service with a bookable option",
+          "name": "IT-23 Owner registers a second staff member",
           "event": [
             {
               "listen": "test",
@@ -1096,7 +1103,205 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-23 the service and its option are created\", function () {",
+                  "pm.test(\"IT-23 the second staff member is registered\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(j.data.registerStaff).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation($s: StaffInput!) { registerStaff(staff: $s) }\",\n  \"variables\": {\n    \"s\": {\n      \"name\": \"IT Spare Staff {{stamp}}\",\n      \"email\": \"it-staff2-{{stamp}}@itest.local\",\n      \"contactNumber\": \"0123456719\",\n      \"position\": \"Assistant\",\n      \"password\": \"TempPass123\",\n      \"workingHours\": [\n        {\n          \"day\": \"monday\",\n          \"startTime\": \"2000-01-01T00:00:00Z\",\n          \"endTime\": \"2000-01-01T23:59:00Z\"\n        },\n        {\n          \"day\": \"tuesday\",\n          \"startTime\": \"2000-01-01T00:00:00Z\",\n          \"endTime\": \"2000-01-01T23:59:00Z\"\n        },\n        {\n          \"day\": \"wednesday\",\n          \"startTime\": \"2000-01-01T00:00:00Z\",\n          \"endTime\": \"2000-01-01T23:59:00Z\"\n        },\n        {\n          \"day\": \"thursday\",\n          \"startTime\": \"2000-01-01T00:00:00Z\",\n          \"endTime\": \"2000-01-01T23:59:00Z\"\n        },\n        {\n          \"day\": \"friday\",\n          \"startTime\": \"2000-01-01T00:00:00Z\",\n          \"endTime\": \"2000-01-01T23:59:00Z\"\n        },\n        {\n          \"day\": \"saturday\",\n          \"startTime\": \"2000-01-01T00:00:00Z\",\n          \"endTime\": \"2000-01-01T23:59:00Z\"\n        },\n        {\n          \"day\": \"sunday\",\n          \"startTime\": \"2000-01-01T00:00:00Z\",\n          \"endTime\": \"2000-01-01T23:59:00Z\"\n        }\n      ]\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-24 Owner finds the second staff member on the list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-24 the second staff member is listed and has no bookings\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    const s = j.data.displayStaff.filter(x => x.email === \"it-staff2-\" + pm.collectionVariables.get(\"stamp\") + \"@itest.local\")[0];",
+                  "    pm.expect(s, \"the second staff member should be listed\").to.not.be.undefined;",
+                  "    pm.expect(s.hasBooking, \"nobody is booked with them yet\").to.eql(false);",
+                  "    pm.collectionVariables.set(\"staff2Id\", s.staffId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query { displayStaff { staffId name email hasBooking } }\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-25 Owner removes a staff member with no upcoming appointments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-25 the staff member is removed\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(j.data.deleteStaff).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation($id: ID!) { deleteStaff(staffId: $id) }\",\n  \"variables\": {\n    \"id\": \"{{staff2Id}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-26 The removed staff member is gone, the other one remains",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-26 only the removed staff member disappeared\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    const ids = j.data.displayStaff.map(s => s.staffId);",
+                  "    pm.expect(ids, \"the removed staff member should be gone\").to.not.include(pm.collectionVariables.get(\"staff2Id\"));",
+                  "    pm.expect(ids, \"the working staff member should remain\").to.include(pm.collectionVariables.get(\"staffId\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query { displayStaff { staffId email } }\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "UC-6 Manage Services",
+      "item": [
+        {
+          "name": "IT-27 Owner creates a service with a bookable option",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-27 the service and its option are created\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.createService.serviceId).to.be.a(\"string\").and.not.empty;",
@@ -1138,7 +1343,7 @@
           }
         },
         {
-          "name": "IT-24 A service with no name is refused",
+          "name": "IT-28 A service with no name is refused",
           "event": [
             {
               "listen": "test",
@@ -1147,7 +1352,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []) + JSON.stringify((j.errors||[]).map(e => (e.extensions||{}).validationErrors||[]));",
-                  "pm.test(\"IT-24 the service without a name is refused\", function () {",
+                  "pm.test(\"IT-28 the service without a name is refused\", function () {",
                   "    pm.expect(j.errors, \"expected the request to be refused\").to.not.be.undefined;",
                   "    pm.expect(msg).to.match(/name/i);",
                   "",
@@ -1186,7 +1391,7 @@
           }
         },
         {
-          "name": "IT-25 Owner edits the service",
+          "name": "IT-29 Owner edits the service",
           "event": [
             {
               "listen": "test",
@@ -1194,7 +1399,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-25 the service name and description are updated, its option untouched\", function () {",
+                  "pm.test(\"IT-29 the service name and description are updated, its option untouched\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.updateService.serviceName).to.contain(\"(Updated)\");",
@@ -1234,7 +1439,7 @@
           }
         },
         {
-          "name": "IT-26 Owner sees the service in the business's service list",
+          "name": "IT-30 Owner sees the service in the business's service list",
           "event": [
             {
               "listen": "test",
@@ -1242,7 +1447,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-26 the updated service is listed with its option\", function () {",
+                  "pm.test(\"IT-30 the updated service is listed with its option\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    const s = j.data.displayServices.filter(x => x.serviceId === pm.collectionVariables.get(\"serviceId\"))[0];",
@@ -1281,14 +1486,9 @@
               ]
             }
           }
-        }
-      ]
-    },
-    {
-      "name": "UC-7 Manage Service Slots",
-      "item": [
+        },
         {
-          "name": "IT-27 Owner creates an appointment slot for a staff member",
+          "name": "IT-31 Owner adds a spare service to delete",
           "event": [
             {
               "listen": "test",
@@ -1296,7 +1496,206 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-27 the slot is created for that staff member on that date\", function () {",
+                  "pm.test(\"IT-31 the spare service is created\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(j.data.createService.serviceId).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.collectionVariables.set(\"spareServiceId\", j.data.createService.serviceId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation($s: ServiceInput!) { createService(service: $s) { serviceId serviceName } }\",\n  \"variables\": {\n    \"s\": {\n      \"serviceName\": \"IT Spare Service {{stamp}}\",\n      \"description\": \"Created to be deleted\",\n      \"serviceOptions\": [\n        {\n          \"serviceOptionName\": \"Spare Option\",\n          \"serviceOptionItems\": [\n            {\n              \"serviceOptionItemName\": \"Spare Item\"\n            }\n          ],\n          \"effectiveFrom\": \"{{today}}\"\n        }\n      ]\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-32 The service list shows the newly added service",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-32 the newly added service is listed before it is deleted\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    const s = j.data.displayServices.filter(x => x.serviceId === pm.collectionVariables.get(\"spareServiceId\"))[0];",
+                  "    pm.expect(s, \"the spare service should be on the list\").to.not.be.undefined;",
+                  "    pm.expect(s.serviceName).to.contain(\"IT Spare Service\");",
+                  "    pm.expect(s.serviceOptions.length, \"with its option\").to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"query { displayServices { serviceId serviceName description serviceOptions { serviceOptionId serviceOptionName } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-33 Owner deletes a service with no upcoming bookings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-33 the service is deleted\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(j.data.deleteService).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation($id: ID!) { deleteService(serviceId: $id) }\",\n  \"variables\": {\n    \"id\": \"{{spareServiceId}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-34 The deleted service is gone, the other one remains",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-34 only the deleted service disappeared\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    const ids = j.data.displayServices.map(s => s.serviceId);",
+                  "    pm.expect(ids, \"the deleted service should be gone\").to.not.include(pm.collectionVariables.get(\"spareServiceId\"));",
+                  "    pm.expect(ids, \"the service in use should remain\").to.include(pm.collectionVariables.get(\"serviceId\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query { displayServices { serviceId serviceName } }\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "UC-7 Manage Service Slots",
+      "item": [
+        {
+          "name": "IT-35 Owner creates an appointment slot for a staff member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-35 the slot is created for that staff member on that date\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.createServiceSlot.date).to.eql(pm.collectionVariables.get(\"dateA\"));",
@@ -1338,7 +1737,7 @@
           }
         },
         {
-          "name": "IT-28 Owner creates a second slot for the same staff member",
+          "name": "IT-36 Owner creates a second slot for the same staff member",
           "event": [
             {
               "listen": "test",
@@ -1346,7 +1745,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-28 the second slot is created\", function () {",
+                  "pm.test(\"IT-36 the second slot is created\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.createServiceSlot.date).to.eql(pm.collectionVariables.get(\"dateC\"));",
@@ -1387,7 +1786,7 @@
           }
         },
         {
-          "name": "IT-29 Owner creates slots the business itself manages",
+          "name": "IT-37 Owner creates slots the business itself manages",
           "event": [
             {
               "listen": "test",
@@ -1395,7 +1794,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-29 an owner-managed slot is created with no staff assigned\", function () {",
+                  "pm.test(\"IT-37 an owner-managed slot is created with no staff assigned\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.createServiceSlot.staffId, \"should be unassigned\").to.be.null;",
@@ -1436,7 +1835,7 @@
           }
         },
         {
-          "name": "IT-30 Owner creates a spare owner-managed slot",
+          "name": "IT-38 Owner creates a spare owner-managed slot",
           "event": [
             {
               "listen": "test",
@@ -1444,7 +1843,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-30 the spare slot is created\", function () {",
+                  "pm.test(\"IT-38 the spare slot is created\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.createServiceSlot.serviceSlotId).to.be.a(\"string\").and.not.empty;",
@@ -1485,7 +1884,7 @@
           }
         },
         {
-          "name": "IT-31 Owner creates a slot that will be deleted",
+          "name": "IT-39 Owner creates a slot that will be deleted",
           "event": [
             {
               "listen": "test",
@@ -1493,7 +1892,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-31 the slot is created\", function () {",
+                  "pm.test(\"IT-39 the slot is created\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.createServiceSlot.serviceSlotId).to.be.a(\"string\").and.not.empty;",
@@ -1533,7 +1932,7 @@
           }
         },
         {
-          "name": "IT-32 Owner assigns a staff member to an owner-managed slot",
+          "name": "IT-40 System shows which staff can take an appointment time",
           "event": [
             {
               "listen": "test",
@@ -1541,7 +1940,257 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-32 the slot is now handled by that staff member\", function () {",
+                  "pm.test(\"IT-40 the staff who can cover that time are offered\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(j.data.availableStaffForSlot, \"should return a list\").to.be.an(\"array\");",
+                  "    const ids = j.data.availableStaffForSlot.map(s => s.staffId);",
+                  "    pm.expect(ids, \"the staff member who works then should be offered\").to.include(pm.collectionVariables.get(\"staffId\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query($id: ID!) { availableStaffForSlot(serviceSlotId: $id) { staffId name position } }\",\n  \"variables\": {\n    \"id\": \"{{slotA}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-41 Owner opens a weekly repeating appointment time",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-41 the repeating series is created and its first occurrence returned\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(j.data.createServiceSlot.serviceSlotId).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.collectionVariables.set(\"seriesFirstSlot\", j.data.createServiceSlot.serviceSlotId);",
+                  "pm.collectionVariables.set(\"seriesFirstDate\", j.data.createServiceSlot.date);",
+                  "const d = new Date(j.data.createServiceSlot.date + \"T00:00:00Z\");",
+                  "d.setUTCDate(d.getUTCDate() + 7);",
+                  "pm.collectionVariables.set(\"seriesNextDate\", d.toISOString().slice(0, 10));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation($i: ServiceSlotInput!) { createServiceSlot(input: $i) { serviceSlotId date startTime endTime staffId serviceSlotOptions { slotOptionId serviceOptionId } } }\",\n  \"variables\": {\n    \"i\": {\n      \"daysOfWeek\": [\n        \"{{seriesWeekday}}\"\n      ],\n      \"recurringEndDate\": \"{{dateG}}\",\n      \"startTime\": \"2000-01-01T15:00:00Z\",\n      \"endTime\": \"2000-01-01T16:00:00Z\",\n      \"serviceOptionIds\": [\n        \"{{optionId}}\"\n      ]\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-42 The following week's occurrence was generated too",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-42 the same time exists again a week later\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    const next = j.data.displayServiceSlots.filter(s => String(s.startTime).indexOf(\"15:00\") >= 0)[0];",
+                  "    pm.expect(next, \"the next weekly occurrence should exist\").to.not.be.undefined;",
+                  "    pm.collectionVariables.set(\"seriesNextSlot\", next.serviceSlotId);",
+                  "    pm.collectionVariables.set(\"seriesNextOption\", next.serviceSlotOptions[0].slotOptionId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query($d: Date!) { displayServiceSlots(date: $d) { serviceSlotId date startTime hasBooking serviceSlotOptions { slotOptionId } } }\",\n  \"variables\": {\n    \"d\": \"{{seriesNextDate}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-43 An appointment time with invalid details is refused",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const msg = JSON.stringify(j.errors || []) + JSON.stringify((j.errors||[]).map(e => (e.extensions||{}).validationErrors||[]));",
+                  "pm.test(\"IT-43 the impossible time range is refused with a validation message\", function () {",
+                  "    pm.expect(j.errors, \"expected the request to be refused\").to.not.be.undefined;",
+                  "    pm.expect(msg).to.match(/start time must be before end time/i);",
+                  "",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation($i: ServiceSlotInput!) { createServiceSlot(input: $i) { serviceSlotId date startTime endTime staffId serviceSlotOptions { slotOptionId serviceOptionId } } }\",\n  \"variables\": {\n    \"i\": {\n      \"date\": \"{{dateC}}\",\n      \"startTime\": \"2000-01-01T16:00:00Z\",\n      \"endTime\": \"2000-01-01T15:00:00Z\",\n      \"serviceOptionIds\": [\n        \"{{optionId}}\"\n      ]\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-44 Owner edits an appointment time that has no booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-44 the time is changed because nobody is booked into it\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.updateServiceSlot.startTime), \"new start time\").to.contain(\"16:00\");",
+                  "    pm.expect(String(j.data.updateServiceSlot.endTime), \"new end time\").to.contain(\"17:00\");",
+                  "});",
+                  "// Editing replaces the occurrence rather than updating it in place, so",
+                  "// the slot now has a new id \u2014 follow it for the later steps.",
+                  "pm.collectionVariables.set(\"slotD\", j.data.updateServiceSlot.serviceSlotId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $i: ServiceSlotInput!) { updateServiceSlot(serviceSlotId: $id, input: $i) { serviceSlotId date startTime endTime } }\",\n  \"variables\": {\n    \"id\": \"{{slotD}}\",\n    \"i\": {\n      \"date\": \"{{dateC}}\",\n      \"startTime\": \"2000-01-01T16:00:00Z\",\n      \"endTime\": \"2000-01-01T17:00:00Z\",\n      \"serviceOptionIds\": [\n        \"{{optionId}}\"\n      ]\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-45 Owner assigns a staff member to an owner-managed slot",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-45 the slot is now handled by that staff member\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.reassignServiceSlotStaff.staffId).to.eql(pm.collectionVariables.get(\"staffId\"));",
@@ -1580,7 +2229,7 @@
           }
         },
         {
-          "name": "IT-33 Owner deletes an appointment slot that has no booking",
+          "name": "IT-46 Owner deletes an appointment slot that has no booking",
           "event": [
             {
               "listen": "test",
@@ -1588,7 +2237,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-33 the unbooked slot is deleted\", function () {",
+                  "pm.test(\"IT-46 the unbooked slot is deleted\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.deleteServiceSlot).to.eql(true);",
@@ -1627,7 +2276,7 @@
           }
         },
         {
-          "name": "IT-34 Owner sees the remaining slots on the calendar",
+          "name": "IT-47 Owner sees the remaining slots on the calendar",
           "event": [
             {
               "listen": "test",
@@ -1635,7 +2284,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-34 the calendar shows the slot created for that date\", function () {",
+                  "pm.test(\"IT-47 the calendar shows the slot created for that date\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    const ids = j.data.displayServiceSlots.map(s => s.serviceSlotId);",
@@ -1680,7 +2329,7 @@
       "name": "UC-13 Book Appointment",
       "item": [
         {
-          "name": "IT-35 Customer browses businesses",
+          "name": "IT-48 Customer browses businesses",
           "event": [
             {
               "listen": "test",
@@ -1688,7 +2337,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-35 the new business is listed for customers to choose\", function () {",
+                  "pm.test(\"IT-48 the new business is listed for customers to choose\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    const ids = j.data.publicBusinesses.map(b => b.businessId);",
@@ -1728,7 +2377,7 @@
           }
         },
         {
-          "name": "IT-36 Customer views the business's services",
+          "name": "IT-49 Customer views the business's services",
           "event": [
             {
               "listen": "test",
@@ -1736,7 +2385,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-36 the business's service and its option are offered\", function () {",
+                  "pm.test(\"IT-49 the business's service and its option are offered\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    const s = j.data.publicServices.filter(x => x.serviceId === pm.collectionVariables.get(\"serviceId\"))[0];",
@@ -1776,7 +2425,7 @@
           }
         },
         {
-          "name": "IT-37 Customer sees the available times for a date",
+          "name": "IT-50 Customer sees the available times for a date",
           "event": [
             {
               "listen": "test",
@@ -1784,7 +2433,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-37 the slot opened in IT-27 is offered as available\", function () {",
+                  "pm.test(\"IT-50 the slot opened in IT-27 is offered as available\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    const ids = j.data.availableSlots.map(s => s.serviceSlotId);",
@@ -1824,7 +2473,7 @@
           }
         },
         {
-          "name": "IT-38 Customer books an appointment",
+          "name": "IT-51 Customer books an appointment",
           "event": [
             {
               "listen": "test",
@@ -1832,7 +2481,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-38 the booking is recorded and waits for the business to respond\", function () {",
+                  "pm.test(\"IT-51 the booking is recorded and waits for the business to respond\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(String(j.data.createBooking.status).toUpperCase()).to.eql(\"PENDING\");",
@@ -1873,7 +2522,7 @@
           }
         },
         {
-          "name": "IT-39 A second customer cannot take a time already requested",
+          "name": "IT-52 A second customer cannot take a time already requested",
           "event": [
             {
               "listen": "test",
@@ -1882,7 +2531,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []) + JSON.stringify((j.errors||[]).map(e => (e.extensions||{}).validationErrors||[]));",
-                  "pm.test(\"IT-39 the time is already spoken for and the second request is refused\", function () {",
+                  "pm.test(\"IT-52 the time is already spoken for and the second request is refused\", function () {",
                   "    pm.expect(j.errors, \"expected the request to be refused\").to.not.be.undefined;",
                   "    pm.expect(msg).to.match(/no longer available|already been booked/i);",
                   "",
@@ -1921,7 +2570,7 @@
           }
         },
         {
-          "name": "IT-40 Customer books a second appointment",
+          "name": "IT-53 Customer books a second appointment",
           "event": [
             {
               "listen": "test",
@@ -1929,7 +2578,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-40 the second booking is recorded as pending\", function () {",
+                  "pm.test(\"IT-53 the second booking is recorded as pending\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(String(j.data.createBooking.status).toUpperCase()).to.eql(\"PENDING\");",
@@ -1974,7 +2623,7 @@
       "name": "UC-11 Manage Bookings",
       "item": [
         {
-          "name": "IT-41 Owner sees the incoming booking requests",
+          "name": "IT-54 Owner sees the incoming booking requests",
           "event": [
             {
               "listen": "test",
@@ -1982,7 +2631,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-41 both pending requests are waiting for the owner\", function () {",
+                  "pm.test(\"IT-54 both pending requests are waiting for the owner\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    const ids = j.data.businessBookings.map(b => b.bookingId);",
@@ -2026,7 +2675,7 @@
           }
         },
         {
-          "name": "IT-42 Owner accepts a booking",
+          "name": "IT-55 Owner accepts a booking",
           "event": [
             {
               "listen": "test",
@@ -2034,7 +2683,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-42 the booking is confirmed\", function () {",
+                  "pm.test(\"IT-55 the booking is confirmed\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.acceptBooking.status).to.eql(\"ACCEPTED\");",
@@ -2073,7 +2722,7 @@
           }
         },
         {
-          "name": "IT-43 The accepted time is no longer offered to other customers",
+          "name": "IT-56 The accepted time is no longer offered to other customers",
           "event": [
             {
               "listen": "test",
@@ -2081,7 +2730,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-43 the booked time has dropped out of the available list\", function () {",
+                  "pm.test(\"IT-56 the booked time has dropped out of the available list\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    const ids = j.data.availableSlots.map(s => s.serviceSlotId);",
@@ -2121,7 +2770,7 @@
           }
         },
         {
-          "name": "IT-44 Owner proposes a new time for a booking",
+          "name": "IT-57 Owner proposes a new time for a booking",
           "event": [
             {
               "listen": "test",
@@ -2129,7 +2778,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-44 the booking is moved and marked as awaiting the customer's answer\", function () {",
+                  "pm.test(\"IT-57 the booking is moved and marked as awaiting the customer's answer\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.rescheduleBooking.status).to.eql(\"RESCHEDULED\");",
@@ -2169,7 +2818,7 @@
           }
         },
         {
-          "name": "IT-45 Owner cannot accept their own reschedule proposal",
+          "name": "IT-58 Owner cannot accept their own reschedule proposal",
           "event": [
             {
               "listen": "test",
@@ -2178,7 +2827,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []) + JSON.stringify((j.errors||[]).map(e => (e.extensions||{}).validationErrors||[]));",
-                  "pm.test(\"IT-45 the business cannot confirm the change it proposed itself\", function () {",
+                  "pm.test(\"IT-58 the business cannot confirm the change it proposed itself\", function () {",
                   "    pm.expect(j.errors, \"expected the request to be refused\").to.not.be.undefined;",
                   "    pm.expect(msg).to.match(/not allowed|no reschedule/i);",
                   "",
@@ -2222,7 +2871,7 @@
       "name": "UC-14 Manage Appointments",
       "item": [
         {
-          "name": "IT-46 Customer sees their appointments",
+          "name": "IT-59 Customer sees their appointments",
           "event": [
             {
               "listen": "test",
@@ -2230,7 +2879,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-46 the customer's own appointments are listed with their statuses\", function () {",
+                  "pm.test(\"IT-59 the customer's own appointments are listed with their statuses\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    const ids = j.data.myAppointments.map(b => b.bookingId);",
@@ -2273,7 +2922,7 @@
           }
         },
         {
-          "name": "IT-47 Customer accepts the new time the business proposed",
+          "name": "IT-60 Customer accepts the new time the business proposed",
           "event": [
             {
               "listen": "test",
@@ -2281,7 +2930,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-47 the appointment is confirmed at the new time\", function () {",
+                  "pm.test(\"IT-60 the appointment is confirmed at the new time\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.acceptReschedule.status).to.eql(\"ACCEPTED\");",
@@ -2320,7 +2969,7 @@
           }
         },
         {
-          "name": "IT-48 Customer asks to move an appointment",
+          "name": "IT-61 Customer asks to move an appointment",
           "event": [
             {
               "listen": "test",
@@ -2328,7 +2977,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-48 the request is recorded and waits for the business, not the customer\", function () {",
+                  "pm.test(\"IT-61 the request is recorded and waits for the business, not the customer\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.rescheduleBooking.status, \"should await the business\").to.eql(\"PENDING\");",
@@ -2368,7 +3017,7 @@
           }
         },
         {
-          "name": "IT-49 Customer cancels an appointment",
+          "name": "IT-62 Customer cancels an appointment",
           "event": [
             {
               "listen": "test",
@@ -2376,7 +3025,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-49 the appointment is cancelled\", function () {",
+                  "pm.test(\"IT-62 the appointment is cancelled\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.cancelBooking.status).to.eql(\"CANCELLED\");",
@@ -2420,7 +3069,7 @@
       "name": "UC-15 Record Walk-In Customer",
       "item": [
         {
-          "name": "IT-50 Owner records a walk-in customer",
+          "name": "IT-63 Owner records a walk-in customer",
           "event": [
             {
               "listen": "test",
@@ -2428,7 +3077,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-50 the walk-in is recorded as an immediately confirmed in-person visit\", function () {",
+                  "pm.test(\"IT-63 the walk-in is recorded as an immediately confirmed in-person visit\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.recordWalkIn.bookingType).to.eql(\"WALK_IN\");",
@@ -2470,7 +3119,7 @@
           }
         },
         {
-          "name": "IT-51 The walk-in appears in the business's bookings",
+          "name": "IT-64 The walk-in appears in the business's bookings",
           "event": [
             {
               "listen": "test",
@@ -2478,7 +3127,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-51 the walk-in is counted alongside online bookings\", function () {",
+                  "pm.test(\"IT-64 the walk-in is counted alongside online bookings\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    const w = j.data.businessBookings.filter(b => b.bookingType === \"WALK_IN\");",
@@ -2523,7 +3172,7 @@
       "name": "UC-10 Apply Leave Application",
       "item": [
         {
-          "name": "IT-52 Staff applies for leave",
+          "name": "IT-65 Staff applies for leave",
           "event": [
             {
               "listen": "test",
@@ -2531,7 +3180,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-52 the application is submitted and waits for the owner's decision\", function () {",
+                  "pm.test(\"IT-65 the application is submitted and waits for the owner's decision\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.applyLeave.status).to.eql(\"PENDING\");",
@@ -2572,7 +3221,7 @@
           }
         },
         {
-          "name": "IT-53 Staff applies for a second day of leave",
+          "name": "IT-66 Staff applies for a second day of leave",
           "event": [
             {
               "listen": "test",
@@ -2580,7 +3229,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-53 the second application is submitted\", function () {",
+                  "pm.test(\"IT-66 the second application is submitted\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.applyLeave.status).to.eql(\"PENDING\");",
@@ -2620,7 +3269,7 @@
           }
         },
         {
-          "name": "IT-54 Staff applies for a third day, to be withdrawn",
+          "name": "IT-67 Staff applies for a third day, to be withdrawn",
           "event": [
             {
               "listen": "test",
@@ -2628,7 +3277,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-54 the third application is submitted\", function () {",
+                  "pm.test(\"IT-67 the third application is submitted\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.applyLeave.status).to.eql(\"PENDING\");",
@@ -2668,7 +3317,7 @@
           }
         },
         {
-          "name": "IT-55 Staff sees their own leave applications and statuses",
+          "name": "IT-68 Staff sees their own leave applications and statuses",
           "event": [
             {
               "listen": "test",
@@ -2676,7 +3325,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-55 all three of their applications are listed with their statuses\", function () {",
+                  "pm.test(\"IT-68 all three of their applications are listed with their statuses\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    const ids = j.data.myLeaveApplications.map(l => l.leaveId);",
@@ -2718,7 +3367,7 @@
           }
         },
         {
-          "name": "IT-56 Staff withdraws a leave application",
+          "name": "IT-69 Staff withdraws a leave application",
           "event": [
             {
               "listen": "test",
@@ -2726,7 +3375,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-56 the application is withdrawn\", function () {",
+                  "pm.test(\"IT-69 the application is withdrawn\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.deleteLeaveApplication).to.eql(true);",
@@ -2770,7 +3419,7 @@
       "name": "UC-9 Manage Staff Availability",
       "item": [
         {
-          "name": "IT-57 Owner reviews pending leave and the bookings it would affect",
+          "name": "IT-70 Owner reviews pending leave and the bookings it would affect",
           "event": [
             {
               "listen": "test",
@@ -2778,7 +3427,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-57 the pending application is shown together with the booking it clashes with\", function () {",
+                  "pm.test(\"IT-70 the pending application is shown together with the booking it clashes with\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    const l = j.data.businessLeaveApplications.filter(x => x.leaveId === pm.collectionVariables.get(\"leave1\"))[0];",
@@ -2821,7 +3470,7 @@
           }
         },
         {
-          "name": "IT-58 Owner approves leave and gives the affected customer a new time",
+          "name": "IT-71 Owner approves leave and gives the affected customer a new time",
           "event": [
             {
               "listen": "test",
@@ -2829,7 +3478,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-58 the leave is granted and the customer's appointment moves with it\", function () {",
+                  "pm.test(\"IT-71 the leave is granted and the customer's appointment moves with it\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.approveLeaveApplication.status).to.eql(\"APPROVED\");",
@@ -2868,7 +3517,7 @@
           }
         },
         {
-          "name": "IT-59 The affected appointment now sits at its new time",
+          "name": "IT-72 The affected appointment now sits at its new time",
           "event": [
             {
               "listen": "test",
@@ -2876,7 +3525,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-59 the customer's appointment really moved to the replacement time\", function () {",
+                  "pm.test(\"IT-72 the customer's appointment really moved to the replacement time\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    const b = j.data.businessBookings.filter(x => x.bookingId === pm.collectionVariables.get(\"booking1\"))[0];",
@@ -2918,7 +3567,7 @@
           }
         },
         {
-          "name": "IT-60 Declining leave without a reason is refused",
+          "name": "IT-73 Declining leave without a reason is refused",
           "event": [
             {
               "listen": "test",
@@ -2927,7 +3576,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []) + JSON.stringify((j.errors||[]).map(e => (e.extensions||{}).validationErrors||[]));",
-                  "pm.test(\"IT-60 a decline with no reason is refused\", function () {",
+                  "pm.test(\"IT-73 a decline with no reason is refused\", function () {",
                   "    pm.expect(j.errors, \"expected the request to be refused\").to.not.be.undefined;",
                   "    pm.expect(msg).to.match(/provide a reason|remark/i);",
                   "",
@@ -2966,7 +3615,7 @@
           }
         },
         {
-          "name": "IT-61 Owner declines leave with a reason",
+          "name": "IT-74 Owner declines leave with a reason",
           "event": [
             {
               "listen": "test",
@@ -2974,7 +3623,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-61 the application is declined with the reason recorded\", function () {",
+                  "pm.test(\"IT-74 the application is declined with the reason recorded\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.rejectLeaveApplication.status).to.eql(\"REJECTED\");",
@@ -3014,7 +3663,7 @@
           }
         },
         {
-          "name": "IT-62 Staff sees the owner's decisions on their leave",
+          "name": "IT-75 Staff sees the owner's decisions on their leave",
           "event": [
             {
               "listen": "test",
@@ -3022,7 +3671,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-62 the staff member sees one approved and one declined with its reason\", function () {",
+                  "pm.test(\"IT-75 the staff member sees one approved and one declined with its reason\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    const l1 = j.data.myLeaveApplications.filter(l => l.leaveId === pm.collectionVariables.get(\"leave1\"))[0];",
@@ -3065,7 +3714,7 @@
           }
         },
         {
-          "name": "IT-63 Owner checks which appointments a change of hours would affect",
+          "name": "IT-76 Owner checks which appointments a change of hours would affect",
           "event": [
             {
               "listen": "test",
@@ -3073,7 +3722,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-63 the check runs and reports any appointments left outside the proposed hours\", function () {",
+                  "pm.test(\"IT-76 the check runs and reports any appointments left outside the proposed hours\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.staffHoursConflicts, \"should return a list\").to.be.an(\"array\");",
@@ -3113,7 +3762,7 @@
           }
         },
         {
-          "name": "IT-64 Owner shortens the staff member's working hours",
+          "name": "IT-77 Owner shortens the staff member's working hours",
           "event": [
             {
               "listen": "test",
@@ -3121,7 +3770,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-64 the new working hours are saved\", function () {",
+                  "pm.test(\"IT-77 the new working hours are saved\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.updateStaffWorkingHours.workingHours.length, \"hours should be saved\").to.be.above(0);",
@@ -3163,10 +3812,10 @@
       ]
     },
     {
-      "name": "UC-16 View Assigned Appointments",
+      "name": "FR-10 No scheduling during approved leave",
       "item": [
         {
-          "name": "IT-65 Staff sees the appointments assigned to them",
+          "name": "IT-78 Staff cannot be scheduled on a day of their approved leave",
           "event": [
             {
               "listen": "test",
@@ -3174,7 +3823,157 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-65 the staff member gets a list of appointments they can work from\", function () {",
+                  "const msg = JSON.stringify(j.errors || []) + JSON.stringify((j.errors||[]).map(e => (e.extensions||{}).validationErrors||[]));",
+                  "pm.test(\"IT-78 opening an appointment time for a staff member on approved leave is refused\", function () {",
+                  "    pm.expect(j.errors, \"expected the request to be refused\").to.not.be.undefined;",
+                  "    pm.expect(msg).to.match(/approved leave/i);",
+                  "    pm.expect(msg, \"the date should be named\").to.contain(pm.collectionVariables.get(\"dateA\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($i: ServiceSlotInput!) { createServiceSlot(input: $i) { serviceSlotId date staffId serviceSlotOptions { slotOptionId } } }\",\n  \"variables\": {\n    \"i\": {\n      \"staffId\": \"{{staffId}}\",\n      \"date\": \"{{dateA}}\",\n      \"startTime\": \"2000-01-01T10:00:00Z\",\n      \"endTime\": \"2000-01-01T11:00:00Z\",\n      \"serviceOptionIds\": [\n        \"{{optionId}}\"\n      ]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-79 An existing appointment time cannot be handed to staff on approved leave",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const msg = JSON.stringify(j.errors || []) + JSON.stringify((j.errors||[]).map(e => (e.extensions||{}).validationErrors||[]));",
+                  "pm.test(\"IT-79 assigning a slot on the leave date to that staff member is refused\", function () {",
+                  "    pm.expect(j.errors, \"expected the request to be refused\").to.not.be.undefined;",
+                  "    pm.expect(msg).to.match(/approved leave/i);",
+                  "",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $s: ID) { reassignServiceSlotStaff(serviceSlotId: $id, staffId: $s) { serviceSlotId staffId } }\",\n  \"variables\": {\n    \"id\": \"{{slotA}}\",\n    \"s\": \"{{staffId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-80 The same staff member can still be scheduled outside the leave",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-80 a date outside the leave is still allowed, so the block is scoped to the leave\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(j.data.createServiceSlot.date).to.eql(pm.collectionVariables.get(\"dateC\"));",
+                  "    pm.expect(j.data.createServiceSlot.staffId).to.eql(pm.collectionVariables.get(\"staffId\"));",
+                  "});",
+                  "pm.collectionVariables.set(\"frTenSlot\", j.data.createServiceSlot.serviceSlotId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($i: ServiceSlotInput!) { createServiceSlot(input: $i) { serviceSlotId date staffId serviceSlotOptions { slotOptionId } } }\",\n  \"variables\": {\n    \"i\": {\n      \"staffId\": \"{{staffId}}\",\n      \"date\": \"{{dateC}}\",\n      \"startTime\": \"2000-01-01T10:00:00Z\",\n      \"endTime\": \"2000-01-01T11:00:00Z\",\n      \"serviceOptionIds\": [\n        \"{{optionId}}\"\n      ]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "UC-16 View Assigned Appointments",
+      "item": [
+        {
+          "name": "IT-81 Staff sees the appointments assigned to them",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-81 the staff member gets a list of appointments they can work from\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.businessBookings, \"should return their appointment list\").to.be.an(\"array\");",
@@ -3220,7 +4019,7 @@
       "name": "UC-12 View Analytics",
       "item": [
         {
-          "name": "IT-66 Owner views the analytics dashboard",
+          "name": "IT-82 Owner views the analytics dashboard",
           "event": [
             {
               "listen": "test",
@@ -3228,7 +4027,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-66 the dashboard returns booking totals, service demand and utilisation figures\", function () {",
+                  "pm.test(\"IT-82 the dashboard returns booking totals, service demand and utilisation figures\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(j.data.bookingSummary, \"booking summary\").to.not.be.null;",
@@ -3271,7 +4070,7 @@
           }
         },
         {
-          "name": "IT-67 A staff member cannot open the analytics dashboard",
+          "name": "IT-83 A staff member cannot open the analytics dashboard",
           "event": [
             {
               "listen": "test",
@@ -3280,7 +4079,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []) + JSON.stringify((j.errors||[]).map(e => (e.extensions||{}).validationErrors||[]));",
-                  "pm.test(\"IT-67 a staff member is refused the business's figures\", function () {",
+                  "pm.test(\"IT-83 a staff member is refused the business's figures\", function () {",
                   "    pm.expect(j.errors, \"expected the request to be refused\").to.not.be.undefined;",
                   "    pm.expect(msg).to.match(/business profile not found|not allowed|unauthor/i);",
                   "",
@@ -3319,7 +4118,7 @@
           }
         },
         {
-          "name": "IT-68 A customer cannot open the analytics dashboard",
+          "name": "IT-84 A customer cannot open the analytics dashboard",
           "event": [
             {
               "listen": "test",
@@ -3328,7 +4127,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []) + JSON.stringify((j.errors||[]).map(e => (e.extensions||{}).validationErrors||[]));",
-                  "pm.test(\"IT-68 a customer is refused the business's figures\", function () {",
+                  "pm.test(\"IT-84 a customer is refused the business's figures\", function () {",
                   "    pm.expect(j.errors, \"expected the request to be refused\").to.not.be.undefined;",
                   "    pm.expect(msg).to.match(/business profile not found|not allowed|unauthor/i);",
                   "",
@@ -3369,10 +4168,1691 @@
       ]
     },
     {
-      "name": "Deletion guards (run last - require existing bookings)",
+      "name": "Booking State Transitions (state model)",
       "item": [
         {
-          "name": "IT-69 A service with bookings cannot be deleted",
+          "name": "ST-01 Open appointment time X",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-01 Open appointment time X\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(j.data.createServiceSlot.serviceSlotId).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.collectionVariables.set(\"stX\", j.data.createServiceSlot.serviceSlotId);",
+                  "pm.collectionVariables.set(\"stXOpt\", j.data.createServiceSlot.serviceSlotOptions[0].slotOptionId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($i: ServiceSlotInput!) { createServiceSlot(input: $i) { serviceSlotId serviceSlotOptions { slotOptionId } } }\",\n  \"variables\": {\n    \"i\": {\n      \"date\": \"{{stDate}}\",\n      \"startTime\": \"2000-01-01T09:00:00Z\",\n      \"endTime\": \"2000-01-01T10:00:00Z\",\n      \"serviceOptionIds\": [\n        \"{{optionId}}\"\n      ]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-02 Open appointment time Y",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-02 Open appointment time Y\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(j.data.createServiceSlot.serviceSlotId).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.collectionVariables.set(\"stY\", j.data.createServiceSlot.serviceSlotId);",
+                  "pm.collectionVariables.set(\"stYOpt\", j.data.createServiceSlot.serviceSlotOptions[0].slotOptionId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($i: ServiceSlotInput!) { createServiceSlot(input: $i) { serviceSlotId serviceSlotOptions { slotOptionId } } }\",\n  \"variables\": {\n    \"i\": {\n      \"date\": \"{{stDate}}\",\n      \"startTime\": \"2000-01-01T11:00:00Z\",\n      \"endTime\": \"2000-01-01T12:00:00Z\",\n      \"serviceOptionIds\": [\n        \"{{optionId}}\"\n      ]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-03 Open appointment time Z",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-03 Open appointment time Z\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(j.data.createServiceSlot.serviceSlotId).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.collectionVariables.set(\"stZ\", j.data.createServiceSlot.serviceSlotId);",
+                  "pm.collectionVariables.set(\"stZOpt\", j.data.createServiceSlot.serviceSlotOptions[0].slotOptionId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($i: ServiceSlotInput!) { createServiceSlot(input: $i) { serviceSlotId serviceSlotOptions { slotOptionId } } }\",\n  \"variables\": {\n    \"i\": {\n      \"date\": \"{{stDate}}\",\n      \"startTime\": \"2000-01-01T13:00:00Z\",\n      \"endTime\": \"2000-01-01T14:00:00Z\",\n      \"serviceOptionIds\": [\n        \"{{optionId}}\"\n      ]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-04 Customer books an appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-04 Customer books an appointment\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.createBooking.status).toUpperCase(), \"resulting state\").to.eql(\"PENDING\");",
+                  "});",
+                  "pm.collectionVariables.set(\"stBooking\", j.data.createBooking.bookingId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($o: ID!) { createBooking(slotOptionId: $o) { bookingId status } }\",\n  \"variables\": {\n    \"o\": \"{{stXOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-05 Customer asks to move it while still pending",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-05 Customer asks to move it while still pending\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.rescheduleBooking.status).toUpperCase(), \"resulting state\").to.eql(\"PENDING\");",
+                  "    pm.expect(j.data.rescheduleBooking.slotOptionId, \"moved onto the chosen time\").to.eql(pm.collectionVariables.get(\"stYOpt\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $o: ID!) { rescheduleBooking(bookingId: $id, newSlotOptionId: $o) { bookingId status slotOptionId } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\",\n    \"o\": \"{{stYOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-06 Customer cancels while pending",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-06 Customer cancels while pending\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.cancelBooking.status).toUpperCase(), \"resulting state\").to.eql(\"CANCELLED\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!) { cancelBooking(bookingId: $id) { bookingId status } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-07 Customer books again for the accepted-state checks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-07 Customer books again for the accepted-state checks\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.createBooking.status).toUpperCase(), \"resulting state\").to.eql(\"PENDING\");",
+                  "});",
+                  "pm.collectionVariables.set(\"stBooking\", j.data.createBooking.bookingId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($o: ID!) { createBooking(slotOptionId: $o) { bookingId status } }\",\n  \"variables\": {\n    \"o\": \"{{stXOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-08 Business accepts the booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-08 Business accepts the booking\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.acceptBooking.status).toUpperCase(), \"resulting state\").to.eql(\"ACCEPTED\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!) { acceptBooking(bookingId: $id) { bookingId status } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-09 Customer asks to move an accepted appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-09 Customer asks to move an accepted appointment\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.rescheduleBooking.status).toUpperCase(), \"resulting state\").to.eql(\"PENDING\");",
+                  "    pm.expect(j.data.rescheduleBooking.slotOptionId, \"moved onto the chosen time\").to.eql(pm.collectionVariables.get(\"stYOpt\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $o: ID!) { rescheduleBooking(bookingId: $id, newSlotOptionId: $o) { bookingId status slotOptionId } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\",\n    \"o\": \"{{stYOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-10 Business accepts the new time",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-10 Business accepts the new time\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.acceptBooking.status).toUpperCase(), \"resulting state\").to.eql(\"ACCEPTED\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!) { acceptBooking(bookingId: $id) { bookingId status } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-11 Customer cancels an accepted appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-11 Customer cancels an accepted appointment\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.cancelBooking.status).toUpperCase(), \"resulting state\").to.eql(\"CANCELLED\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!) { cancelBooking(bookingId: $id) { bookingId status } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-12 Customer books for the proposal checks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-12 Customer books for the proposal checks\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.createBooking.status).toUpperCase(), \"resulting state\").to.eql(\"PENDING\");",
+                  "});",
+                  "pm.collectionVariables.set(\"stBooking\", j.data.createBooking.bookingId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($o: ID!) { createBooking(slotOptionId: $o) { bookingId status } }\",\n  \"variables\": {\n    \"o\": \"{{stXOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-13 Business proposes a new time for a pending booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-13 Business proposes a new time for a pending booking\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.rescheduleBooking.status).toUpperCase(), \"resulting state\").to.eql(\"RESCHEDULED\");",
+                  "    pm.expect(j.data.rescheduleBooking.slotOptionId, \"moved onto the chosen time\").to.eql(pm.collectionVariables.get(\"stYOpt\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $o: ID!) { rescheduleBooking(bookingId: $id, newSlotOptionId: $o) { bookingId status slotOptionId } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\",\n    \"o\": \"{{stYOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-14 Business proposes yet another time",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-14 Business proposes yet another time\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.rescheduleBooking.status).toUpperCase(), \"resulting state\").to.eql(\"RESCHEDULED\");",
+                  "    pm.expect(j.data.rescheduleBooking.slotOptionId, \"moved onto the chosen time\").to.eql(pm.collectionVariables.get(\"stZOpt\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $o: ID!) { rescheduleBooking(bookingId: $id, newSlotOptionId: $o) { bookingId status slotOptionId } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\",\n    \"o\": \"{{stZOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-15 Customer accepts the proposed time",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-15 Customer accepts the proposed time\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.acceptReschedule.status).toUpperCase(), \"resulting state\").to.eql(\"ACCEPTED\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!) { acceptReschedule(bookingId: $id) { bookingId status } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-16 Business proposes moving an accepted appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-16 Business proposes moving an accepted appointment\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.rescheduleBooking.status).toUpperCase(), \"resulting state\").to.eql(\"RESCHEDULED\");",
+                  "    pm.expect(j.data.rescheduleBooking.slotOptionId, \"moved onto the chosen time\").to.eql(pm.collectionVariables.get(\"stXOpt\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $o: ID!) { rescheduleBooking(bookingId: $id, newSlotOptionId: $o) { bookingId status slotOptionId } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\",\n    \"o\": \"{{stXOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-17 Customer counters with a time of their own",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-17 Customer counters with a time of their own\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.rescheduleBooking.status).toUpperCase(), \"resulting state\").to.eql(\"PENDING\");",
+                  "    pm.expect(j.data.rescheduleBooking.slotOptionId, \"moved onto the chosen time\").to.eql(pm.collectionVariables.get(\"stYOpt\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $o: ID!) { rescheduleBooking(bookingId: $id, newSlotOptionId: $o) { bookingId status slotOptionId } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\",\n    \"o\": \"{{stYOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-18 Business proposes once more",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-18 Business proposes once more\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.rescheduleBooking.status).toUpperCase(), \"resulting state\").to.eql(\"RESCHEDULED\");",
+                  "    pm.expect(j.data.rescheduleBooking.slotOptionId, \"moved onto the chosen time\").to.eql(pm.collectionVariables.get(\"stZOpt\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $o: ID!) { rescheduleBooking(bookingId: $id, newSlotOptionId: $o) { bookingId status slotOptionId } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\",\n    \"o\": \"{{stZOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-19 Customer cancels a proposed appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-19 Customer cancels a proposed appointment\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.cancelBooking.status).toUpperCase(), \"resulting state\").to.eql(\"CANCELLED\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!) { cancelBooking(bookingId: $id) { bookingId status } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-20 Customer books for the rejection checks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-20 Customer books for the rejection checks\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.createBooking.status).toUpperCase(), \"resulting state\").to.eql(\"PENDING\");",
+                  "});",
+                  "pm.collectionVariables.set(\"stBooking\", j.data.createBooking.bookingId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($o: ID!) { createBooking(slotOptionId: $o) { bookingId status } }\",\n  \"variables\": {\n    \"o\": \"{{stXOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-21 Business rejects a pending booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-21 Business rejects a pending booking\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.rejectBooking.status).toUpperCase(), \"resulting state\").to.eql(\"REJECTED\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!) { rejectBooking(bookingId: $id) { bookingId status } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-22 Customer books again",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-22 Customer books again\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.createBooking.status).toUpperCase(), \"resulting state\").to.eql(\"PENDING\");",
+                  "});",
+                  "pm.collectionVariables.set(\"stBooking\", j.data.createBooking.bookingId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($o: ID!) { createBooking(slotOptionId: $o) { bookingId status } }\",\n  \"variables\": {\n    \"o\": \"{{stXOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-23 Business proposes a new time",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-23 Business proposes a new time\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.rescheduleBooking.status).toUpperCase(), \"resulting state\").to.eql(\"RESCHEDULED\");",
+                  "    pm.expect(j.data.rescheduleBooking.slotOptionId, \"moved onto the chosen time\").to.eql(pm.collectionVariables.get(\"stYOpt\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $o: ID!) { rescheduleBooking(bookingId: $id, newSlotOptionId: $o) { bookingId status slotOptionId } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\",\n    \"o\": \"{{stYOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-24 Business withdraws its own proposal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-24 Business withdraws its own proposal\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.rejectBooking.status).toUpperCase(), \"resulting state\").to.eql(\"REJECTED\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!) { rejectBooking(bookingId: $id) { bookingId status } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-25 Customer books for the business-cancel checks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-25 Customer books for the business-cancel checks\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.createBooking.status).toUpperCase(), \"resulting state\").to.eql(\"PENDING\");",
+                  "});",
+                  "pm.collectionVariables.set(\"stBooking\", j.data.createBooking.bookingId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($o: ID!) { createBooking(slotOptionId: $o) { bookingId status } }\",\n  \"variables\": {\n    \"o\": \"{{stXOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-26 Business cancels a pending booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-26 Business cancels a pending booking\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.cancelBooking.status).toUpperCase(), \"resulting state\").to.eql(\"CANCELLED\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!) { cancelBooking(bookingId: $id) { bookingId status } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-27 Customer books again",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-27 Customer books again\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.createBooking.status).toUpperCase(), \"resulting state\").to.eql(\"PENDING\");",
+                  "});",
+                  "pm.collectionVariables.set(\"stBooking\", j.data.createBooking.bookingId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($o: ID!) { createBooking(slotOptionId: $o) { bookingId status } }\",\n  \"variables\": {\n    \"o\": \"{{stXOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-28 Business accepts it",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-28 Business accepts it\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.acceptBooking.status).toUpperCase(), \"resulting state\").to.eql(\"ACCEPTED\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!) { acceptBooking(bookingId: $id) { bookingId status } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-29 Business cancels an accepted appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-29 Business cancels an accepted appointment\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.cancelBooking.status).toUpperCase(), \"resulting state\").to.eql(\"CANCELLED\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!) { cancelBooking(bookingId: $id) { bookingId status } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-30 Customer books one last time",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-30 Customer books one last time\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.createBooking.status).toUpperCase(), \"resulting state\").to.eql(\"PENDING\");",
+                  "});",
+                  "pm.collectionVariables.set(\"stBooking\", j.data.createBooking.bookingId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($o: ID!) { createBooking(slotOptionId: $o) { bookingId status } }\",\n  \"variables\": {\n    \"o\": \"{{stXOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-31 Business proposes a new time again",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-31 Business proposes a new time again\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.rescheduleBooking.status).toUpperCase(), \"resulting state\").to.eql(\"RESCHEDULED\");",
+                  "    pm.expect(j.data.rescheduleBooking.slotOptionId, \"moved onto the chosen time\").to.eql(pm.collectionVariables.get(\"stYOpt\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $o: ID!) { rescheduleBooking(bookingId: $id, newSlotOptionId: $o) { bookingId status slotOptionId } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\",\n    \"o\": \"{{stYOpt}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-32 Business cancels a proposed appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-32 Business cancels a proposed appointment\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.cancelBooking.status).toUpperCase(), \"resulting state\").to.eql(\"CANCELLED\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!) { cancelBooking(bookingId: $id) { bookingId status } }\",\n  \"variables\": {\n    \"id\": \"{{stBooking}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-33 Business records a walk-in whose time has already passed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-33 Business records a walk-in whose time has already passed\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.recordWalkIn.status).toUpperCase(), \"recorded as\").to.eql(\"ACCEPTED\");",
+                  "});",
+                  "pm.collectionVariables.set(\"stPastBooking\", j.data.recordWalkIn.bookingId);",
+                  "pm.collectionVariables.set(\"stPastSlot\", j.data.recordWalkIn.serviceSlotId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($i: WalkInInput!) { recordWalkIn(input: $i) { bookingId status serviceSlotId date } }\",\n  \"variables\": {\n    \"i\": {\n      \"serviceOptionId\": \"{{optionId}}\",\n      \"date\": \"{{today}}\",\n      \"startTime\": \"2000-01-01T00:00:00Z\",\n      \"endTime\": \"2000-01-01T00:01:00Z\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-34 The passed appointment leaves the active booking list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-34 reading the bookings sweeps the passed appointment out of the active list\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    const ids = j.data.businessBookings.map(b => b.bookingId);",
+                  "    // businessBookings only lists pending, accepted and rescheduled work.",
+                  "    // Reading it runs the sweep, after which the passed booking is no",
+                  "    // longer active and so drops out \u2014 ST-35 confirms it became Past.",
+                  "    pm.expect(ids, \"the passed booking should no longer be active\").to.not.include(pm.collectionVariables.get(\"stPastBooking\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"query { businessBookings { bookingId status date startTime } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ST-35 The booking is now counted as Past",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"ST-35 the booking is reported in the Past bucket\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    const past = j.data.bookingSummary.byStatus.filter(s => String(s.status).toUpperCase() === \"PAST\")[0];",
+                  "    pm.expect(past, \"a Past bucket should exist\").to.not.be.undefined;",
+                  "    pm.expect(past.count, \"at least the walk-in whose time has gone by\").to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"query($f: Date!, $u: Date!) { bookingSummary(from: $f, until: $u) { totalBookings byStatus { status count } } }\",\n  \"variables\": {\n    \"f\": \"{{monthAgo}}\",\n    \"u\": \"{{dateF}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Post-booking guards (run last - need existing bookings)",
+      "item": [
+        {
+          "name": "IT-85 A service with bookings cannot be deleted",
           "event": [
             {
               "listen": "test",
@@ -3381,7 +5861,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []) + JSON.stringify((j.errors||[]).map(e => (e.extensions||{}).validationErrors||[]));",
-                  "pm.test(\"IT-69 deletion is refused while the service still has bookings\", function () {",
+                  "pm.test(\"IT-85 deletion is refused while the service still has bookings\", function () {",
                   "    pm.expect(j.errors, \"expected the request to be refused\").to.not.be.undefined;",
                   "    pm.expect(msg).to.match(/booking exists/i);",
                   "",
@@ -3420,7 +5900,7 @@
           }
         },
         {
-          "name": "IT-70 A customer books the staff member's remaining time",
+          "name": "IT-86 A customer books the staff member's remaining time",
           "event": [
             {
               "listen": "test",
@@ -3428,7 +5908,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"IT-70 the booking is placed on the staff member's own time\", function () {",
+                  "pm.test(\"IT-86 the booking is placed on the staff member's own time\", function () {",
                   "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
                   "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
                   "    pm.expect(String(j.data.createBooking.status).toUpperCase()).to.eql(\"PENDING\");",
@@ -3468,7 +5948,7 @@
           }
         },
         {
-          "name": "IT-71 A staff member with bookings cannot be removed",
+          "name": "IT-87 A staff member with bookings cannot be removed",
           "event": [
             {
               "listen": "test",
@@ -3477,7 +5957,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []) + JSON.stringify((j.errors||[]).map(e => (e.extensions||{}).validationErrors||[]));",
-                  "pm.test(\"IT-71 removal is refused while the staff member still has bookings\", function () {",
+                  "pm.test(\"IT-87 removal is refused while the staff member still has bookings\", function () {",
                   "    pm.expect(j.errors, \"expected the request to be refused\").to.not.be.undefined;",
                   "    pm.expect(msg).to.match(/booking exists/i);",
                   "",
@@ -3516,7 +5996,7 @@
           }
         },
         {
-          "name": "IT-72 An appointment slot with a booking cannot be deleted",
+          "name": "IT-88 An appointment slot with a booking cannot be deleted",
           "event": [
             {
               "listen": "test",
@@ -3525,7 +6005,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []) + JSON.stringify((j.errors||[]).map(e => (e.extensions||{}).validationErrors||[]));",
-                  "pm.test(\"IT-72 deletion is refused while a customer is booked into the slot\", function () {",
+                  "pm.test(\"IT-88 deletion is refused while a customer is booked into the slot\", function () {",
                   "    pm.expect(j.errors, \"expected the request to be refused\").to.not.be.undefined;",
                   "    pm.expect(msg).to.match(/booking|cannot/i);",
                   "",
@@ -3549,6 +6029,246 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"query\": \"mutation($id: ID!, $f: Boolean!) { deleteServiceSlot(serviceSlotId: $id, deleteFutureRecurring: $f) }\",\n  \"variables\": {\n    \"id\": \"{{slotC}}\",\n    \"f\": false\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-89 Editing a booked appointment time is refused",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const msg = JSON.stringify(j.errors || []) + JSON.stringify((j.errors||[]).map(e => (e.extensions||{}).validationErrors||[]));",
+                  "pm.test(\"IT-89 the details cannot be changed once a customer is booked in\", function () {",
+                  "    pm.expect(j.errors, \"expected the request to be refused\").to.not.be.undefined;",
+                  "    pm.expect(msg).to.match(/already has a booking|only staff reassignment/i);",
+                  "",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $i: ServiceSlotInput!) { updateServiceSlot(serviceSlotId: $id, input: $i) { serviceSlotId startTime } }\",\n  \"variables\": {\n    \"id\": \"{{slotBStaff}}\",\n    \"i\": {\n      \"date\": \"{{dateC}}\",\n      \"startTime\": \"2000-01-01T11:00:00Z\",\n      \"endTime\": \"2000-01-01T12:00:00Z\",\n      \"serviceOptionIds\": [\n        \"{{optionId}}\"\n      ]\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-90 Reassigning staff on a booked appointment time is allowed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-90 the booked slot is handed over, which is the one change allowed\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(j.data.reassignServiceSlotStaff.staffId, \"should now be owner-managed\").to.be.null;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $s: ID) { reassignServiceSlotStaff(serviceSlotId: $id, staffId: $s) { serviceSlotId staffId } }\",\n  \"variables\": {\n    \"id\": \"{{slotBStaff}}\",\n    \"s\": null\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-91 A customer books a later occurrence of the weekly series",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-91 the later weekly occurrence is booked\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    pm.expect(String(j.data.createBooking.status).toUpperCase()).to.eql(\"PENDING\");",
+                  "});",
+                  "pm.collectionVariables.set(\"seriesBooking\", j.data.createBooking.bookingId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation($o: ID!) { createBooking(slotOptionId: $o) { bookingId status } }\",\n  \"variables\": {\n    \"o\": \"{{seriesNextOption}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-92 Deleting future occurrences keeps the booked ones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const msg = JSON.stringify(j.errors || []) + JSON.stringify((j.errors||[]).map(e => (e.extensions||{}).validationErrors||[]));",
+                  "pm.test(\"IT-92 the booked occurrence is kept and its date is reported back\", function () {",
+                  "    pm.expect(j.errors, \"expected the request to be refused\").to.not.be.undefined;",
+                  "    pm.expect(msg).to.match(/kept/i);",
+                  "    pm.expect(msg, \"the kept date should be named\").to.contain(pm.collectionVariables.get(\"seriesNextDate\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $f: Boolean!) { deleteServiceSlot(serviceSlotId: $id, deleteFutureRecurring: $f) }\",\n  \"variables\": {\n    \"id\": \"{{seriesFirstSlot}}\",\n    \"f\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "IT-93 The booked occurrence really survived the deletion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test(\"IT-93 the booked occurrence is still on the calendar with its booking\", function () {",
+                  "    pm.expect(pm.response.code, \"HTTP status\").to.eql(200);",
+                  "    pm.expect(j.errors, \"unexpected errors: \" + JSON.stringify(j.errors)).to.be.undefined;",
+                  "    const kept = j.data.displayServiceSlots.filter(s => s.serviceSlotId === pm.collectionVariables.get(\"seriesNextSlot\"))[0];",
+                  "    pm.expect(kept, \"the booked occurrence must not have been deleted\").to.not.be.undefined;",
+                  "    pm.expect(kept.hasBooking, \"and it still holds its booking\").to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query($d: Date!) { displayServiceSlots(date: $d) { serviceSlotId startTime hasBooking } }\",\n  \"variables\": {\n    \"d\": \"{{seriesNextDate}}\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3710,7 +6430,7 @@
           }
         },
         {
-          "name": "CL-04 Remove the approved leave application",
+          "name": "CL-04 Close the booking on the weekly occurrence",
           "event": [
             {
               "listen": "test",
@@ -3719,7 +6439,101 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []);",
-                  "pm.test(\"CL-04 the run's approved leave application is removed\", function () {",
+                  "pm.test(\"CL-04 the weekly series booking is closed\", function () {",
+                  "    const gone = /not found|no longer|already|cannot be/i.test(msg);",
+                  "    pm.expect(!j.errors || gone, \"cleanup step failed: \" + msg).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation($id: ID!) { rejectBooking(bookingId: $id) { bookingId status } }\",\n  \"variables\": {\n    \"id\": \"{{seriesBooking}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CL-05 Remove the weekly occurrence that was kept",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const msg = JSON.stringify(j.errors || []);",
+                  "pm.test(\"CL-05 the kept weekly occurrence is removed\", function () {",
+                  "    const gone = /not found|no longer|already|cannot be/i.test(msg);",
+                  "    pm.expect(!j.errors || gone, \"cleanup step failed: \" + msg).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $f: Boolean!) { deleteServiceSlot(serviceSlotId: $id, deleteFutureRecurring: $f) }\",\n  \"variables\": {\n    \"id\": \"{{seriesNextSlot}}\",\n    \"f\": false\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CL-06 Remove the approved leave application",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const msg = JSON.stringify(j.errors || []);",
+                  "pm.test(\"CL-06 the run's approved leave application is removed\", function () {",
                   "    const gone = /not found|no longer|already|cannot be/i.test(msg);",
                   "    pm.expect(!j.errors || gone, \"cleanup step failed: \" + msg).to.be.true;",
                   "});"
@@ -3757,7 +6571,7 @@
           }
         },
         {
-          "name": "CL-05 Remove the declined leave application",
+          "name": "CL-07 Remove the declined leave application",
           "event": [
             {
               "listen": "test",
@@ -3766,7 +6580,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []);",
-                  "pm.test(\"CL-05 the run's declined leave application is removed\", function () {",
+                  "pm.test(\"CL-07 the run's declined leave application is removed\", function () {",
                   "    const gone = /not found|no longer|already|cannot be/i.test(msg);",
                   "    pm.expect(!j.errors || gone, \"cleanup step failed: \" + msg).to.be.true;",
                   "});"
@@ -3804,7 +6618,7 @@
           }
         },
         {
-          "name": "CL-06 Remove the staff member created by this run",
+          "name": "CL-08 Remove the staff member created by this run",
           "event": [
             {
               "listen": "test",
@@ -3813,7 +6627,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []);",
-                  "pm.test(\"CL-06 the run's staff member is removed\", function () {",
+                  "pm.test(\"CL-08 the run's staff member is removed\", function () {",
                   "    const gone = /not found|no longer|already|cannot be/i.test(msg);",
                   "    pm.expect(!j.errors || gone, \"cleanup step failed: \" + msg).to.be.true;",
                   "});"
@@ -3851,7 +6665,7 @@
           }
         },
         {
-          "name": "CL-07 Remove the staff appointment slot (7 days ahead)",
+          "name": "CL-09 Remove the staff appointment slot (7 days ahead)",
           "event": [
             {
               "listen": "test",
@@ -3860,7 +6674,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []);",
-                  "pm.test(\"CL-07 slot A is removed\", function () {",
+                  "pm.test(\"CL-09 slot A is removed\", function () {",
                   "    const gone = /not found|no longer|already|cannot be/i.test(msg);",
                   "    pm.expect(!j.errors || gone, \"cleanup step failed: \" + msg).to.be.true;",
                   "});"
@@ -3898,7 +6712,7 @@
           }
         },
         {
-          "name": "CL-08 Remove the staff appointment slot (9 days ahead)",
+          "name": "CL-10 Remove the staff appointment slot (9 days ahead)",
           "event": [
             {
               "listen": "test",
@@ -3907,7 +6721,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []);",
-                  "pm.test(\"CL-08 the staff's second slot is removed\", function () {",
+                  "pm.test(\"CL-10 the staff's second slot is removed\", function () {",
                   "    const gone = /not found|no longer|already|cannot be/i.test(msg);",
                   "    pm.expect(!j.errors || gone, \"cleanup step failed: \" + msg).to.be.true;",
                   "});"
@@ -3945,7 +6759,7 @@
           }
         },
         {
-          "name": "CL-09 Remove the owner-managed slot (09:00)",
+          "name": "CL-11 Remove the owner-managed slot (09:00)",
           "event": [
             {
               "listen": "test",
@@ -3954,7 +6768,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []);",
-                  "pm.test(\"CL-09 the owner-managed 09:00 slot is removed\", function () {",
+                  "pm.test(\"CL-11 the owner-managed 09:00 slot is removed\", function () {",
                   "    const gone = /not found|no longer|already|cannot be/i.test(msg);",
                   "    pm.expect(!j.errors || gone, \"cleanup step failed: \" + msg).to.be.true;",
                   "});"
@@ -3992,7 +6806,7 @@
           }
         },
         {
-          "name": "CL-10 Remove the owner-managed slot (11:00)",
+          "name": "CL-12 Remove the owner-managed slot (11:00)",
           "event": [
             {
               "listen": "test",
@@ -4001,7 +6815,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []);",
-                  "pm.test(\"CL-10 the owner-managed 11:00 slot is removed\", function () {",
+                  "pm.test(\"CL-12 the owner-managed 11:00 slot is removed\", function () {",
                   "    const gone = /not found|no longer|already|cannot be/i.test(msg);",
                   "    pm.expect(!j.errors || gone, \"cleanup step failed: \" + msg).to.be.true;",
                   "});"
@@ -4039,7 +6853,7 @@
           }
         },
         {
-          "name": "CL-11 Remove the service created by this run",
+          "name": "CL-13 Remove the service created by this run",
           "event": [
             {
               "listen": "test",
@@ -4048,7 +6862,7 @@
                 "exec": [
                   "const j = pm.response.json();",
                   "const msg = JSON.stringify(j.errors || []);",
-                  "pm.test(\"CL-11 the run's service is removed\", function () {",
+                  "pm.test(\"CL-13 the run's service is removed\", function () {",
                   "    const gone = /not found|no longer|already|cannot be/i.test(msg);",
                   "    pm.expect(!j.errors || gone, \"cleanup step failed: \" + msg).to.be.true;",
                   "});"
@@ -4086,7 +6900,7 @@
           }
         },
         {
-          "name": "CL-12 Confirm this run left nothing active behind",
+          "name": "CL-14 Confirm this run left nothing active behind",
           "event": [
             {
               "listen": "test",
@@ -4094,7 +6908,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const j = pm.response.json();",
-                  "pm.test(\"CL-12 the run's business has no active bookings, staff or services left\", function () {",
+                  "pm.test(\"CL-14 the run's business has no active bookings, staff or services left\", function () {",
                   "    pm.expect(j.errors, JSON.stringify(j.errors)).to.be.undefined;",
                   "    const active = j.data.businessBookings.filter(b => [\"PENDING\",\"ACCEPTED\",\"RESCHEDULED\"].indexOf(String(b.status).toUpperCase()) >= 0);",
                   "    pm.expect(active.length, \"active bookings left over\").to.eql(0);",
@@ -4127,6 +6941,241 @@
                   "language": "json"
                 }
               }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CL-15 Remove state-transition appointment time X",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const msg = JSON.stringify(j.errors || []);",
+                  "pm.test(\"CL-15 state-transition appointment time X is removed\", function () {",
+                  "    const gone = /not found|no longer|already|cannot be/i.test(msg);",
+                  "    pm.expect(!j.errors || gone, \"cleanup step failed: \" + msg).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $f: Boolean!) { deleteServiceSlot(serviceSlotId: $id, deleteFutureRecurring: $f) }\",\n  \"variables\": {\n    \"id\": \"{{stX}}\",\n    \"f\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CL-16 Remove state-transition appointment time Y",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const msg = JSON.stringify(j.errors || []);",
+                  "pm.test(\"CL-16 state-transition appointment time Y is removed\", function () {",
+                  "    const gone = /not found|no longer|already|cannot be/i.test(msg);",
+                  "    pm.expect(!j.errors || gone, \"cleanup step failed: \" + msg).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $f: Boolean!) { deleteServiceSlot(serviceSlotId: $id, deleteFutureRecurring: $f) }\",\n  \"variables\": {\n    \"id\": \"{{stY}}\",\n    \"f\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CL-17 Remove state-transition appointment time Z",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const msg = JSON.stringify(j.errors || []);",
+                  "pm.test(\"CL-17 state-transition appointment time Z is removed\", function () {",
+                  "    const gone = /not found|no longer|already|cannot be/i.test(msg);",
+                  "    pm.expect(!j.errors || gone, \"cleanup step failed: \" + msg).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $f: Boolean!) { deleteServiceSlot(serviceSlotId: $id, deleteFutureRecurring: $f) }\",\n  \"variables\": {\n    \"id\": \"{{stZ}}\",\n    \"f\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CL-18 Remove state-transition appointment time walk-in",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const msg = JSON.stringify(j.errors || []);",
+                  "pm.test(\"CL-18 state-transition appointment time walk-in is removed\", function () {",
+                  "    const gone = /not found|no longer|already|cannot be/i.test(msg);",
+                  "    pm.expect(!j.errors || gone, \"cleanup step failed: \" + msg).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $f: Boolean!) { deleteServiceSlot(serviceSlotId: $id, deleteFutureRecurring: $f) }\",\n  \"variables\": {\n    \"id\": \"{{stPastSlot}}\",\n    \"f\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CL-19 Remove the appointment time opened outside the leave",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const msg = JSON.stringify(j.errors || []);",
+                  "pm.test(\"CL-19 the FR-10 appointment time is removed\", function () {",
+                  "    const gone = /not found|no longer|already|cannot be/i.test(msg);",
+                  "    pm.expect(!j.errors || gone, \"cleanup step failed: \" + msg).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ownerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"query\": \"mutation($id: ID!, $f: Boolean!) { deleteServiceSlot(serviceSlotId: $id, deleteFutureRecurring: $f) }\",\n  \"variables\": {\n    \"id\": \"{{frTenSlot}}\",\n    \"f\": false\n  }\n}"
             },
             "url": {
               "raw": "{{baseUrl}}",

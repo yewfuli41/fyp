@@ -181,9 +181,8 @@ export default function RegisterStaffPage() {
                     isn't guaranteed (a failed send is only logged server-side —
                     see RegisterStaff), so the owner is told to keep a copy. */}
                 <p className="text-muted small mb-3">
-                    Login details have been emailed to the staff member. Please keep a copy of the temporary password in case the email does not reach them. They will be required to change the temporary password on their first login.
+                    Login details have been emailed to the staff member. Please keep a copy of the temporary password in case the email does not reach them. The temporary password is only applicable if the staff member does not already have an existing account. They will be required to change the temporary password on their first login.
                 </p>
-
                 <WorkingHoursEditor
                     businessWorkingHours={businessWorkingHours}
                     workingHours={staffWorkingHours}

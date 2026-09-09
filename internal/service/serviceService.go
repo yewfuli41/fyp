@@ -205,16 +205,17 @@ func (s *serviceService) UpdateService(ctx context.Context, p param.ServiceParam
 			// The default option (position 0 — a service always needs one
 			// available) can't be given an end date. To retire it, the owner
 			// must set a different option as default first, then delete it.
-			// Also checks the option's already-saved end date — unless this
-			// same submission clears it (ClearEffectiveUntil), in which case
-			// the clear below applies before this option becomes the default.
+			// Also checks the option's already-saved end date: since a saved
+			// window is now immutable (see below), an option that was created
+			// with an end date can never become the default — it has to be
+			// replaced rather than amended.
 			if i == 0 {
 				field := fmt.Sprintf("serviceOptions[%d]", i)
 				if pkg.EffectiveUntil != nil && *pkg.EffectiveUntil != "" {
 					return errs.ValidationErrors{{Field: field, Message: "The default option can't have an effective-until date. Set another option as default first."}}
 				}
-				if isExisting && existing.EffectiveUntil != nil && *existing.EffectiveUntil != "" && !pkg.ClearEffectiveUntil {
-					return errs.ValidationErrors{{Field: field, Message: "This option has an effective-until date set. Clear it (or delete this option and add a replacement without one), then set it as default."}}
+				if isExisting && existing.EffectiveUntil != nil && *existing.EffectiveUntil != "" {
+					return errs.ValidationErrors{{Field: field, Message: "This option was created with an effective-until date, which can't be changed. Delete it and add a replacement without an end date to use it as the default."}}
 				}
 			}
 
@@ -247,50 +248,18 @@ func (s *serviceService) UpdateService(ctx context.Context, p param.ServiceParam
 				defaultOptionID = existing.ServiceOptionID
 			}
 
-			// Unchanged content → the option's name/items stay as-is, but its
-			// own window can still be resized in place. The default can't
-			// gain an end date; that's already guaranteed above.
+			// Unchanged content → the option stays exactly as saved. Its
+			// effective window is fixed at creation, like its name and items:
+			// slots and bookings resolve an option against the window as it
+			// stood on their own date (serviceSlotService.resolveOptionsForDate,
+			// bookingService.GetAvailableSlots), so moving that window after
+			// the fact silently rewrites which past slots were ever valid.
+			// Retiring an option is done by deleting it and, if it's still
+			// needed later, adding a replacement with its own window.
 			if !optionContentChanged(existing, pkg) {
-				field := fmt.Sprintf("serviceOptions[%d]", i)
-				today := time.Now().Format("2006-01-02")
-
-				newFrom := existing.EffectiveFrom
-				fromChanged := pkg.EffectiveFrom != "" && pkg.EffectiveFrom != existing.EffectiveFrom
-				if fromChanged {
-					msg := "Effective from cannot be in the past"
-					if i == 0 {
-						msg = "The default option's effective-from date cannot be in the past."
-					}
-					if pkg.EffectiveFrom < today {
-						return errs.ValidationErrors{{Field: field, Message: msg}}
-					}
-					newFrom = pkg.EffectiveFrom
+				if err := checkOptionWindowUnchanged(existing, pkg, i); err != nil {
+					return err
 				}
-
-				newUntil := existing.EffectiveUntil
-				untilChanged := false
-				if pkg.EffectiveUntil != nil && *pkg.EffectiveUntil != "" {
-					if *pkg.EffectiveUntil < today {
-						return errs.ValidationErrors{{Field: field, Message: "Effective until cannot be in the past"}}
-					}
-					if *pkg.EffectiveUntil < newFrom {
-						return errs.ValidationErrors{{Field: field, Message: "Effective until must be on or after effective from"}}
-					}
-					untilChanged = existing.EffectiveUntil == nil || *existing.EffectiveUntil != *pkg.EffectiveUntil
-					newUntil = pkg.EffectiveUntil
-				} else if pkg.ClearEffectiveUntil && existing.EffectiveUntil != nil {
-					newUntil = nil
-					untilChanged = true
-				}
-
-				if fromChanged || untilChanged {
-					if err := s.serviceRepo.SetOptionWindow(ctx, tx, existing.ServiceOptionID, newFrom, newUntil); err != nil {
-						return err
-					}
-					existing.EffectiveFrom = newFrom
-					existing.EffectiveUntil = newUntil
-				}
-
 				updated.ServiceOptions = append(updated.ServiceOptions, existing)
 				continue
 			}
@@ -357,6 +326,40 @@ func optionContentChanged(existing, submitted param.ServiceOptionParam) bool {
 		}
 	}
 	return false
+}
+
+// checkOptionWindowUnchanged rejects any submission that would move a saved
+// option's [effective_from, effective_until]. Both dates are set once, when
+// the option is created, and are immutable from then on.
+//
+// A blank submitted date means "unchanged" rather than "clear it" — the edit
+// form leaves an untouched option's dates out of the payload entirely — so
+// only a date that differs from the saved one counts as an attempted change.
+// ClearEffectiveUntil is the form's explicit "remove the end date" signal and
+// is rejected on the same grounds.
+func checkOptionWindowUnchanged(existing, submitted param.ServiceOptionParam, i int) error {
+	field := fmt.Sprintf("serviceOptions[%d]", i)
+	const advice = " Delete this option and add a replacement with the dates you want."
+
+	if submitted.EffectiveFrom != "" && submitted.EffectiveFrom != existing.EffectiveFrom {
+		return errs.ValidationErrors{{Field: field, Message: "An option's effective-from date can't be changed after it's created." + advice}}
+	}
+
+	existingUntil := ""
+	if existing.EffectiveUntil != nil {
+		existingUntil = *existing.EffectiveUntil
+	}
+	submittedUntil := ""
+	if submitted.EffectiveUntil != nil {
+		submittedUntil = *submitted.EffectiveUntil
+	}
+	if submittedUntil != "" && submittedUntil != existingUntil {
+		return errs.ValidationErrors{{Field: field, Message: "An option's effective-until date can't be changed after it's created." + advice}}
+	}
+	if submitted.ClearEffectiveUntil && existingUntil != "" {
+		return errs.ValidationErrors{{Field: field, Message: "An option's effective-until date can't be removed after it's created." + advice}}
+	}
+	return nil
 }
 
 // validateNewOptionWindow validates the effective window for a brand new

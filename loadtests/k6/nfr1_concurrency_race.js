@@ -23,12 +23,26 @@ import http from 'k6/http';
 import { check } from 'k6';
 import { Counter } from 'k6/metrics';
 
+// Dates must be worked out in LOCAL time, not UTC. The server compares them
+// against its own clock, so before 08:00 in a UTC+8 timezone the UTC date is
+// still yesterday — which made "today" land in the past and the run fail in
+// setup. toISOString() is UTC, so shift by the timezone offset first.
+function localDate(offsetDays) {
+  const d = new Date(Date.now() + offsetDays * 86400000);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080/query';
 const SLOTS = Number(__ENV.SLOTS || 5);
 const ATTEMPTS_PER_SLOT = Number(__ENV.ATTEMPTS_PER_SLOT || 10);
 const TOTAL_VUS = SLOTS * ATTEMPTS_PER_SLOT;
 
 const successfulLandings = new Counter('successful_landings');
+// Broken down by who won, so the summary shows the business side really took
+// part in the race rather than leaving it to be assumed.
+const wonByCreate = new Counter('won_by_customer_booking');
+const wonByCustomerReschedule = new Counter('won_by_customer_reschedule');
+const wonByOwnerReschedule = new Counter('won_by_owner_reschedule');
 const cleanRejections = new Counter('already_booked_rejections');
 const unexpectedErrors = new Counter('unexpected_errors');
 
@@ -132,7 +146,7 @@ export function setup() {
           {
             serviceOptionName: 'Standard',
             serviceOptionItems: [{ serviceOptionItemName: 'Standard item' }],
-            effectiveFrom: new Date().toISOString().slice(0, 10),
+            effectiveFrom: localDate(0),
           },
         ],
       },
@@ -150,7 +164,7 @@ export function setup() {
   }
 
   function createSlot(dateOffsetDays, hour) {
-    const date = new Date(Date.now() + dateOffsetDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const date = localDate(dateOffsetDays);
     const hh = String(hour).padStart(2, '0');
     const slot = gql(
       `mutation($i: ServiceSlotInput!) {
@@ -185,43 +199,59 @@ export function setup() {
     targetSlots.push(createSlot(1, 8 + i));
   }
 
-  // Build one attempt spec per VU, round-robin across target slots so each
-  // slot gets exactly ATTEMPTS_PER_SLOT contenders, alternating create vs
-  // reschedule within each slot's group.
+  // Build one attempt spec per VU, round-robin across target slots so each slot
+  // gets exactly ATTEMPTS_PER_SLOT contenders, cycling through the three ways a
+  // slot can be taken within each slot's group:
+  //   create           - a customer books the slot outright
+  //   reschedule       - a customer moves an existing booking onto it, which
+  //                      lands the booking as "pending"
+  //   owner-reschedule - the BUSINESS moves a customer's booking onto it, which
+  //                      lands it as "rescheduled" and also fans out staff
+  //                      notifications. Same uq_active_booking_per_slot guard,
+  //                      but a different path through RescheduleBooking, so the
+  //                      business side has to be raced too, not just customers.
   const attempts = [];
   let originDayOffset = 2; // origin slots start the day after target slots, one distinct date each
   for (let i = 0; i < TOTAL_VUS; i++) {
     const targetSlotOptionId = targetSlots[i % SLOTS];
     const localIndex = Math.floor(i / SLOTS);
-    const isReschedule = localIndex % 2 === 1;
+    const kind = localIndex % 3; // 0 create, 1 customer reschedule, 2 owner reschedule
 
-    if (!isReschedule) {
+    if (kind === 0) {
       const token = signUpCustomer(stamp, `create${i}`);
       attempts.push({ type: 'create', token, targetSlotOptionId });
       continue;
     }
 
-    const token = signUpCustomer(stamp, `resched${i}`);
+    // Both reschedule kinds need a customer already booked somewhere else; only
+    // who submits the move differs.
+    const customerToken = signUpCustomer(stamp, `resched${i}`);
     const originSlotOptionId = createSlot(originDayOffset, 10);
     originDayOffset += 1;
     const booking = gql(
       `mutation($slotOptionId: ID!) { createBooking(slotOptionId: $slotOptionId) { bookingId } }`,
       { slotOptionId: originSlotOptionId },
-      token
+      customerToken
     );
     const bookingId = booking.body && booking.body.data && booking.body.data.createBooking && booking.body.data.createBooking.bookingId;
     if (!bookingId) {
       throw new Error(`origin createBooking failed for attempt ${i}: ${booking.res.status} ${booking.res.body}`);
     }
-    attempts.push({ type: 'reschedule', token, bookingId, targetSlotOptionId });
+    attempts.push(
+      kind === 1
+        ? { type: 'reschedule', token: customerToken, bookingId, targetSlotOptionId }
+        : { type: 'owner-reschedule', token: ownerToken, bookingId, targetSlotOptionId }
+    );
   }
 
   return { ownerToken, targetSlots, attempts };
 }
 
 // default(): one call per VU (per-vu-iterations, 1 iteration each), so all
-// TOTAL_VUS attempts fire concurrently — a mix of createBooking and
-// rescheduleBooking, all racing across SLOTS contended target slots at once.
+// TOTAL_VUS attempts fire concurrently — customers booking outright, customers
+// rescheduling, and the owner rescheduling — all racing across SLOTS contended
+// target slots at once. The two reschedule kinds send the same mutation; only
+// who submits it differs, which is the whole point of including both.
 export default function (data) {
   const attempt = data.attempts[__VU - 1];
 
@@ -268,6 +298,9 @@ export default function (data) {
 
   if (succeeded) {
     successfulLandings.add(1);
+    if (attempt.type === 'create') wonByCreate.add(1);
+    else if (attempt.type === 'reschedule') wonByCustomerReschedule.add(1);
+    else wonByOwnerReschedule.add(1);
   } else if (rejectedAsExpected) {
     cleanRejections.add(1);
   } else {
@@ -324,9 +357,12 @@ export function handleSummary(data) {
 NFR-1 concurrency race summary
 -------------------------------
 Contended slots:            ${SLOTS}
-Attempts per slot:          ${ATTEMPTS_PER_SLOT}  (mix of createBooking and rescheduleBooking)
+Attempts per slot:          ${ATTEMPTS_PER_SLOT}  (customer books, customer reschedules, owner reschedules)
 Total concurrent requests:  ${TOTAL_VUS}
 Successful landings:        ${count('successful_landings')}  (expected: exactly ${SLOTS} — one per slot)
+  won by customer booking:  ${count('won_by_customer_booking')}
+  won by customer reschedule: ${count('won_by_customer_reschedule')}
+  won by owner reschedule:  ${count('won_by_owner_reschedule')}
 Rejected as already booked: ${count('already_booked_rejections')}  (expected: ${TOTAL_VUS - SLOTS})
 Unexpected errors:          ${count('unexpected_errors')}  (expected: 0)
 ${count('successful_landings') === SLOTS && count('unexpected_errors') === 0 ? 'CLIENT-SIDE RESULT: PASS' : 'CLIENT-SIDE RESULT: FAIL — see above'}

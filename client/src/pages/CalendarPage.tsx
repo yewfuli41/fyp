@@ -20,6 +20,7 @@ import ManageServiceSlotModal from "../modals/ManageServiceSlotModal";
 import RescheduleBookingModal from "../modals/RescheduleBookingModal";
 import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
 import ConfirmActionModal from "../modals/ConfirmActionModal";
+import BookingSummary from "../components/BookingSummary";
 import RecordWalkInModal, { type WalkInSubmission } from "../modals/RecordWalkInModal";
 import CalendarToolbar from "../components/CalendarToolbar";
 import CalendarGrid from "../components/CalendarGrid";
@@ -674,7 +675,7 @@ export default function CalendarPage() {
             <ConfirmDeleteModal
                 show={confirmingDeleteSlot}
                 title="Delete service slot"
-                itemName={deleteFuture ? "this slot and all futrue slots of this series, from this date onward" : "this service slot"}
+                itemName={deleteFuture ? "this slot and all future slots of this series, from this date onward" : "this service slot"}
                 warningNote={deleteFuture ? "Slots that already have a booking are kept, not deleted. Earlier occurrences before this date are also kept." : undefined}
                 error={deleteSlotError}
                 isDeleting={manageBusy}
@@ -688,7 +689,16 @@ export default function CalendarPage() {
             <ConfirmActionModal
                 show={!!pendingBookingAction}
                 title={pendingBookingAction?.title ?? ""}
-                body={pendingBookingAction?.body ?? ""}
+                body={pendingBookingAction && (
+                    <>
+                        {pendingBookingAction.body}
+                        {/* Rendered here rather than baked into each call
+                            site's `body` string, so all three destructive
+                            actions (reject request, reject reschedule, cancel)
+                            show the same summary without repeating it. */}
+                        <BookingSummary booking={pendingBookingAction.booking} />
+                    </>
+                )}
                 confirmLabel={pendingBookingAction?.confirmLabel ?? "Confirm"}
                 confirmingLabel="Working..."
                 error={pendingBookingActionError}

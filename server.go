@@ -25,23 +25,6 @@ func server(app *app.App, cfg *config.Config) {
 	//CORS
 	e.Use(echoMiddleware.CORS())
 	e.Use(authMiddleware.JWTUserContext(cfg.Auth.JWTSecret))
-	// CSP (second layer defense for XSS)
-	e.Use(func(
-		next echo.HandlerFunc,
-	) echo.HandlerFunc {
-		return func(
-			c echo.Context,
-		) error {
-			c.Response().
-				Header().
-				Set(
-					"Content-Security-Policy",
-					"default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline';",
-				)
-
-			return next(c)
-		}
-	})
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort

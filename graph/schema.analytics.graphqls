@@ -1,5 +1,15 @@
-# Business analytics (UC-12) — owner-only. Every query takes an explicit
-# date range and is scoped to the caller's own business.
+enum TrendGranularity {
+  day
+  week
+  month
+}
+
+enum SlotUtilizationGroupBy {
+  weekday
+  date
+  month
+  year
+}
 
 type StatusCount {
   status: BookingStatus!
@@ -15,15 +25,8 @@ type BookingSummary {
   totalBookings: Int!
   byStatus: [StatusCount!]!
   byType: [TypeCount!]!
-  # Always live, business-wide figures — not scoped to the selected range.
   todayAcceptedCount: Int!
   pendingCount: Int!
-}
-
-enum TrendGranularity {
-  day
-  week
-  month
 }
 
 type BookingTrendPoint {
@@ -37,35 +40,17 @@ type ServicePopularity {
   bookingCount: Int!
 }
 
-enum SlotUtilizationGroupBy {
-  weekday
-  date
-  month
-  year
-}
-
-# One point within a section — label is a weekday name ("monday"), a
-# zero-padded day-of-month ("15"), a zero-padded month ("07"), or a year
-# ("2026"), depending on the requested groupBy.
 type UtilizationBreakdownPoint {
   label: String!
   totalSlots: Int!
   bookedSlots: Int!
 }
 
-# Groups related points under one subtitle — "date" grouping sections by
-# month ("2026-07"), "month" grouping sections by year ("2026"). "weekday"
-# and "year" groupings have no natural subtitle, so they come back as a
-# single section with an empty subtitle.
 type UtilizationSection {
   subtitle: String!
   points: [UtilizationBreakdownPoint!]!
 }
 
-# "weekday" stays scoped to the from/until range passed in. "date", "month",
-# and "year" all span the business's whole history instead — from its own
-# creation date through until — since picking one of those means wanting the
-# full calendar, not a window that happens to match from/until.
 type SlotUtilization {
   totalSlots: Int!
   bookedSlots: Int!
@@ -73,7 +58,6 @@ type SlotUtilization {
   sections: [UtilizationSection!]!
 }
 
-# staffId is null for the "Owner-managed" bucket (unassigned slots).
 type StaffUtilization {
   staffId: ID
   staffName: String!
@@ -87,19 +71,12 @@ type CustomerRetention {
   totalCustomers: Int!
 }
 
-# Cancelled and rejected are combined everywhere here (both mean the same
-# thing to the business: a booking that didn't happen) — count is the sum
-# of the two for that service.
 type ServiceCancellation {
   serviceId: ID!
   serviceName: String!
   count: Int!
 }
 
-# customerCount + staffCount = the total cancelled/rejected for this staff
-# (or "Owner-managed", when staffId is null, for unassigned slots).
-# Rejections are always staff-initiated (a customer can't reject their own
-# booking), so staffCount also absorbs every rejection.
 type StaffCancellation {
   staffId: ID
   staffName: String!
@@ -110,23 +87,12 @@ type StaffCancellation {
 type CancellationAnalysis {
   totalCancelled: Int!
   totalRejected: Int!
-  # totalCancelled + totalRejected — shown as one combined rate rather than
-  # two separate ones, since both mean the booking didn't happen.
   totalCancelledOrRejected: Int!
   cancelledOrRejectedRate: Float!
   byService: [ServiceCancellation!]!
   byStaff: [StaffCancellation!]!
 }
 
-# One entry in the cancellation analysis's service filter — unlike
-# displayServices, this includes soft-deleted services, since a deleted
-# service's past cancellations/rejections still show up in the byService
-# breakdown and should stay filterable. Grouped by name, same as
-# ServicePopularity and ServiceCancellation, so a service that was deleted
-# and recreated is one option — serviceIds is every service_id that ever
-# used this name, and is what should be passed to cancellationAnalysis's
-# serviceIds when this option is selected. deleted is true only when none
-# of those service_ids are currently active.
 type ServiceFilterOption {
   serviceIds: [ID!]!
   serviceName: String!
@@ -141,11 +107,6 @@ extend type Query {
   staffUtilization(from: Date!, until: Date!): [StaffUtilization!]!
   customerRetention(from: Date!, until: Date!): CustomerRetention!
   cancellationServiceOptions: [ServiceFilterOption!]!
-  # The caller's own business's creation date — used to bound the dashboard's
-  # Years filter to years the business could actually have data in.
   businessCreatedAt: Date!
-  # staffIds/serviceIds narrow the whole analysis (totals, rate, and both
-  # breakdowns) to just those staff members' or services' bookings — either
-  # may be omitted or empty to mean "any".
   cancellationAnalysis(from: Date!, until: Date!, staffIds: [ID!], serviceIds: [ID!]): CancellationAnalysis!
 }

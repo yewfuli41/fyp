@@ -71,11 +71,13 @@ appointment slot is assigned to more than one active booking."*
 slot, one operation type. This script exercises the actual requirement:
 
 - **Multiple contended slots at once** — 5 by default (`SLOTS`), not just one.
-- **A mix of two different operations** racing for the same slot: `createBooking` (a
-  brand-new customer booking it directly) and `rescheduleBooking` (a customer moving an
-  *existing* booking from elsewhere onto it). Reschedule requests hit the same
-  `uq_active_booking_per_slot` constraint via `UpdateBookingSlotOption`, so this proves
-  the guarantee holds across both write paths, not just one.
+- **A mix of three different operations** racing for the same slot: `createBooking` (a
+  brand-new customer booking it directly), `rescheduleBooking` submitted by the **customer**
+  (which lands the booking as `pending`), and `rescheduleBooking` submitted by the **business
+  owner** (which lands it as `rescheduled` and additionally fans out staff notifications).
+  All three hit the same `uq_active_booking_per_slot` constraint, so this proves the
+  guarantee holds across every write path that can take a slot — the business side included,
+  not just customers.
 - **50+ concurrent requests total** — `SLOTS × ATTEMPTS_PER_SLOT` (default 5 × 10 = 50),
   evenly split between the two operation types per slot.
 - **An independent server-side check**, not just counting HTTP responses. After the
@@ -102,9 +104,12 @@ A passing run prints a client-side summary plus the independent teardown check:
 NFR-1 concurrency race summary
 -------------------------------
 Contended slots:            5
-Attempts per slot:          10  (mix of createBooking and rescheduleBooking)
+Attempts per slot:          10  (customer books, customer reschedules, owner reschedules)
 Total concurrent requests:  50
 Successful landings:        5  (expected: exactly 5 — one per slot)
+  won by customer booking:  2
+  won by customer reschedule: 1
+  won by owner reschedule:  2
 Rejected as already booked: 45  (expected: 45)
 Unexpected errors:          0  (expected: 0)
 CLIENT-SIDE RESULT: PASS

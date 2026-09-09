@@ -26,8 +26,6 @@ type IServiceRepo interface {
 	// IsOptionEffectiveOn reports whether serviceOptionID's own validity
 	// window covers date.
 	IsOptionEffectiveOn(ctx context.Context, serviceOptionID int64, date string) (bool, error)
-	// SetOptionWindow resizes an option's own [effective_from, effective_until].
-	SetOptionWindow(ctx context.Context, tx *sql.Tx, serviceOptionID int64, from string, until *string) error
 	// SetServiceDefaultOption marks serviceOptionID as the service's default
 	// option and every other option under it as not-default.
 	SetServiceDefaultOption(ctx context.Context, tx *sql.Tx, serviceID int64, serviceOptionID int64) error

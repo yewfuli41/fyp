@@ -39,6 +39,11 @@ export type AuthContextValue = {
   // from a first-time visitor or someone who deliberately signed out, who
   // both land on the home page instead.
   sessionExpired: boolean;
+  // Consumes the flag above. The lapsed-session bounce is a one-time handoff
+  // ("you were signed in — sign in again"), not a durable state, so whoever
+  // acts on it clears it. Without this the flag outlives its purpose and
+  // every later visit to "/" is redirected to the login page forever.
+  acknowledgeSessionExpired: () => void;
   login: (token: string, user: User) => void;
   logout: () => void;
   hasRoles: (roles: string[]) => boolean;

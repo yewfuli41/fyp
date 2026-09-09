@@ -5,23 +5,25 @@ export interface ServiceOptionItemInput {
 }
 
 export interface ServiceOptionInput {
-    // Set when editing an existing option — its name/items can't change, but
-    // its own window (effectiveFrom/effectiveUntil) can be resized in place.
-    // Omit serviceOptionId for a brand new option.
+    // Set when editing an existing option, which is entirely immutable — name,
+    // items and effective window are all fixed at creation. The fields below
+    // therefore only ever carry values for a brand new option (one submitted
+    // with no serviceOptionId).
     serviceOptionId?: string;
     serviceOptionName: string;
     description?: string;
     serviceOptionItems: ServiceOptionItemInput[];
     effectiveFrom?: string;  // "YYYY-MM-DD"
     effectiveUntil?: string; // "YYYY-MM-DD"
-    // true to explicitly clear an existing option's already-saved
-    // effectiveUntil (reopening it) without setting a new one —
-    // effectiveUntil alone can't express "clear it" since blank and "not set
-    // this time" serialize identically.
+    // Vestigial: this used to ask the server to clear an existing option's
+    // saved effectiveUntil. A saved window can no longer be changed, so the
+    // form never sets it and the server rejects it if some other client does
+    // (a stale bundle, a saved Postman request). Kept on the wire because the
+    // GraphQL input still declares it.
     clearEffectiveUntil?: boolean;
-    // Read-only display of the option's CURRENT effective window (as loaded from
-    // the server), kept separate from effectiveFrom/effectiveUntil above which
-    // describe a NEW window being set. Not sent to the server.
+    // The option's saved effective window, as loaded from the server. For an
+    // existing option this is the only window there is — the form shows it in
+    // disabled inputs. Not sent to the server.
     currentEffectiveFrom?: string;
     currentEffectiveUntil?: string;
     // Read-only, as loaded from the server — lets the form refuse to delete

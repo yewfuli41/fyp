@@ -98,16 +98,6 @@ func (r *serviceRepo) IsOptionEffectiveOn(ctx context.Context, serviceOptionID i
 	return ok, err
 }
 
-// SetOptionWindow resizes an option's own validity window.
-func (r *serviceRepo) SetOptionWindow(ctx context.Context, tx *sql.Tx, serviceOptionID int64, from string, until *string) error {
-	_, err := tx.ExecContext(ctx, `
-		UPDATE fyp_fuli_service_options
-		SET effective_from = COALESCE($2::date, effective_from), effective_until = $3::date
-		WHERE service_option_id = $1
-	`, serviceOptionID, nilIfEmpty(from), until)
-	return err
-}
-
 // SetServiceDefaultOption marks serviceOptionID as the service's default
 // option and every other option under the service as not-default, atomically
 // — so a service always has exactly one default.

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Container, Col, Row } from "react-bootstrap";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
@@ -54,14 +55,27 @@ const FEATURES = [
 ];
 
 export default function HomePage() {
-    const { isLoggedIn, user, message, sessionExpired } = useAuth();
+    const { isLoggedIn, user, message, sessionExpired, acknowledgeSessionExpired } = useAuth();
     const { viewMode } = useViewMode();
+
+    // Consume the lapsed-session flag as we act on it, so the redirect below
+    // fires once and then stops. Left set, it never expires on its own —
+    // only login() and logout() clear it — so a visitor who let a token
+    // lapse without signing out could never reach the home page on that
+    // browser again. Runs after the redirect is committed, which is fine:
+    // the redirect only needs the flag on this one render.
+    useEffect(() => {
+        if (!isLoggedIn && sessionExpired) {
+            acknowledgeSessionExpired();
+        }
+    }, [isLoggedIn, sessionExpired, acknowledgeSessionExpired]);
 
     // A returning user whose session lapsed on its own (expired token, or a
     // 401 mid-use — see sessionExpired in AuthProvider) is sent straight to
     // the login screen to pick up where they left off. A first-time visitor,
     // or someone who deliberately signed out, gets the welcome screen below
-    // instead — neither of them was in the middle of anything.
+    // instead — neither of them was in the middle of anything. One-time: the
+    // effect above clears the flag, so coming back to "/" shows this page.
     if (!isLoggedIn && sessionExpired) {
         return <Navigate to="/login" replace />;
     }

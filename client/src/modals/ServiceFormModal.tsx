@@ -77,17 +77,19 @@ export default function ServiceFormModal({
     // one available option.
     const setAsDefault = (optionIdx: number) => {
         const pkg = formInput.serviceOptions[optionIdx];
-        // Untouched (undefined) → fall back to the option's already-saved end
-        // date. Explicitly cleared ("") → the owner just removed it, so it no
-        // longer counts, even though currentEffectiveUntil still shows the
-        // stale pre-edit snapshot.
-        const hasScheduledEnd = pkg?.effectiveUntil !== undefined
-            ? !!pkg.effectiveUntil
-            : !!pkg?.currentEffectiveUntil;
+        // A saved option's end date can no longer be cleared, so an option
+        // created with one can never be promoted — only replaced. A brand new
+        // option (no serviceOptionId) is still just form state, so its own
+        // effectiveUntil is what counts.
+        const hasScheduledEnd = pkg?.serviceOptionId
+            ? !!pkg.currentEffectiveUntil
+            : !!pkg?.effectiveUntil;
         if (hasScheduledEnd) {
             setFieldErrors(errors => ({
                 ...errors,
-                [`serviceOptions[${optionIdx}]`]: "This option has an effective-until date set. Clear it (or delete this option and add a replacement without one), then set it as default.",
+                [`serviceOptions[${optionIdx}]`]: pkg.serviceOptionId
+                    ? "This option was created with an effective-until date, which can't be changed. Delete it and add a replacement without an end date to use it as the default."
+                    : "The default option can't have an effective-until date. Clear it first.",
             }));
             return;
         }
@@ -192,20 +194,20 @@ export default function ServiceFormModal({
                         const isExisting = !!pkg.serviceOptionId;
 
                         const today = new Date().toISOString().slice(0, 10);
-                        // An existing option's window can be resized, so prefill
-                        // from/until with their real current values when untouched.
+                        // A saved option's window is fixed at creation (see
+                        // serviceService.checkOptionWindowUnchanged), so an
+                        // existing option shows its real stored dates and the
+                        // inputs are locked — nothing here is editable.
                         const fromValue = isExisting
-                            ? (pkg.effectiveFrom ?? pkg.currentEffectiveFrom ?? "")
+                            ? (pkg.currentEffectiveFrom ?? "")
                             : (pkg.effectiveFrom ?? "");
                         const untilValue = isExisting
-                            ? (pkg.effectiveUntil ?? pkg.currentEffectiveUntil ?? "")
+                            ? (pkg.currentEffectiveUntil ?? "")
                             : (pkg.effectiveUntil ?? "");
-                        // A saved option's real start date is usually well in the
-                        // past — don't set min=today in that case, or the browser
-                        // treats the displayed value as out-of-range (new picks are
-                        // still guided to today+ once the owner actually changes it,
-                        // and the backend enforces "not in the past" either way).
-                        const fromMin = fromValue && fromValue < today ? undefined : today;
+                        // A saved option's start date is usually in the past, which
+                        // would sit outside a min=today range; it's disabled anyway,
+                        // so the bound only applies to a new option's own picker.
+                        const fromMin = isExisting ? undefined : today;
                         const status = getOptionStatus(fromValue, untilValue);
 
                         return (
@@ -235,7 +237,33 @@ export default function ServiceFormModal({
                                     </div>
                                 </div>
 
-                                <div className="d-flex gap-3 mb-2">
+                                {isEditing && isExisting && (
+                                    <small className="text-muted d-block mb-2">
+                                        {isDefault && <> This is the default option, so it can't be deleted or given an end date; set another option as default first if you need to retire it.</>}
+                                    </small>
+                                )}
+
+                                {!isExisting && (
+                                    <small className="text-muted d-block mb-2">
+                                        {isDefault
+                                            ? <>Select the start date for this new default option. Default options cannot have an end date.</>
+                                            : <>Select the start date for this new option. The end date is optional; leave it blank for no end date.</>}
+                                    </small>
+                                )}
+
+                                {fieldErrors[`serviceOptions[${optionIdx}]`] && (
+                                    <div className="text-danger small mb-2">
+                                        {fieldErrors[`serviceOptions[${optionIdx}]`]}
+                                    </div>
+                                )}
+
+                                {isExisting && (
+                                    <div className="small text-muted mb-2">
+                                        This option is saved — its effective dates, name and items can't be edited here. Delete it and add a new option instead to change them.
+                                    </div>
+                                )}
+
+                                 <div className="d-flex gap-3 mb-2">
                                     <Form.Group className="flex-fill">
                                         <Form.Label className="small mb-1">
                                             Effective from {!isExisting && <span className="text-danger">*</span>}
@@ -244,6 +272,7 @@ export default function ServiceFormModal({
                                             type="date"
                                             min={fromMin}
                                             value={fromValue}
+                                            disabled={isExisting}
                                             onChange={e => updateOption(optionIdx, "effectiveFrom", e.target.value)}
                                             isInvalid={!isExisting && !!fieldErrors[`serviceOptionEffectiveFrom[${optionIdx}]`]}
                                         />
@@ -258,39 +287,12 @@ export default function ServiceFormModal({
                                                 type="date"
                                                 min={fromValue || today}
                                                 value={untilValue}
+                                                disabled={isExisting}
                                                 onChange={e => updateOption(optionIdx, "effectiveUntil", e.target.value)}
                                             />
                                         </Form.Group>
                                     )}
                                 </div>
-
-                                {isEditing && isExisting && (
-                                    <small className="text-muted d-block mb-2">
-                                        {isDefault
-                                            ? <>This is the default option — it can't be deleted or given an end date, but you can adjust when it starts (today or later). Set another option as default first if you need to retire this one.</>
-                                            : <></>}
-                                    </small>
-                                )}
-
-                                {!isExisting && (
-                                    <small className="text-muted d-block mb-2">
-                                        {isDefault
-                                            ? <>Pick when this new default option starts being offered. As the default, it can't have an end date.</>
-                                            : <>Pick when this new option starts being offered — effective until is still optional; leave it blank to make the option open-ended.</>}
-                                    </small>
-                                )}
-
-                                {fieldErrors[`serviceOptions[${optionIdx}]`] && (
-                                    <div className="text-danger small mb-2">
-                                        {fieldErrors[`serviceOptions[${optionIdx}]`]}
-                                    </div>
-                                )}
-
-                                {isExisting && (
-                                    <div className="small text-muted mb-2">
-                                        This option is saved — its name and items can't be edited here. Delete it and add a new option instead to change them.
-                                    </div>
-                                )}
 
                                 <Form.Group className="mb-2">
                                     <Form.Label>Option Name </Form.Label>

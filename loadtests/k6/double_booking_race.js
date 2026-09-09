@@ -24,6 +24,15 @@ import http from 'k6/http';
 import { check } from 'k6';
 import { Counter } from 'k6/metrics';
 
+// Dates must be worked out in LOCAL time, not UTC. The server compares them
+// against its own clock, so before 08:00 in a UTC+8 timezone the UTC date is
+// still yesterday — which made "today" land in the past and the run fail in
+// setup. toISOString() is UTC, so shift by the timezone offset first.
+function localDate(offsetDays) {
+  const d = new Date(Date.now() + offsetDays * 86400000);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080/query';
 const VU_COUNT = Number(__ENV.VUS || 10);
 
@@ -117,7 +126,7 @@ export function setup() {
           {
             serviceOptionName: 'Standard',
             serviceOptionItems: [{ serviceOptionItemName: 'Standard item' }],
-            effectiveFrom: new Date().toISOString().slice(0, 10),
+            effectiveFrom: localDate(0),
           },
         ],
       },
@@ -134,7 +143,7 @@ export function setup() {
     throw new Error(`createService failed: ${service.res.status} ${service.res.body}`);
   }
 
-  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const tomorrow = localDate(1);
   const slot = gql(
     `mutation($i: ServiceSlotInput!) {
       createServiceSlot(input: $i) { serviceSlotId serviceSlotOptions { slotOptionId } }

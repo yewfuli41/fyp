@@ -34,6 +34,15 @@ import http from 'k6/http';
 import { check } from 'k6';
 import { Counter } from 'k6/metrics';
 
+// Dates must be worked out in LOCAL time, not UTC. The server compares them
+// against its own clock, so before 08:00 in a UTC+8 timezone the UTC date is
+// still yesterday — which made "today" land in the past and the run fail in
+// setup. toISOString() is UTC, so shift by the timezone offset first.
+function localDate(offsetDays) {
+  const d = new Date(Date.now() + offsetDays * 86400000);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080/query';
 // One affected booking per replacement slot; the owner must settle all of
 // them in the same approval, which is exactly what makes this atomic.
@@ -110,7 +119,7 @@ function signUp(stamp, label) {
 }
 
 function dateOffset(days) {
-  return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return localDate(days);
 }
 
 // setup() runs once, single-threaded, before any VU starts. It builds the

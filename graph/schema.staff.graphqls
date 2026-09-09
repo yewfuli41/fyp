@@ -4,10 +4,6 @@ type Staff {
   user: User!
   businessId: ID!
   business: BusinessProfile!
-  # The name of the business this staff member works for, carried on the staff
-  # record itself so a staff-side screen can show it without being able to read
-  # the whole business profile. Blank where the caller already knows the
-  # business (e.g. the owner's own staff list).
   businessName: String!
   name: String!
   email: String!
@@ -18,8 +14,6 @@ type Staff {
   leaveApplications: [LeaveApplication!]!
   serviceSlots: [ServiceSlot!]!
   recurringSchedules: [RecurringSchedule!]!
-  # true once this staff member has an active (pending/accepted/rescheduled)
-  # booking on any of their slots — exactly what blocks deleting them.
   hasBooking: Boolean!
   deletedAt: DateTime
 }
@@ -34,34 +28,11 @@ type StaffWorkingHour {
   deletedAt: DateTime
 }
 
-type LeaveApplication {
-  leaveId: ID!
-  staffId: ID!
-  staff: Staff!
-  staffName: String!
-  position: String
-  startDate: Date!
-  endDate: Date!
-  justification: String
-  fileUrl: String
-  status: LeaveStatus!
-  remark: String
-  decidedAt: DateTime
-  deletedAt: DateTime
-  createdAt: DateTime!
-  # The active bookings that would need a replacement staff if this leave is
-  # approved — populated for the owner's review list (businessLeaveApplications).
-  affectedBookings: [BookingDetail!]!
-}
-
-input StaffInput{
+input StaffInput {
   name: String!
   email: String!
   contactNumber: String!
   position: String!
-  # Temporary password set by the owner for this staff member's first login —
-  # only used when a brand-new account is created for the staff email; the
-  # staff is required to change it via resetPassword right after logging in.
   password: String!
   workingHours: [WorkingHourInput!]!
 }

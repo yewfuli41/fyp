@@ -29,8 +29,8 @@ npx newman run loadtests/postman/booking-system-integration.postman_collection.j
   --env-var baseUrl=http://localhost:8080/query
 ```
 
-A clean run reports 84 requests / 84 assertions / 0 failures — 72 numbered tests plus 12 teardown
-steps.
+A clean run reports 147 requests / 147 assertions / 0 failures — 93 use-case tests (IT-xx), 35 state transition
+steps (ST-xx) and 19 teardown steps (CL-xx).
 
 ## Cleanup
 
@@ -59,6 +59,21 @@ It matches only emails of the form `it-*-<stamp>@itest.local` (and the business 
 `it-biz-<stamp>@itest.local`), so pre-existing data can never match. This was verified by planting an
 unrelated account and business before a run: after cleanup, the run's 4 accounts and 1 business were
 gone and the planted pair was still there.
+
+## State transition tests
+
+The `Booking State Transitions` folder walks the booking state model itself: every row of the state
+transition table (Actor / Current State / Event / Next State), driven through the API. Steps that only
+put a booking into the state the next transition needs are marked **(setup)** in the results table.
+
+It also covers the one transition nobody triggers — a booking whose appointment time has gone by moves
+to **Past** on its own. That is reached by recording a walk-in for a time earlier today (walk-ins may
+be backdated), then reading the bookings, which runs the sweep.
+
+- `state_transition_test_results.md` / `.csv` — results plus an Actor/State/Event/Next State coverage map.
+
+Note: the Past step needs the run to start at least a minute into the day, since the walk-in it uses is
+dated today 00:00-00:01.
 
 ## Results
 

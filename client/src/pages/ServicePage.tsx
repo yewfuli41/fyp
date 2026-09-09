@@ -154,13 +154,13 @@ export default function ServicePage() {
                 serviceOptionId: pkg.serviceOptionId,
                 serviceOptionName: pkg.serviceOptionName,
                 description: pkg.description || undefined,
+                // Only ever populated for a brand new option — a saved
+                // option's window is immutable, so the form leaves both blank
+                // and the server keeps the stored dates. (clearEffectiveUntil
+                // is deliberately not sent: clearing a saved end date is no
+                // longer possible.)
                 effectiveFrom: pkg.effectiveFrom || undefined,
                 effectiveUntil: pkg.effectiveUntil || undefined,
-                // effectiveUntil === "" means the owner explicitly cleared a
-                // previously-saved end date — that can't be expressed by
-                // effectiveUntil alone (blank looks the same as untouched),
-                // so flag it explicitly.
-                clearEffectiveUntil: pkg.effectiveUntil === "" && !!pkg.currentEffectiveUntil,
                 serviceOptionItems: pkg.serviceOptionItems
                     .filter(i => i.serviceOptionItemName.trim())
                     .map(i => ({ serviceOptionItemName: i.serviceOptionItemName })),

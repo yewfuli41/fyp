@@ -14,7 +14,7 @@
     FROM_EMAIL=replace-with-your-email
     FROM_NAME=replace-with-your-name
     ```
-    Replace `JWT_SECRET` with a random string of your choice.`SENDGRID_API_KEY`, `RESEND_API_KEY`, `FROM_EMAIL`, and `FROM_NAME` are optional.
+    Replace `JWT_SECRET` with a random string of your choice.`SENDGRID_API_KEY`, `RESEND_API_KEY`, `FROM_EMAIL`, and `FROM_NAME` are optional, but they must be left with placeholder values if email notifications are not required. The system will continue to function normally without email configuration.
 3. Open a terminal in the project root directory.
 4. Start the application:
     ``` 

@@ -5,8 +5,6 @@ services:
       POSTGRES_USER: postgresdb
       POSTGRES_PASSWORD: postgresdb
       POSTGRES_DB: fyp_booking
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgresdb -d fyp_booking"]
       interval: 5s

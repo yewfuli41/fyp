@@ -14,7 +14,7 @@
     FROM_EMAIL=replace-with-your-email
     FROM_NAME=replace-with-your-name
     ```
-    `SENDGRID_API_KEY`, `RESEND_API_KEY`, `FROM_EMAIL`, and `FROM_NAME` are optional.
+    Replace `JWT_SECRET` with a random secret string of your choice.`SENDGRID_API_KEY`, `RESEND_API_KEY`, `FROM_EMAIL`, and `FROM_NAME` are optional.
 3. Open a terminal in the project root directory.
 4. Start the application:
     ``` 

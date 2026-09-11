@@ -5,7 +5,7 @@
 ## How to Start
 
 1. Clone or download this project.
-2. Add a <kbd>.env.local</kbd> with the following:
+2. Add a <kbd>.env</kbd> file with the following:
     ```
     JWT_SECRET=replace-with-your-secret
 

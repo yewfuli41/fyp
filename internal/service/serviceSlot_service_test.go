@@ -501,6 +501,74 @@ var _ = Describe("ServiceSlotService", func() {
 			Expect(result.ServiceSlotID).To(Equal(int64(200)))
 		})
 
+		It("skips only the recurring occurrences the staff is on leave for, and creates the rest", func() {
+			// 3-week horizon: the staff has approved leave covering the second
+			// Monday only. The series must still be created, minus that date.
+			horizonSvc := service.NewServiceSlotService(db, slotRepo, serviceRepo, leaveRepo, config.ServiceSlotConfig{RecurringHorizonWeeks: 3})
+			p := param.ServiceSlotParam{
+				BusinessID:       1,
+				ServiceOptionIDs: []int64{20},
+				DaysOfWeek:       []string{"monday"},
+				StaffID:          &staffID,
+				StartTime:        startTime,
+				EndTime:          endTime,
+			}
+
+			today := time.Now()
+			start := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, time.UTC)
+			offset := (int(time.Monday) - int(start.Weekday()) + 7) % 7
+			secondMonday := start.AddDate(0, 0, offset+7).Format("2006-01-02")
+
+			slotRepo.EXPECT().OptionsBelongToBusiness(ctx, int64(1), []int64{20}).Return(true, nil).Once()
+			slotRepo.EXPECT().StaffBelongsToBusiness(ctx, staffID, int64(1)).Return(true, nil).Once()
+			slotRepo.EXPECT().StaffCoversTime(ctx, staffID, "monday", startTime, endTime).Return(true, nil).Once()
+			leaveRepo.EXPECT().IsStaffOnLeave(ctx, staffID, mock.AnythingOfType("string")).
+				RunAndReturn(func(_ context.Context, _ int64, date string) (bool, error) {
+					return date == secondMonday, nil
+				}).Times(3)
+			// Only the two surviving dates are ever resolved for options.
+			serviceRepo.EXPECT().IsOptionEffectiveOn(ctx, int64(20), mock.AnythingOfType("string")).Return(true, nil).Times(2)
+
+			dbMock.ExpectBegin()
+			slotRepo.EXPECT().
+				InsertRecurringSchedule(ctx, mock.AnythingOfType("*sql.Tx"), mock.Anything, "monday").
+				Return(int64(9), nil).Once()
+			slotRepo.EXPECT().
+				InsertServiceSlot(ctx, mock.AnythingOfType("*sql.Tx"), mock.MatchedBy(func(sp param.ServiceSlotParam) bool {
+					return sp.Date != secondMonday
+				})).
+				Return(int64(200), nil).Times(2) // the leave date is not inserted
+			slotRepo.EXPECT().InsertServiceSlotOption(ctx, mock.AnythingOfType("*sql.Tx"), int64(200), int64(20)).Return(nil).Times(2)
+			dbMock.ExpectCommit()
+			slotRepo.EXPECT().GetServiceSlotByID(ctx, int64(200), int64(1)).
+				Return(&param.ServiceSlotParam{ServiceSlotID: 200, BusinessID: 1}, nil).Once()
+
+			result, err := horizonSvc.CreateServiceSlot(ctx, p)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ServiceSlotID).To(Equal(int64(200)))
+		})
+
+		It("rejects a recurring series whose every occurrence falls on the staff's approved leave", func() {
+			p := param.ServiceSlotParam{
+				BusinessID:       1,
+				ServiceOptionIDs: []int64{20},
+				DaysOfWeek:       []string{"monday"},
+				StaffID:          &staffID,
+				StartTime:        startTime,
+				EndTime:          endTime,
+			}
+			slotRepo.EXPECT().OptionsBelongToBusiness(ctx, int64(1), []int64{20}).Return(true, nil).Once()
+			slotRepo.EXPECT().StaffBelongsToBusiness(ctx, staffID, int64(1)).Return(true, nil).Once()
+			slotRepo.EXPECT().StaffCoversTime(ctx, staffID, "monday", startTime, endTime).Return(true, nil).Once()
+			leaveRepo.EXPECT().IsStaffOnLeave(ctx, staffID, mock.AnythingOfType("string")).Return(true, nil).Once()
+
+			result, err := slotSvc.CreateServiceSlot(ctx, p)
+			Expect(result).To(BeNil())
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve[0].Field).To(Equal("schedule"))
+		})
+
 		It("rolls back when InsertServiceSlot fails", func() {
 			p := param.ServiceSlotParam{
 				BusinessID:       1,

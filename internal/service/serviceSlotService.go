@@ -187,32 +187,55 @@ func (s *serviceSlotService) validateCoverage(ctx context.Context, staffID *int6
 	return nil
 }
 
-// validateNoLeaveConflict checks that the assigned staff (if any) isn't on
-// approved leave on any of the scheduled dates. Leave is date-only (no
-// time-of-day component — see leave_applications), so unlike validateCoverage
-// this needs the concrete dates, not just the weekdays: a weekday-recurring
-// series' occurrences fall on many different calendar dates, any of which
-// could individually be covered by an approved leave even though the weekday
-// itself is normally worked. Owner-managed slots (staffID nil) have no staff
-// to be on leave, so there's nothing to check.
+// resolveLeaveConflicts checks that the assigned staff (if any) isn't on
+// approved leave on the scheduled dates. Leave is date-only (no time-of-day
+// component — see leave_applications), so unlike validateCoverage this needs
+// the concrete dates, not just the weekdays: a weekday-recurring series'
+// occurrences fall on many different calendar dates, any of which could
+// individually be covered by an approved leave even though the weekday itself
+// is normally worked. Owner-managed slots (staffID nil) have no staff to be on
+// leave, so there's nothing to check.
 //
-// Returned as a plain (non-field) error, unlike validateCoverage's errors —
-// it isn't really about the time picker specifically, so it's shown as a
-// general form message rather than pinned to one field's feedback text.
-func (s *serviceSlotService) validateNoLeaveConflict(ctx context.Context, staffID *int64, scheduled []scheduledDate) error {
+// A leave date is handled differently depending on what's being scheduled:
+//
+//   - A weekday-recurring series (isRecurring) drops just that occurrence and
+//     keeps the rest — one week of leave shouldn't stop the owner from setting
+//     up "every Tuesday". This mirrors how insertSlotsForSchedule skips an
+//     occurrence no selected option covers. The returned slice is the dates
+//     that survived; only a series left with nothing at all is an error,
+//     since that silently creates no slots.
+//   - A single date is the owner deliberately picking that one day, so it
+//     still fails — there's nothing left to create if it's skipped.
+//
+// The single-date conflict is returned as a plain (non-field) error, unlike
+// validateCoverage's errors — it isn't really about the time picker
+// specifically, so it's shown as a general form message rather than pinned to
+// one field's feedback text.
+func (s *serviceSlotService) resolveLeaveConflicts(ctx context.Context, staffID *int64, scheduled []scheduledDate, isRecurring bool) ([]scheduledDate, error) {
 	if staffID == nil {
-		return nil
+		return scheduled, nil
 	}
+	kept := make([]scheduledDate, 0, len(scheduled))
 	for _, sd := range scheduled {
 		onLeave, err := s.leaveRepo.IsStaffOnLeave(ctx, *staffID, sd.Date)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		if onLeave {
-			return fmt.Errorf("This staff member is on approved leave on %s — pick a different date or staff member.", sd.Date)
+		if !onLeave {
+			kept = append(kept, sd)
+			continue
+		}
+		if !isRecurring {
+			return nil, fmt.Errorf("This staff member is on approved leave on %s — pick a different date or staff member.", sd.Date)
 		}
 	}
-	return nil
+	if len(kept) == 0 && len(scheduled) > 0 {
+		return nil, errs.ValidationErrors{{
+			Field:   "schedule",
+			Message: "This staff member is on approved leave for every date in this series — pick a different staff member or weekday.",
+		}}
+	}
+	return kept, nil
 }
 
 // insertSlotsForSchedule inserts one service_slots row (plus its packages)
@@ -348,7 +371,10 @@ func (s *serviceSlotService) CreateServiceSlot(ctx context.Context, p param.Serv
 		return nil, err
 	}
 
-	if err := s.validateNoLeaveConflict(ctx, p.StaffID, scheduled); err != nil {
+	// A recurring series keeps going around the staff's leave; a single
+	// chosen date can't be skipped, so it still fails.
+	scheduled, err = s.resolveLeaveConflicts(ctx, p.StaffID, scheduled, len(p.DaysOfWeek) > 0)
+	if err != nil {
 		return nil, err
 	}
 
@@ -442,7 +468,9 @@ func (s *serviceSlotService) UpdateServiceSlot(ctx context.Context, p param.Serv
 		return nil, err
 	}
 
-	if err := s.validateNoLeaveConflict(ctx, p.StaffID, scheduled); err != nil {
+	// An edit always writes one occurrence (insertSlotsForSchedule is called
+	// with isRecurring false below), so there's nothing to skip to here.
+	if _, err := s.resolveLeaveConflicts(ctx, p.StaffID, scheduled, false); err != nil {
 		return nil, err
 	}
 

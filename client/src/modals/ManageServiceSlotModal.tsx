@@ -70,6 +70,10 @@ export default function ManageServiceSlotModal({
     // keeps the checkbox list from offering something that won't apply.
     const editCheckDate = editForm.date || todayISO();
 
+    // A slot whose date has already gone by is history — nothing about it is
+    // still actionable, so say that rather than talking about the booking.
+    const isPastSlot = !!managing && managing.date < todayISO();
+
     const editSelectedService = services.find(s => s.serviceId === editFormServiceId);
     const editActiveOptions = editSelectedService?.serviceOptions.filter(o => isOptionOfferedOn(o, editCheckDate)) ?? [];
     // A service with no option offered on the target date can't be selected
@@ -140,8 +144,9 @@ export default function ManageServiceSlotModal({
                         {allowReassign ? (
                             <>
                                 <Alert variant="info" className="py-2 small">
-                                    This slot already has a booking — it cannot be deleted, and its date, time and
-                                    options can no longer be changed. You can still reassign staff below.
+                                    {isPastSlot
+                                        ? "This slot is in the past — it cannot be deleted, and its date, time and options can no longer be changed. You can still reassign staff below to correct who carried it out."
+                                        : "This slot already has a booking — it cannot be deleted, and its date, time and options can no longer be changed. You can still reassign staff below."}
                                 </Alert>
 
                                 <hr />
@@ -163,8 +168,9 @@ export default function ManageServiceSlotModal({
                             </>
                         ) : (
                             <Alert variant="info" className="py-2 small mb-0">
-                                This slot already has a booking — it cannot be deleted. Contact the business owner
-                                to change or reassign it.
+                                {isPastSlot
+                                    ? "This slot is in the past — it cannot be deleted or changed. Contact the business owner if its staff needs correcting."
+                                    : "This slot already has a booking — it cannot be deleted. Contact the business owner to change or reassign it."}
                             </Alert>
                         )}
                     </>

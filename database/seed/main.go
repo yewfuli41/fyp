@@ -550,12 +550,29 @@ func seedBusiness(
 			status = weightedChoice(rng, []string{"accepted", "pending", "cancelled"}, []int{55, 35, 10})
 		}
 
+		// Booked a few days before the appointment itself — realistic for a
+		// past slot, but slots run two weeks ahead, so a future slot would
+		// otherwise claim to have been booked in the future. A real booking
+		// made while demoing carries created_at = now and would then sort
+		// below these on any most-recently-booked list. Pull anything that
+		// overshoots back into the last ten days, staggered rather than
+		// pinned to the same instant so their relative order still means
+		// something.
+		seedRunAt := time.Now().UTC()
 		createdAt := s.date.AddDate(0, 0, -(rng.Intn(10) + 1))
 		if createdAt.Before(businessCreatedAt) {
 			createdAt = businessCreatedAt
 		}
 		createdAt = createdAt.Add(time.Duration(rng.Intn(10)+8) * time.Hour)
+		if createdAt.After(seedRunAt) {
+			createdAt = seedRunAt.Add(-time.Duration(rng.Intn(14400)) * time.Minute)
+		}
+		// Decided an hour or so after being booked, on the same footing: a
+		// decision that hasn't happened yet would be its own small lie.
 		decidedAt := createdAt.Add(time.Duration(rng.Intn(6)+1) * time.Hour)
+		if decidedAt.After(seedRunAt) {
+			decidedAt = seedRunAt
+		}
 
 		var decidedBy *int64
 		switch status {

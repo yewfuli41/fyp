@@ -347,7 +347,7 @@ func (s *staffService) UpdateStaffWorkingHours(ctx context.Context, businessID i
 			return err
 		}
 
-		notify, err := resolveSlotConflicts(ctx, tx, s.serviceSlotRepo, s.bookingRepo, businessID, outside, reassignments)
+		notify, err := resolveSlotConflicts(ctx, tx, s.serviceSlotRepo, s.bookingRepo, businessID, staffID, workingHours, outside, reassignments)
 		if err != nil {
 			return err
 		}

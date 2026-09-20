@@ -55,10 +55,17 @@ func slotsOutsideHours(slots []param.AssignedSlotParam, newHours []param.Working
 // replacement; see its doc comment.) Must run inside the caller's
 // transaction; returns the booking contexts to email once it commits (see
 // notifyStaffReassigned).
+//
+// editedStaffID/newHours describe the staff member whose hours are being
+// saved. They matter because the owner is allowed to name that same person as
+// the "replacement" for one of their own slots, and at this point in the
+// transaction their stored hours are still the old ones — see the same-staff
+// branch below.
 func resolveSlotConflicts(
 	ctx context.Context, tx *sql.Tx,
 	serviceSlotRepo interfaces.IServiceSlotRepo, bookingRepo interfaces.IBookingRepo,
-	businessID int64, affected []param.AssignedSlotParam, reassignments []param.SlotReassignmentParam,
+	businessID int64, editedStaffID int64, newHours []param.WorkingHourParam,
+	affected []param.AssignedSlotParam, reassignments []param.SlotReassignmentParam,
 ) ([]*param.BookingContextParam, error) {
 	byID := make(map[int64]*param.SlotReassignmentParam, len(reassignments))
 	for i := range reassignments {
@@ -81,23 +88,37 @@ func resolveSlotConflicts(
 			continue
 		}
 		if r.StaffID != nil {
-			staffOK, err := serviceSlotRepo.StaffBelongsToBusiness(ctx, *r.StaffID, businessID)
-			if err != nil {
-				return nil, err
-			}
-			if !staffOK {
-				return nil, errs.ValidationErrors{{Field: "reassignments", Message: "Selected replacement staff was not found."}}
-			}
 			weekday, err := weekdayOf(slot.Date)
 			if err != nil {
 				return nil, err
 			}
-			covers, err := serviceSlotRepo.StaffCoversTime(ctx, *r.StaffID, weekday, slot.StartTime, slot.EndTime)
-			if err != nil {
-				return nil, err
-			}
-			if !covers {
-				return nil, errs.ValidationErrors{{Field: "reassignments", Message: fmt.Sprintf("Replacement staff is not working on %s during that time.", slot.Date)}}
+
+			if *r.StaffID == editedStaffID {
+				// Keeping the slot with the staff member being edited. Their
+				// stored hours are still the OLD ones until this transaction
+				// writes the new ones, and the old hours always cover the slot
+				// — that's why it was assigned under them to begin with — so
+				// asking the database here would pass every time and leave the
+				// booking with someone who no longer works then. The hours
+				// being saved are the only correct thing to check against.
+				if !coveredByHours(weekday, timeOfDay(slot.StartTime), timeOfDay(slot.EndTime), newHours) {
+					return nil, errs.ValidationErrors{{Field: "reassignments", Message: fmt.Sprintf("These new hours don't cover the booking on %s, so it can't stay with this staff member. Pick someone else, or move the booking before reducing the hours.", slot.Date)}}
+				}
+			} else {
+				staffOK, err := serviceSlotRepo.StaffBelongsToBusiness(ctx, *r.StaffID, businessID)
+				if err != nil {
+					return nil, err
+				}
+				if !staffOK {
+					return nil, errs.ValidationErrors{{Field: "reassignments", Message: "Selected replacement staff was not found."}}
+				}
+				covers, err := serviceSlotRepo.StaffCoversTime(ctx, *r.StaffID, weekday, slot.StartTime, slot.EndTime)
+				if err != nil {
+					return nil, err
+				}
+				if !covers {
+					return nil, errs.ValidationErrors{{Field: "reassignments", Message: fmt.Sprintf("Replacement staff is not working on %s during that time.", slot.Date)}}
+				}
 			}
 		}
 		if err := serviceSlotRepo.ReassignStaff(ctx, tx, slot.ServiceSlotID, businessID, r.StaffID); err != nil {

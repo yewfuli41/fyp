@@ -145,6 +145,76 @@ var _ = Describe("StaffService working hours", func() {
 			Expect(ve[0].Field).To(Equal("reassignments"))
 		})
 
+		It("rejects keeping a conflicting booked slot with the same staff whose hours are being reduced", func() {
+			newHours := []param.WorkingHourParam{
+				{Day: "monday", StartTime: time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC), EndTime: time.Date(0, 1, 1, 12, 0, 0, 0, time.UTC)},
+			}
+			businessRepo.EXPECT().GetBusinessByID(ctx, businessID).
+				Return(&param.BusinessProfileParam{BusinessID: businessID}, nil).Once()
+			businessRepo.EXPECT().GetBusinessWorkingHours(ctx, businessID).
+				Return(businessHours, nil).Once()
+
+			// 14:00-15:00 falls outside the new 09:00-12:00 Monday hours.
+			booked := param.AssignedSlotParam{
+				ServiceSlotID: 10, Date: "2026-08-03", HasBooking: true,
+				StartTime: time.Date(0, 1, 1, 14, 0, 0, 0, time.UTC), EndTime: time.Date(0, 1, 1, 15, 0, 0, 0, time.UTC),
+			}
+			serviceSlotRepo.EXPECT().GetFutureAssignedSlotWindows(ctx, staffID, mock.AnythingOfType("string")).
+				Return([]param.AssignedSlotParam{booked}, nil).Once()
+
+			dbMock.ExpectBegin()
+			staffRepo.EXPECT().GetStaffByIDTx(ctx, mock.AnythingOfType("*sql.Tx"), staffID, businessID).
+				Return(&param.StaffParam{StaffID: staffID, BusinessID: businessID}, nil).Once()
+			dbMock.ExpectRollback()
+
+			// The owner names the very staff member being edited as the
+			// "replacement". Their saved hours still cover 14:00-15:00 at this
+			// point, so a database check would wave it through and leave the
+			// booking with someone who no longer works then.
+			result, err := staffSvc.UpdateStaffWorkingHours(ctx, businessID, staffID, newHours, []param.SlotReassignmentParam{
+				{ServiceSlotID: 10, StaffID: &staffID},
+			})
+			Expect(result).To(BeNil())
+			ve, ok := err.(errs.ValidationErrors)
+			Expect(ok).To(BeTrue())
+			Expect(ve[0].Field).To(Equal("reassignments"))
+			Expect(ve[0].Message).To(ContainSubstring("2026-08-03"))
+		})
+
+		It("still lets the owner unassign a conflicting booked slot back to owner-managed", func() {
+			newHours := []param.WorkingHourParam{
+				{Day: "monday", StartTime: time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC), EndTime: time.Date(0, 1, 1, 12, 0, 0, 0, time.UTC)},
+			}
+			businessRepo.EXPECT().GetBusinessByID(ctx, businessID).
+				Return(&param.BusinessProfileParam{BusinessID: businessID}, nil).Once()
+			businessRepo.EXPECT().GetBusinessWorkingHours(ctx, businessID).
+				Return(businessHours, nil).Once()
+
+			booked := param.AssignedSlotParam{
+				ServiceSlotID: 10, Date: "2026-08-03", HasBooking: true,
+				StartTime: time.Date(0, 1, 1, 14, 0, 0, 0, time.UTC), EndTime: time.Date(0, 1, 1, 15, 0, 0, 0, time.UTC),
+			}
+			serviceSlotRepo.EXPECT().GetFutureAssignedSlotWindows(ctx, staffID, mock.AnythingOfType("string")).
+				Return([]param.AssignedSlotParam{booked}, nil).Once()
+
+			dbMock.ExpectBegin()
+			staffRepo.EXPECT().GetStaffByIDTx(ctx, mock.AnythingOfType("*sql.Tx"), staffID, businessID).
+				Return(&param.StaffParam{StaffID: staffID, BusinessID: businessID}, nil).Once()
+			serviceSlotRepo.EXPECT().ReassignStaff(ctx, mock.AnythingOfType("*sql.Tx"), int64(10), businessID, (*int64)(nil)).Return(nil).Once()
+			bookingRepo.EXPECT().GetBookingContextForSlot(ctx, int64(10)).Return(nil, nil).Once()
+			staffRepo.EXPECT().DeleteStaffWorkingHours(ctx, mock.AnythingOfType("*sql.Tx"), staffID).Return(nil).Once()
+			staffRepo.EXPECT().
+				InsertStaffWorkingHours(ctx, mock.AnythingOfType("*sql.Tx"), mock.AnythingOfType("param.StaffParam")).
+				Return(nil).Once()
+			dbMock.ExpectCommit()
+
+			result, err := staffSvc.UpdateStaffWorkingHours(ctx, businessID, staffID, newHours, []param.SlotReassignmentParam{
+				{ServiceSlotID: 10, StaffID: nil},
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.WorkingHours).To(Equal(newHours))
+		})
+
 		// UT-021 (Staff Scheduling & Working-Hour Rules).
 		It("reassigns the booked slot, unassigns the non-booked one, and saves the new hours", func() {
 			newHours := []param.WorkingHourParam{

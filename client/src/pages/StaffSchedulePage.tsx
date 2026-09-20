@@ -20,7 +20,7 @@ interface Conflict {
 }
 
 function ReassignmentModal({
-    show, title, conflicts, token, busy, error, onCancel, onConfirm,
+    show, title, conflicts, token, busy, error, excludeStaffId, onCancel, onConfirm,
 }: {
     show: boolean;
     title: string;
@@ -28,6 +28,13 @@ function ReassignmentModal({
     token: string;
     busy: boolean;
     error: string;
+    // The staff member whose hours are being reduced, when that is what
+    // triggered this dialog. They are never a valid pick for their own
+    // conflicting slot — the whole point is that they stop working then — and
+    // availableStaffForSlot still lists them because it reads their saved
+    // hours, which the edit has not written yet. Filtered out here so the
+    // dialog cannot offer a choice the server will reject.
+    excludeStaffId?: string;
     onCancel: () => void;
     onConfirm: (reassignments: SlotReassignment[]) => void;
 }) {
@@ -63,9 +70,11 @@ function ReassignmentModal({
                         >
                             <option value="">Select…</option>
                             <option value="__unassign__">Unassigned (owner-managed)</option>
-                            {(options[c.serviceSlotId] ?? []).map(s => (
-                                <option key={s.staffId} value={s.staffId}>{s.name}</option>
-                            ))}
+                            {(options[c.serviceSlotId] ?? [])
+                                .filter(s => s.staffId !== excludeStaffId)
+                                .map(s => (
+                                    <option key={s.staffId} value={s.staffId}>{s.name}</option>
+                                ))}
                         </Form.Select>
                     </Form.Group>
                 ))}
@@ -366,6 +375,7 @@ export default function StaffSchedulePage() {
                 token={activeToken ?? ""}
                 busy={hoursConflictBusy}
                 error={hoursConflictError}
+                excludeStaffId={selectedStaffId}
                 onCancel={() => {
                     setHoursConflicts(null);
                     setHoursUnbookedConflicts([]);

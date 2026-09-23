@@ -28,6 +28,7 @@ const testPassword = "Password123!"
 // appointment slots (time + service) generated for every one of those days.
 type staffSpec struct {
 	staffID         int64
+	leaveDemo       bool
 	weekdays        []string
 	workStart       string
 	workEnd         string
@@ -66,10 +67,17 @@ type serviceSeed struct {
 // weekly pattern, and the two daily slots generated for them. slot1Svc /
 // slot2Svc index into the owning businessSeed's services.
 type staffSeed struct {
-	name       string
-	email      string
-	contact    string
-	position   string
+	name     string
+	email    string
+	contact  string
+	position string
+	// leaveDemo marks the one staff member who gets a pending leave
+	// guaranteed to collide with a live booking — see
+	// seedLeaveWithAffectedBooking. The generic leavePlans can't promise
+	// that: their day offsets drift against the weekdays a staff member
+	// actually works, so on most run dates they land on that person's days
+	// off and the leave affects nothing at all.
+	leaveDemo  bool
 	weekdays   []string
 	workStart  string
 	workEnd    string
@@ -205,7 +213,7 @@ func main() {
 					slot2Start: "11:00", slot2End: "12:00", slot2Svc: 1,
 				},
 				{
-					name: "Cara Stylist", email: "staff2@test.com", contact: "0123456782", position: "Junior Stylist",
+					name: "Cara Stylist", email: "staff2@test.com", contact: "0123456782", position: "Junior Stylist", leaveDemo: true,
 					weekdays: []string{"tuesday", "thursday"}, workStart: "10:00", workEnd: "18:00",
 					slot1Start: "10:00", slot1End: "11:00", slot1Svc: 2,
 					slot2Start: "12:00", slot2End: "13:00", slot2Svc: 0,
@@ -463,7 +471,7 @@ func seedBusiness(
 	optionIDs := make([]int64, len(cfg.services))
 	for i, svc := range cfg.services {
 		serviceID := insertService(db, businessID, svc.name, svc.description)
-		optionID := insertServiceOption(db, serviceID, svc.optionName, svc.optionDesc)
+		optionID := insertServiceOption(db, serviceID, svc.optionName, svc.optionDesc, businessCreatedAt)
 		for _, item := range svc.items {
 			insertServiceOptionItem(db, optionID, item)
 		}
@@ -475,8 +483,9 @@ func seedBusiness(
 	for i, s := range cfg.staff {
 		userID := insertUser(db, s.name, s.email, s.contact, hashedPassword)
 		specs[i] = &staffSpec{
-			staffID:  insertStaff(db, userID, businessID, s.name, s.contact, s.position),
-			weekdays: s.weekdays, workStart: s.workStart, workEnd: s.workEnd,
+			staffID:   insertStaff(db, userID, businessID, s.name, s.contact, s.position),
+			leaveDemo: s.leaveDemo,
+			weekdays:  s.weekdays, workStart: s.workStart, workEnd: s.workEnd,
 			slot1Start: s.slot1Start, slot1End: s.slot1End, slot1ServiceOpt: optionIDs[s.slot1Svc],
 			slot2Start: s.slot2Start, slot2End: s.slot2End, slot2ServiceOpt: optionIDs[s.slot2Svc],
 		}
@@ -598,11 +607,113 @@ func seedBusiness(
 
 	// ── Leave applications ───────────────────────────────────────────────
 	for i, spec := range specs {
+		if spec.leaveDemo {
+			seedLeaveWithAffectedBooking(db, rng, spec, specs, customers, ownerID, today, slotsUntil)
+			continue
+		}
 		p := leavePlans[(index+i)%len(leavePlans)]
 		insertLeave(db, spec.staffID, today.AddDate(0, 0, p.fromDay), today.AddDate(0, 0, p.toDay), p.reason, p.status)
 	}
 
 	return len(allSlots), bookedCount
+}
+
+// leaveConflictDay picks the date for the demo leave: a day the target
+// actually works, far enough ahead to be comfortably in the future, and —
+// preferably — one a colleague also works, so the owner has somewhere to
+// reschedule the affected booking to. Approving leave is all-or-nothing
+// (leaveService.ApproveLeaveApplication), so a day with no colleague on
+// shift would show the block without a way through it.
+func leaveConflictDay(target *staffSpec, specs []*staffSpec, today, slotsUntil time.Time) (time.Time, bool) {
+	worksOn := func(spec *staffSpec, weekday string) bool {
+		for _, d := range spec.weekdays {
+			if d == weekday {
+				return true
+			}
+		}
+		return false
+	}
+	colleagueOn := func(weekday string) bool {
+		for _, s := range specs {
+			if s.staffID != target.staffID && worksOn(s, weekday) {
+				return true
+			}
+		}
+		return false
+	}
+
+	var fallback time.Time
+	for d := today.AddDate(0, 0, 3); !d.After(slotsUntil); d = d.AddDate(0, 0, 1) {
+		weekday := strings.ToLower(d.Weekday().String())
+		if !worksOn(target, weekday) {
+			continue
+		}
+		if colleagueOn(weekday) {
+			return d, true
+		}
+		if fallback.IsZero() {
+			fallback = d
+		}
+	}
+	return fallback, !fallback.IsZero()
+}
+
+// seedLeaveWithAffectedBooking gives one staff member a pending leave that is
+// guaranteed to collide with exactly one live booking, so the leave-approval
+// flow (which refuses to approve until every affected booking is rescheduled
+// onto another staff member's slot) can actually be demonstrated. The random
+// booking pass has already run, so this clears whatever it left on that day
+// and books a single slot deliberately — exactly one conflict, not zero and
+// not two.
+func seedLeaveWithAffectedBooking(
+	db *sql.DB, rng *rand.Rand, target *staffSpec, specs []*staffSpec,
+	customers []weightedCustomer, ownerID int64, today, slotsUntil time.Time,
+) {
+	day, ok := leaveConflictDay(target, specs, today, slotsUntil)
+	if !ok {
+		log.Printf("  (no working day ahead for staff %d — skipping leave-conflict fixture)", target.staffID)
+		return
+	}
+
+	rows, err := db.Query(`
+		SELECT sso.slot_option_id
+		FROM fyp_fuli_service_slots ss
+		JOIN fyp_fuli_service_slot_options sso ON sso.service_slot_id = ss.service_slot_id
+		WHERE ss.staff_id = $1 AND ss.date = $2 AND ss.deleted_at IS NULL
+		ORDER BY ss.start_time`, target.staffID, day.Format("2006-01-02"))
+	if err != nil {
+		log.Fatal("leave-conflict slots: ", err)
+	}
+	var slotOptionIDs []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			log.Fatal("scan leave-conflict slot: ", err)
+		}
+		slotOptionIDs = append(slotOptionIDs, id)
+	}
+	rows.Close()
+	if len(slotOptionIDs) == 0 {
+		log.Printf("  (no slots on %s for staff %d — skipping leave-conflict fixture)", day.Format("2006-01-02"), target.staffID)
+		return
+	}
+
+	for _, id := range slotOptionIDs {
+		if _, err := db.Exec(`DELETE FROM fyp_fuli_bookings WHERE slot_option_id = $1`, id); err != nil {
+			log.Fatal("clear leave-conflict day: ", err)
+		}
+	}
+
+	createdAt := time.Now().UTC().Add(-time.Duration(rng.Intn(72)+1) * time.Hour)
+	decidedAt := createdAt.Add(time.Duration(rng.Intn(3)+1) * time.Hour)
+	insertBookingFull(db, pickCustomer(rng, customers), slotOptionIDs[0],
+		"accepted", "online", "Please keep the same stylist if possible.", &ownerID, &decidedAt, createdAt)
+
+	// Single-day window: a wider one risks catching a second working day and
+	// turning one affected booking into several.
+	insertLeave(db, target.staffID, day, day, "Medical appointment", "pending")
+	log.Printf("  leave-conflict fixture: staff %d has pending leave on %s with 1 affected booking",
+		target.staffID, day.Format("2006-01-02"))
 }
 
 func pickCustomer(rng *rand.Rand, customers []weightedCustomer) int64 {
@@ -690,12 +801,18 @@ func insertService(db *sql.DB, businessID int64, name, description string) int64
 	return id
 }
 
-func insertServiceOption(db *sql.DB, serviceID int64, name, description string) int64 {
+// effectiveFrom must be passed explicitly: the column defaults to
+// CURRENT_DATE, which would date every option to the day the seed ran even
+// though the business it belongs to was created months earlier. That leaves
+// the catalogue claiming it did not exist during the four months of history
+// seeded against it, and anything that asks "was this offered on <date>" —
+// backdating a walk-in, most visibly — finds nothing to offer.
+func insertServiceOption(db *sql.DB, serviceID int64, name, description string, effectiveFrom time.Time) int64 {
 	var id int64
 	err := db.QueryRow(
-		`INSERT INTO fyp_fuli_service_options (service_id, service_option_name, description, is_default)
-		 VALUES ($1,$2,$3,TRUE) RETURNING service_option_id`,
-		serviceID, name, description).Scan(&id)
+		`INSERT INTO fyp_fuli_service_options (service_id, service_option_name, description, is_default, effective_from)
+		 VALUES ($1,$2,$3,TRUE,$4) RETURNING service_option_id`,
+		serviceID, name, description, effectiveFrom).Scan(&id)
 	if err != nil {
 		log.Fatal("insert service option: ", err)
 	}
